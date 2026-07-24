@@ -1,0 +1,859 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PTTGC | QAQC ONLINE APPLICATION</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom right, #f0f8ff, #eaf2f8);
+      min-height: 100vh;
+      padding-bottom: 90px;
+    }
+
+    .header {
+      background: linear-gradient(to right, #d6eaf8, #aed6f1);
+      padding: 28px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
+
+    .logo-container { display: flex; flex-direction: column; align-items: flex-start; }
+    .logo { height: 50px; margin-bottom: 4px; }
+    .company-name { font-size: 13px; font-style: italic; color: #2c3e50; }
+
+    .center-title {
+      flex: 1;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #154360;
+    }
+
+    /* HEADER NAV (right side inside header) */
+    .header-nav {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      width: 360px;
+      flex-shrink: 0;
+      min-width: 0;
+    }
+
+    .hn-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #154360;
+      cursor: pointer;
+      padding: 7px 16px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: 20px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      transition: background 0.2s, box-shadow 0.2s;
+      user-select: none;
+    }
+
+    .hn-label:hover {
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    }
+
+    .hn-label .hn-arrow {
+      font-size: 10px;
+      transition: transform 0.25s;
+    }
+
+    .hn-label.open .hn-arrow {
+      transform: rotate(180deg);
+    }
+
+    .hn-grid {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      width: 100%;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+    }
+
+    .hn-item {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .hn-btn {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      color: #154360;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .hn-btn:hover {
+      background: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    }
+
+    .hn-btn .btn-icon {
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .hn-btn .btn-text {
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    @media (max-width: 900px) {
+      .header-nav { display: none; }
+    }
+
+    .top-right { position: relative; }
+
+    .add-button {
+      width: 40px; height: 40px;
+      background: white;
+      border: 2px solid #0078d7;
+      border-radius: 50%;
+      font-size: 28px;
+      color: #0078d7;
+      line-height: 38px;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: 0 0 8px #0078d7aa;
+      position: relative;
+      z-index: 100;
+    }
+    .add-button:hover { background: #0078d7; color: white; }
+
+    .popup-options {
+      position: absolute;
+      top: 50px; right: 0;
+      background: white;
+      border: 1px solid #0078d7;
+      border-radius: 6px;
+      box-shadow: 0 0 10px #0078d7aa;
+      display: none;
+      flex-direction: column;
+      width: 140px;
+      z-index: 101;
+    }
+    .popup-options.show { display: flex; }
+    .popup-options button {
+      background: none; border: none;
+      padding: 10px 15px;
+      text-align: left; cursor: pointer;
+      font-weight: bold; color: #0078d7;
+      border-bottom: 1px solid #0078d7;
+    }
+    .popup-options button:last-child { border-bottom: none; }
+    .popup-options button:hover { background: #0078d7; color: white; }
+
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 6px;
+      max-width: 900px;
+      margin: 30px auto;
+      box-shadow: 0 0 10px #ccc;
+    }
+
+    .breadcrumb { margin-bottom: 15px; font-size: 14px; }
+    .breadcrumb span { cursor: pointer; color: #0078d7; margin-right: 5px; }
+    .breadcrumb span:last-child { color: #333; cursor: default; }
+
+    .folders, .files { display: flex; flex-wrap: wrap; gap: 20px; }
+
+    .folder, .file {
+      width: 120px;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+    }
+    .folder img, .file img { width: 64px; height: 64px; }
+    .folder:hover { background: #e0f0ff; border-radius: 8px; }
+    .folder .name, .file .name { margin-top: 8px; word-break: break-word; }
+    .folder.selected, .file.selected { background: #cce5ff; border-radius: 8px; outline: 2px solid #0078d7; }
+
+    .item-checkbox {
+      position: absolute;
+      top: 4px; left: 4px;
+      width: 16px; height: 16px;
+      cursor: pointer;
+      z-index: 2;
+      accent-color: #0078d7;
+    }
+
+    #deleteBar {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding: 8px 14px;
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 6px;
+      flex-wrap: wrap;
+    }
+    #deleteActions, #renameActions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    #deleteBar .del-count { font-weight: 600; color: #856404; }
+    #deleteBar .del-btn {
+      padding: 5px 16px;
+      background: #dc3545; color: white;
+      border: none; border-radius: 5px;
+      cursor: pointer; font-weight: bold;
+    }
+    #deleteBar .del-btn:hover { background: #b02a37; }
+    #deleteBar .rename-bar-btn {
+      padding: 5px 14px;
+      background: #0078d7; color: white;
+      border: none; border-radius: 5px;
+      cursor: pointer; font-weight: bold;
+    }
+    #deleteBar .rename-bar-btn:hover { background: #005fa3; }
+    #deleteBar .cancel-btn {
+      padding: 5px 12px;
+      background: #6c757d; color: white;
+      border: none; border-radius: 5px;
+      cursor: pointer;
+    }
+    #deleteBar .cancel-btn:hover { background: #545b62; }
+    #renameInput {
+      padding: 4px 10px;
+      border: 1px solid #aaa; border-radius: 4px;
+      font-size: 14px; min-width: 200px;
+    }
+
+    #transferBtnWrapper { margin-bottom: 15px; }
+    #transferBtnWrapper button {
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white; font-weight: bold;
+      border: none; border-radius: 5px;
+      cursor: pointer;
+      box-shadow: 0 3px 6px #aaa;
+      transition: background-color 0.3s;
+    }
+    #transferBtnWrapper button:hover { background-color: #1e7e34; }
+
+    #homeBtn {
+      position: fixed; bottom: 15px; left: 50%;
+      transform: translateX(-50%);
+      background: transparent; border: none;
+      cursor: pointer; z-index: 300;
+      width: 50px; height: 50px; padding: 0;
+    }
+    #homeBtn svg { fill: #0078d7; width: 50px; height: 50px; transition: fill 0.3s; }
+    #homeBtn:hover svg { fill: #004a9f; }
+
+    #homePopup {
+      position: fixed; bottom: 75px; left: 50%;
+      transform: translateX(-50%);
+      display: none; gap: 12px;
+      background: transparent; z-index: 310;
+    }
+    #homePopup.show { display: flex; }
+    #homePopup button {
+      background-color: #0078d7; color: white;
+      border: none; border-radius: 50%;
+      width: 60px; height: 60px;
+      cursor: pointer; font-weight: bold;
+      box-shadow: 0 3px 8px #004a9faa;
+      display: flex; justify-content: center; align-items: center;
+      transition: background-color 0.3s;
+    }
+    #homePopup button:hover { background-color: #004a9f; }
+
+    input[type="file"] { display: none; }
+
+    .error-msg { color: red; padding: 12px; }
+
+    /* ── Toast notifications ── */
+    #toast-container {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 280px;
+      max-width: 400px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+      pointer-events: all;
+      animation: toastIn 0.3s ease;
+      line-height: 1.4;
+    }
+    .toast.success { background: #d4edda; border-left: 5px solid #28a745; color: #155724; }
+    .toast.error   { background: #f8d7da; border-left: 5px solid #dc3545; color: #721c24; }
+    .toast.info    { background: #d1ecf1; border-left: 5px solid #17a2b8; color: #0c5460; }
+    .toast-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .toast-body { flex: 1; }
+    .toast-title { font-weight: 700; margin-bottom: 2px; }
+    .toast-msg   { font-weight: 400; word-break: break-all; }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(40px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateX(0); }
+      to   { opacity: 0; transform: translateX(40px); }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="logo-container">
+      <img src="GCME_Logo.png" alt="GCME Logo" class="logo" />
+      <div class="company-name">GC Maintenance and Engineering Co.,LTD.</div>
+    </div>
+    <div class="center-title">QAQC ONLINE APPLICATION - Data</div>
+
+    <!-- Navigation (inside header, right side) -->
+    <div class="header-nav">
+      <div class="hn-label" id="hnLabel" onclick="toggleBox()">
+        <span>General Form</span>
+        <span class="hn-arrow">▾</span>
+      </div>
+      <div id="myBox" class="hn-grid" style="display: none;">
+        <div class="hn-item">
+          <button class="hn-btn" onclick="location.href='MaintenanceReport.html'">
+            <span class="btn-icon">🔧</span>
+            <span class="btn-text">Maintenance Report</span>
+          </button>
+        </div>
+        <div class="hn-item">
+          <button class="hn-btn" onclick="location.href='InspectionReport.html'">
+            <span class="btn-icon">🔍</span>
+            <span class="btn-text">Inspection Report</span>
+          </button>
+        </div>
+        <div class="hn-item">
+          <button class="hn-btn" onclick="location.href='SparePartReport.html'">
+            <span class="btn-icon">⚙️</span>
+            <span class="btn-text">Spare Part Report</span>
+          </button>
+        </div>
+        <div class="hn-item">
+          <button class="hn-btn" onclick="location.href='PhotographerReport.html'">
+            <span class="btn-icon">📷</span>
+            <span class="btn-text">Photographer Report</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="top-right">
+      <div class="add-button" id="addBtn" title="Add">+</div>
+      <div class="popup-options" id="popupOptions">
+        <button id="newFolderBtn">New folder</button>
+        <button id="uploadFileBtn">Upload file</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="breadcrumb" id="breadcrumb"></div>
+    <div id="deleteBar">
+      <div id="deleteActions">
+        <span class="del-count"><span id="selectedCount">0</span> รายการที่เลือก</span>
+        <button id="renameSelectedBtn" class="rename-bar-btn" onclick="startRename()">✏️ แก้ไขชื่อ</button>
+        <button class="del-btn" onclick="deleteSelected()">🗑️ ลบที่เลือก</button>
+        <button class="cancel-btn" onclick="clearSelection()">ยกเลิก</button>
+      </div>
+      <div id="renameActions" style="display:none;">
+        <span style="font-weight:600; color:#856404;">ชื่อใหม่:</span>
+        <input id="renameInput" type="text" />
+        <button class="rename-bar-btn" onclick="confirmRename()">✅ ยืนยัน</button>
+        <button class="cancel-btn" onclick="cancelRename()">❌ ยกเลิก</button>
+      </div>
+    </div>
+    <div id="transferBtnWrapper" style="display:none;">
+      <button onclick="location.href='Transfer data to excel.html'">➤ Transfer data to Excel</button>
+    </div>
+    <div class="folders" id="folderList"></div>
+    <div class="files"   id="fileList"></div>
+  </div>
+
+  <button id="homeBtn" title="Home">
+    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <path d="M32 12l-20 20h6v20h12V38h4v14h12V32h6z"/>
+    </svg>
+  </button>
+
+  <div id="homePopup">
+    <button data-link="Main.html">Home</button>
+    <button data-link="Plant Selection.html">Plant Selection</button>
+    <button data-link="Package Selection.html">Package Selection</button>
+  </div>
+
+  <div id="toast-container"></div>
+  <input type="file" id="fileInput" multiple />
+
+  <script>
+    // ── Toast notification ─────────────────────────────────
+    function showToast(title, msg, type = 'info', duration = 4000) {
+      const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+      const container = document.getElementById('toast-container');
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.innerHTML = `
+        <span class="toast-icon">${icons[type]}</span>
+        <div class="toast-body">
+          <div class="toast-title">${title}</div>
+          ${msg ? `<div class="toast-msg">${msg}</div>` : ''}
+        </div>`;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.animation = 'toastOut 0.3s ease forwards';
+        setTimeout(() => el.remove(), 300);
+      }, duration);
+    }
+
+    function toggleBox() {
+      const element = document.getElementById('myBox');
+      const label = document.getElementById('hnLabel');
+
+      if (element.style.display === 'none') {
+        element.style.display = 'grid'; // แสดง
+        label.classList.add('open');
+      } else {
+        element.style.display = 'none';  // ซ่อน
+        label.classList.remove('open');
+      }
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  CONFIG
+    // ══════════════════════════════════════════════════════
+    const API_BASE = '/api';
+
+    const folderIcon = 'https://cdn-icons-png.flaticon.com/512/715/715676.png';
+    const fileIcon   = 'https://cdn-icons-png.flaticon.com/512/136/136534.png';
+    const excelIcon  = 'https://cdn-icons-png.flaticon.com/512/732/732220.png';
+    const pdfIcon    = 'data:image/svg+xml,' + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48">
+        <path d="M4 2h10l6 6v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#e74c3c"/>
+        <path d="M14 2v6h6z" fill="#c0392b"/>
+        <text x="12" y="17" font-size="6" fill="#fff" text-anchor="middle" font-family="Arial" font-weight="bold">PDF</text>
+      </svg>`);
+    const imageIcon  = 'data:image/svg+xml,' + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48">
+        <rect x="2" y="3" width="20" height="18" rx="2" fill="#3498db"/>
+        <circle cx="8" cy="9" r="2" fill="#fff"/>
+        <path d="M2 17l5-5 4 4 5-6 6 7v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1z" fill="#fff"/>
+      </svg>`);
+
+    // URL context
+    const _p = new URLSearchParams(window.location.search);
+    const _company = _p.get("company") || "";
+    const _plant   = _p.get("plant")   || "";
+    const _service = _p.get("service") || "";
+    const _pkg     = _p.get("package") || "";
+
+    // basePath = PTTGC/A-MN/Rotating Equipment/TestPackage/Data/
+    const basePath = [_company, _plant, _service, _pkg].filter(Boolean).join("/") + "/Data/";
+
+    // pathStack เก็บชื่อ folder เป็น string
+    const _path = _p.get("path") || "";
+    let pathStack = _path ? _path.split("/").filter(Boolean) : [];
+
+    function currentPath() {
+      return pathStack.length ? basePath + pathStack.join("/") + "/" : basePath;
+    }
+
+    const folderListEl       = document.getElementById('folderList');
+    const fileListEl         = document.getElementById('fileList');
+    const breadcrumbEl       = document.getElementById('breadcrumb');
+    const addBtn             = document.getElementById('addBtn');
+    const popupOptions       = document.getElementById('popupOptions');
+    const newFolderBtn       = document.getElementById('newFolderBtn');
+    const uploadFileBtn      = document.getElementById('uploadFileBtn');
+    const fileInput          = document.getElementById('fileInput');
+    const homeBtn            = document.getElementById('homeBtn');
+    const homePopup          = document.getElementById('homePopup');
+    const transferBtnWrapper = document.getElementById('transferBtnWrapper');
+
+    // นามสกุลไฟล์ที่เปิดแก้ไขผ่าน OnlyOffice ได้
+    const editableExt = ['xlsx', 'xls', 'xlsm', 'csv', 'ods', 'docx', 'doc', 'odt', 'rtf', 'pptx', 'ppt', 'odp'];
+
+    const imageExt = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg'];
+
+    function getIcon(name) {
+      const ext = name.split('.').pop().toLowerCase();
+      if (ext === 'xlsx' || ext === 'xls') return excelIcon;
+      if (ext === 'pdf') return pdfIcon;
+      if (imageExt.includes(ext)) return imageIcon;
+      return fileIcon;
+    }
+
+    // ── breadcrumb ─────────────────────────────────────────
+    function renderBreadcrumb() {
+      const ctx = new URLSearchParams({company: _company, plant: _plant, service: _service, package: _pkg});
+      const lnk = 'color:#0078d7;text-decoration:none;';
+
+      let html = `<a href="Main.html" style="${lnk}">Home</a>`;
+      if (_company) html += ` &gt; <a href="Plant Selection.html?plant=${encodeURIComponent(_company)}" style="${lnk}">${_company}</a>`;
+      if (_plant)   html += ` &gt; <a href="Service.html?company=${encodeURIComponent(_company)}&plant=${encodeURIComponent(_plant)}" style="${lnk}">${_plant}</a>`;
+      if (_service) html += ` &gt; <a href="Package Selection.html?company=${encodeURIComponent(_company)}&plant=${encodeURIComponent(_plant)}&service=${encodeURIComponent(_service)}" style="${lnk}">${_service}</a>`;
+      if (_pkg)     html += ` &gt; <a href="Package Default.html?${ctx}" style="${lnk}">${_pkg}</a>`;
+
+      // Data root
+      html += ` &gt; <span data-idx="-1" style="color:#0078d7;cursor:pointer;">Data</span>`;
+
+      // pathStack (strings)
+      pathStack.forEach((name, i) => {
+        html += i < pathStack.length - 1
+          ? ` &gt; <span data-idx="${i}" style="color:#0078d7;cursor:pointer;">${name}</span>`
+          : ` &gt; <span>${name}</span>`;
+      });
+
+      breadcrumbEl.innerHTML = html;
+      breadcrumbEl.querySelectorAll('span[data-idx]').forEach(s =>
+        s.addEventListener('click', e => {
+          const idx = +e.target.dataset.idx;
+          pathStack = idx === -1 ? [] : pathStack.slice(0, idx + 1);
+          renderView();
+        })
+      );
+    }
+
+    // ── delete / rename bar ────────────────────────────────
+    function updateDeleteBar() {
+      const checked = document.querySelectorAll('.item-checkbox:checked');
+      const bar = document.getElementById('deleteBar');
+      document.getElementById('selectedCount').textContent = checked.length;
+      bar.style.display = checked.length > 0 ? 'flex' : 'none';
+      // แสดง rename button เฉพาะเมื่อเลือก 1 รายการ
+      document.getElementById('renameSelectedBtn').style.display =
+        checked.length === 1 ? 'inline-block' : 'none';
+      // คืนกลับ deleteActions เสมอเมื่อ selection เปลี่ยน
+      document.getElementById('deleteActions').style.display = 'flex';
+      document.getElementById('renameActions').style.display = 'none';
+    }
+
+    function clearSelection() {
+      document.querySelectorAll('.item-checkbox:checked').forEach(cb => {
+        cb.checked = false;
+        cb.closest('.folder, .file').classList.remove('selected');
+      });
+      updateDeleteBar();
+    }
+
+    async function deleteSelected() {
+      const checkboxes = Array.from(document.querySelectorAll('.item-checkbox:checked'));
+      if (!checkboxes.length) return;
+      if (!confirm(`ยืนยันลบ ${checkboxes.length} รายการที่เลือก?`)) return;
+
+      let success = 0;
+      for (const cb of checkboxes) {
+        try {
+          let res;
+          if (cb.dataset.type === 'folder') {
+            res = await fetch(`${API_BASE}/delete-path?path=${encodeURIComponent(cb.dataset.path)}`, { method: 'DELETE' });
+          } else {
+            res = await fetch(`${API_BASE}/browse/file?object_name=${encodeURIComponent(cb.dataset.object)}`, { method: 'DELETE' });
+          }
+          if (res.ok) success++;
+        } catch (err) {
+          showToast('ลบไม่สำเร็จ', err.message, 'error');
+        }
+      }
+
+      showToast('ลบเรียบร้อย', `${success} / ${checkboxes.length} รายการถูกลบแล้ว`, 'success');
+      renderView();
+    }
+
+    function startRename() {
+      const checked = document.querySelectorAll('.item-checkbox:checked');
+      if (checked.length !== 1) return;
+      const currentName = checked[0].closest('.folder, .file').querySelector('.name').textContent;
+
+      document.getElementById('deleteActions').style.display = 'none';
+      document.getElementById('renameActions').style.display = 'flex';
+
+      const input = document.getElementById('renameInput');
+      input.value = currentName;
+      input.focus();
+      input.select();
+      input.onkeydown = e => {
+        if (e.key === 'Enter') { e.preventDefault(); confirmRename(); }
+        if (e.key === 'Escape') cancelRename();
+      };
+    }
+
+    function cancelRename() {
+      document.getElementById('deleteActions').style.display = 'flex';
+      document.getElementById('renameActions').style.display = 'none';
+    }
+
+    async function confirmRename() {
+      const checked = document.querySelectorAll('.item-checkbox:checked');
+      if (checked.length !== 1) return;
+      const cb = checked[0];
+      const newName = document.getElementById('renameInput').value.trim();
+      const currentName = cb.closest('.folder, .file').querySelector('.name').textContent;
+      if (!newName || newName === currentName) { cancelRename(); return; }
+
+      try {
+        let res;
+        if (cb.dataset.type === 'folder') {
+          const oldPathNoSlash = cb.dataset.path.slice(0, -1);
+          const parentPath = oldPathNoSlash.slice(0, oldPathNoSlash.lastIndexOf('/') + 1);
+          res = await fetch(`${API_BASE}/rename-path`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ old_path: oldPathNoSlash, new_path: parentPath + newName })
+          });
+        } else {
+          const oldObject = cb.dataset.object;
+          const parentPath = oldObject.slice(0, oldObject.lastIndexOf('/') + 1);
+          res = await fetch(`${API_BASE}/rename-file`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ old_object: oldObject, new_object: parentPath + newName })
+          });
+        }
+        if (!res.ok) {
+          showToast('แก้ไขชื่อไม่สำเร็จ', `Server error: ${res.status}`, 'error');
+          return;
+        }
+        showToast('แก้ไขชื่อสำเร็จ', `"${currentName}" → "${newName}"`, 'success');
+        renderView();
+      } catch (err) {
+        showToast('แก้ไขชื่อไม่สำเร็จ', err.message, 'error');
+      }
+    }
+
+    // ── main render (browse MinIO path จริง) ───────────────
+    async function renderView() {
+      renderBreadcrumb();
+      folderListEl.innerHTML = '<div style="color:#888;padding:12px;">กำลังโหลด...</div>';
+      fileListEl.innerHTML   = '';
+
+      try {
+        const res = await fetch(`${API_BASE}/browse?prefix=${encodeURIComponent(currentPath())}`);
+        const { folders, files } = await res.json();
+
+        // folders
+        folderListEl.innerHTML = '';
+        folders.forEach(f => {
+          const div = document.createElement('div');
+          div.className = 'folder';
+
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.className = 'item-checkbox';
+          cb.dataset.type = 'folder';
+          cb.dataset.path = currentPath() + f.name + '/';
+          cb.addEventListener('click', e => {
+            e.stopPropagation();
+            div.classList.toggle('selected', cb.checked);
+            updateDeleteBar();
+          });
+
+          const img = document.createElement('img');
+          img.src = folderIcon; img.alt = 'Folder';
+          const nameEl = document.createElement('div');
+          nameEl.className = 'name'; nameEl.textContent = f.name;
+
+          div.appendChild(cb); div.appendChild(img); div.appendChild(nameEl);
+          div.addEventListener('click', () => { pathStack.push(f.name); renderView(); });
+          folderListEl.appendChild(div);
+        });
+
+        // files
+        files.forEach(file => {
+          const div = document.createElement('div');
+          div.className = 'file';
+
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.className = 'item-checkbox';
+          cb.dataset.type = 'file';
+          cb.dataset.object = file.object_name;
+          cb.addEventListener('click', e => {
+            e.stopPropagation();
+            div.classList.toggle('selected', cb.checked);
+            updateDeleteBar();
+          });
+
+          const img = document.createElement('img');
+          img.src = getIcon(file.name); img.alt = 'File';
+          const nameEl = document.createElement('div');
+          nameEl.className = 'name'; nameEl.textContent = file.name;
+
+          div.appendChild(cb); div.appendChild(img); div.appendChild(nameEl);
+          div.addEventListener('click', async () => {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (editableExt.includes(ext)) {
+              const backParams = new URLSearchParams({ company: _company, plant: _plant, service: _service, package: _pkg, path: pathStack.join("/") });
+              window.open(`Editor.html?object_name=${encodeURIComponent(file.object_name)}&${backParams}`, '_blank');
+              return;
+            }
+            const win = window.open('', '_blank');
+            try {
+              const r = await fetch(`${API_BASE}/browse/file-url?object_name=${encodeURIComponent(file.object_name)}`);
+              const { url } = await r.json();
+              if (win) win.location.href = url;
+            } catch {
+              if (win) win.close();
+              alert('ไม่สามารถเปิดไฟล์ได้');
+            }
+          });
+          fileListEl.appendChild(div);
+        });
+
+        updateDeleteBar();
+
+        transferBtnWrapper.style.display =
+          pathStack.length && pathStack.at(-1) === 'ITP' ? 'block' : 'none';
+
+      } catch (err) {
+        folderListEl.innerHTML =
+          '<div class="error-msg">⚠️ เชื่อมต่อ Backend ไม่ได้ — ตรวจสอบว่า FastAPI กำลังทำงานอยู่</div>';
+        showToast('เชื่อมต่อ S3 ไม่ได้', err.message || 'ตรวจสอบว่า Backend กำลังทำงาน', 'error', 6000);
+      }
+    }
+
+    // ── add popup ──────────────────────────────────────────
+    addBtn.addEventListener('mouseenter', () => popupOptions.classList.add('show'));
+    addBtn.addEventListener('mouseleave', () => setTimeout(() => {
+      if (!popupOptions.matches(':hover') && !addBtn.matches(':hover'))
+        popupOptions.classList.remove('show');
+    }, 300));
+    popupOptions.addEventListener('mouseenter', () => popupOptions.classList.add('show'));
+    popupOptions.addEventListener('mouseleave', () => popupOptions.classList.remove('show'));
+
+    // ── create folder ใน MinIO ────────────────────────────
+    newFolderBtn.addEventListener('click', async () => {
+      const name = prompt('ชื่อ Folder ใหม่:');
+      if (!name) return;
+      popupOptions.classList.remove('show');
+      try {
+        const res = await fetch(`${API_BASE}/ensure-path`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: currentPath() + name + "/" }),
+        });
+        if (!res.ok) {
+          const detail = await res.json().then(j => j.detail || res.statusText).catch(() => res.statusText);
+          showToast('สร้าง Folder ไม่สำเร็จ', detail, 'error');
+          return;
+        }
+        const data = await res.json();
+        const msg = data.status === 'exists' ? `"${name}" มีอยู่แล้วใน S3` : `สร้าง "${name}" ใน S3 สำเร็จ`;
+        showToast('Folder', msg, data.status === 'exists' ? 'info' : 'success');
+        renderView();
+      } catch (err) {
+        showToast('สร้าง Folder ไม่สำเร็จ', err.message || 'เชื่อมต่อ Backend ไม่ได้', 'error');
+      }
+    });
+
+    // ── upload file → MinIO path จริง ─────────────────────
+    uploadFileBtn.addEventListener('click', () => {
+      popupOptions.classList.remove('show');
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+      const selected = Array.from(e.target.files);
+      if (!selected.length) return;
+      fileInput.value = '';
+
+      let successCount = 0;
+      for (const file of selected) {
+        try {
+          const form = new FormData();
+          form.append('file', file);
+          const r = await fetch(
+            `${API_BASE}/browse/upload?prefix=${encodeURIComponent(currentPath())}`,
+            { method: 'POST', body: form }
+          );
+          if (!r.ok) {
+            const detail = await r.json().then(j => j.detail || r.statusText).catch(() => r.statusText);
+            showToast(`อัปโหลดไม่สำเร็จ`, `"${file.name}": ${detail}`, 'error');
+          } else {
+            successCount++;
+            if (selected.length === 1) {
+              showToast('อัปโหลดสำเร็จ', `"${file.name}" ขึ้น S3 เรียบร้อย`, 'success');
+            }
+          }
+        } catch (err) {
+          showToast(`อัปโหลดไม่สำเร็จ`, `"${file.name}": ${err.message || 'เชื่อมต่อ Backend ไม่ได้'}`, 'error');
+        }
+      }
+      if (selected.length > 1 && successCount > 0) {
+        showToast('อัปโหลดสำเร็จ', `${successCount} / ${selected.length} ไฟล์ ขึ้น S3 เรียบร้อย`, 'success');
+      }
+      renderView();
+    });
+
+    // ── home popup ─────────────────────────────────────────
+    let hpTimeout;
+    homeBtn.addEventListener('mouseenter', () => { clearTimeout(hpTimeout); homePopup.classList.add('show'); });
+    homeBtn.addEventListener('mouseleave', () => {
+      hpTimeout = setTimeout(() => {
+        if (!homePopup.matches(':hover') && !homeBtn.matches(':hover'))
+          homePopup.classList.remove('show');
+      }, 300);
+    });
+    homePopup.addEventListener('mouseenter', () => { clearTimeout(hpTimeout); homePopup.classList.add('show'); });
+    homePopup.addEventListener('mouseleave', () => homePopup.classList.remove('show'));
+    homePopup.querySelectorAll('button').forEach(btn =>
+      btn.addEventListener('click', () => { if (btn.dataset.link) location.href = btn.dataset.link; })
+    );
+
+    renderView();
+  </script>
+</body>
+</html>

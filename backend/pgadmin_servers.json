@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "ME Smart DB",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "me_smart_db",
+      "Username": "myuser",
+      "SSLMode": "prefer"
+    }
+  }
+}

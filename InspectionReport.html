@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Inspection Report</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #cce0f0;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: #ffffff;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    .logo-area { display: flex; flex-direction: column; min-width: 180px; }
+    .logo { height: 42px; margin-bottom: 3px; }
+    .company-name { font-size: 10px; color: #666; font-style: italic; }
+
+    .page-title {
+      flex: 1;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a252f;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 140px;
+      justify-content: flex-end;
+    }
+
+    .breadcrumb {
+      font-size: 13px;
+      font-weight: 600;
+      color: #2c3e50;
+      text-decoration: none;
+    }
+    .breadcrumb:hover { color: #2e86c1; }
+
+    .user-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: #2e86c1;
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 15px; flex-shrink: 0;
+    }
+
+    .content {
+      padding: 20px;
+      display: flex;
+      gap: 14px;
+      height: calc(100vh - 70px);
+    }
+
+    .folder {
+      flex: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .folder-header {
+      background: #a8bfcf;
+      padding: 9px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a252f;
+    }
+
+    .sort-btn {
+      background: rgba(0,0,0,0.12);
+      border: none;
+      color: #333;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 2px 7px;
+      border-radius: 3px;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .sort-btn:hover { background: rgba(0,0,0,0.22); }
+
+    .folder-body {
+      background: #d8d8d8;
+      padding: 6px 14px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .folder-item {
+      font-size: 13px;
+      color: #1a252f;
+      padding: 9px 6px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+      border-radius: 4px;
+      transition: background 0.15s, color 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+    }
+    .folder-item:last-child { border-bottom: none; }
+    .folder-item:hover { background: rgba(46,134,193,0.10); color: #1a6ea8; }
+
+    .item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .item-menu-btn {
+      background: none; border: none; cursor: pointer;
+      color: #888; font-size: 16px; padding: 0 4px; line-height: 1;
+      opacity: 0; transition: opacity 0.15s; flex-shrink: 0;
+    }
+    .folder-item:hover .item-menu-btn { opacity: 1; }
+    .item-menu-btn:hover { color: #333; }
+    .item-menu {
+      position: absolute; right: 0; top: 100%; z-index: 200;
+      background: white; border-radius: 6px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+      min-width: 110px; overflow: hidden;
+    }
+    .item-menu div {
+      padding: 8px 16px; cursor: pointer; font-size: 13px; color: #1a252f;
+    }
+    .item-menu div:hover { background: #eef6ff; }
+
+    .folder-item.active {
+      background: rgba(46,134,193,0.22);
+      color: #1a5f8c;
+      font-weight: 600;
+      border-bottom-color: transparent;
+    }
+
+    .input-row {
+      display: none;
+      padding: 4px 6px;
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+    }
+    .input-row input {
+      font-size: 13px; color: #1a252f;
+      border: none; border-radius: 4px;
+      outline: none; width: 100%;
+      background: rgba(255,255,255,0.7);
+      padding: 5px 6px;
+    }
+
+    .status-msg {
+      font-size: 12px; padding: 8px 6px; color: #888;
+    }
+    .status-msg.error { color: #c0392b; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="logo-area">
+      <img src="GCME_Logo.png" class="logo" alt="GCME">
+      <div class="company-name">GC Maintenance and Engineering Co.,LTD.</div>
+    </div>
+    <div class="page-title">General Form – Inspection Report</div>
+    <div class="header-right">
+      <a class="breadcrumb" href="Main.html">General Form</a>
+      <div class="user-avatar">W</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Col 0: Object Type -->
+    <div class="folder">
+      <div class="folder-header">
+        <span>Object Type</span>
+        <button class="sort-btn" onclick="showInput(0)">+</button>
+      </div>
+      <div class="folder-body" id="col-0"></div>
+    </div>
+
+    <!-- Col 1: Manufacturer -->
+    <div class="folder">
+      <div class="folder-header">
+        <span>Manufacturer</span>
+        <button class="sort-btn" onclick="showInput(1)">+</button>
+      </div>
+      <div class="folder-body" id="col-1"></div>
+    </div>
+
+    <!-- Col 2: Year -->
+    <div class="folder">
+      <div class="folder-header">
+        <span>Year</span>
+        <button class="sort-btn" onclick="showInput(2)">+</button>
+      </div>
+      <div class="folder-body" id="col-2"></div>
+    </div>
+
+    <!-- Col 3: Form files -->
+    <div class="folder">
+      <div class="folder-header">
+        <span>Form</span>
+        <button class="sort-btn" onclick="triggerUpload()">Upload</button>
+      </div>
+      <div class="folder-body" id="col-3"></div>
+    </div>
+
+  </div>
+
+  <!-- Hidden file input for upload -->
+  <input type="file" id="file-upload-input" style="display:none;" multiple>
+
+  <script>
+    // ── CONFIG ────────────────────────────────────────────
+    const API_BASE  = '/api';
+    const BASE_PATH = 'General_Form/Inspection_Report/';
+    const IS_SELECT = new URLSearchParams(location.search).get('mode') === 'select';
+
+    // Current selections per column: [objectType, manufacturer, year]
+    const sel = [null, null, null];
+
+    const editableExt = ['xlsx','xls','xlsm','csv','ods','docx','doc','odt','rtf','pptx','ppt','odp'];
+
+    // ── PATH HELPER ───────────────────────────────────────
+    function prefixFor(colIndex) {
+      let prefix = BASE_PATH;
+      for (let i = 0; i < colIndex; i++) {
+        if (!sel[i]) return null;
+        prefix += sel[i] + '/';
+      }
+      return prefix;
+    }
+
+    // ── LOAD FROM MINIO ───────────────────────────────────
+    async function loadFolders(colIndex) {
+      const prefix = prefixFor(colIndex);
+      if (prefix === null) return;
+      const col = document.getElementById(`col-${colIndex}`);
+      col.innerHTML = '<div class="status-msg">กำลังโหลด...</div>';
+      try {
+        const res = await fetch(`${API_BASE}/browse?prefix=${encodeURIComponent(prefix)}`);
+        if (!res.ok) throw new Error(res.status);
+        const { folders } = await res.json();
+        col.innerHTML = '';
+        prependInputBox(col, colIndex);
+        if (folders.length === 0) {
+          col.insertAdjacentHTML('beforeend', '<div class="status-msg">ยังไม่มี Folder — กด + เพื่อเพิ่ม</div>');
+        }
+        folders.forEach(f => col.appendChild(makeFolderItem(f.name, colIndex)));
+      } catch {
+        col.innerHTML = '<div class="status-msg error">⚠️ เชื่อมต่อ Backend ไม่ได้</div>';
+      }
+    }
+
+    async function loadFiles() {
+      const prefix = prefixFor(3);
+      if (!prefix) return;
+      const col = document.getElementById('col-3');
+      col.innerHTML = '<div class="status-msg">กำลังโหลด...</div>';
+      try {
+        const res = await fetch(`${API_BASE}/browse?prefix=${encodeURIComponent(prefix)}`);
+        if (!res.ok) throw new Error(res.status);
+        const { files } = await res.json();
+        col.innerHTML = '';
+        if (files.length === 0) {
+          col.innerHTML = '<div class="status-msg">ยังไม่มีไฟล์ — กด Upload เพื่อเพิ่ม</div>';
+        } else {
+          files.forEach(f => col.appendChild(makeFileItem(f)));
+        }
+      } catch {
+        col.innerHTML = '<div class="status-msg error">⚠️ เชื่อมต่อ Backend ไม่ได้</div>';
+      }
+    }
+
+    // ── SELECT ────────────────────────────────────────────
+    function onSelectFolder(el, colIndex, folderName) {
+      document.querySelectorAll(`#col-${colIndex} .folder-item`).forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+      sel[colIndex] = folderName;
+      // Clear downstream selections
+      for (let i = colIndex + 1; i < 3; i++) sel[i] = null;
+      // Clear downstream columns
+      for (let i = colIndex + 1; i <= 3; i++) document.getElementById(`col-${i}`).innerHTML = '';
+      // Load next column
+      if (colIndex < 2) loadFolders(colIndex + 1);
+      else              loadFiles();
+    }
+
+    // ── MAKE ELEMENTS ─────────────────────────────────────
+    function prependInputBox(col, colIndex) {
+      const box = document.createElement('div');
+      box.className = 'input-row';
+      box.id = `input-box-${colIndex}`;
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.id = `new-item-${colIndex}`;
+      inp.placeholder = 'พิมชื่อ Folder...';
+      box.appendChild(inp);
+      col.insertBefore(box, col.firstChild);
+    }
+
+    function makeFolderItem(name, colIndex) {
+      const div = document.createElement('div');
+      div.className = 'folder-item';
+      div.dataset.minioName = name;
+
+      const label = document.createElement('span');
+      label.className = 'item-label';
+      label.textContent = name;
+
+      const menuBtn = document.createElement('button');
+      menuBtn.className = 'item-menu-btn';
+      menuBtn.textContent = '⋮';
+      menuBtn.addEventListener('click', e => { e.stopPropagation(); toggleMenu(menuBtn); });
+
+      const menu = document.createElement('div');
+      menu.className = 'item-menu';
+      menu.style.display = 'none';
+
+      const editEl = document.createElement('div');
+      editEl.textContent = 'Edit';
+      editEl.addEventListener('click', e => { e.stopPropagation(); renameFolderLabel(div, label, menu, colIndex); });
+
+      const delEl = document.createElement('div');
+      delEl.textContent = 'Delete';
+      delEl.addEventListener('click', async e => {
+        e.stopPropagation();
+        menu.style.display = 'none';
+        const folderName = div.dataset.minioName;
+        if (!confirm(`ลบ Folder "${folderName}" และไฟล์ทั้งหมดข้างใน?`)) return;
+        const parentPrefix = prefixFor(colIndex);
+        try {
+          await fetch(`${API_BASE}/delete-path?path=${encodeURIComponent(parentPrefix + folderName)}`, { method: 'DELETE' });
+        } catch {}
+        if (sel[colIndex] === folderName) {
+          for (let i = colIndex; i < 3; i++) sel[i] = null;
+          for (let i = colIndex + 1; i <= 3; i++) document.getElementById(`col-${i}`).innerHTML = '';
+        }
+        div.remove();
+      });
+
+      if (!IS_SELECT) {
+        menu.append(editEl, delEl);
+        div.append(label, menuBtn, menu);
+      } else {
+        div.append(label);
+      }
+
+      div.addEventListener('click', e => {
+        if (e.target.closest('.item-menu-btn') || e.target.closest('.item-menu')) return;
+        onSelectFolder(div, colIndex, div.dataset.minioName);
+      });
+
+      return div;
+    }
+
+    function makeFileItem(file) {
+      const div = document.createElement('div');
+      div.className = 'folder-item';
+
+      const label = document.createElement('span');
+      label.className = 'item-label';
+      label.title = file.name;
+      label.textContent = file.name;
+
+      const menuBtn = document.createElement('button');
+      menuBtn.className = 'item-menu-btn';
+      menuBtn.textContent = '⋮';
+      menuBtn.addEventListener('click', e => { e.stopPropagation(); toggleMenu(menuBtn); });
+
+      const menu = document.createElement('div');
+      menu.className = 'item-menu';
+      menu.style.display = 'none';
+
+      const delEl = document.createElement('div');
+      delEl.textContent = 'Delete';
+      delEl.addEventListener('click', async e => {
+        e.stopPropagation();
+        menu.style.display = 'none';
+        if (!confirm(`ลบ "${file.name}"?`)) return;
+        try {
+          await fetch(`${API_BASE}/browse/file?object_name=${encodeURIComponent(file.object_name)}`, { method: 'DELETE' });
+        } catch {}
+        div.remove();
+      });
+
+      if (!IS_SELECT) {
+        menu.appendChild(delEl);
+        div.append(label, menuBtn, menu);
+      } else {
+        div.append(label);
+      }
+
+      div.addEventListener('click', e => {
+        if (e.target.closest('.item-menu-btn') || e.target.closest('.item-menu')) return;
+        openFile(file);
+      });
+
+      return div;
+    }
+
+    // ── TOGGLE MENU ───────────────────────────────────────
+    function toggleMenu(btn) {
+      const menu = btn.nextElementSibling;
+      const isOpen = menu.style.display !== 'none';
+      document.querySelectorAll('.item-menu').forEach(m => m.style.display = 'none');
+      if (!isOpen) menu.style.display = 'block';
+    }
+
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.item-menu').forEach(m => m.style.display = 'none');
+    });
+
+    // ── RENAME FOLDER (calls /api/rename-path) ───────────────
+    async function renameFolderLabel(divEl, labelEl, menuEl, colIndex) {
+      menuEl.style.display = 'none';
+      const oldName = divEl.dataset.minioName;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = oldName;
+      input.style.cssText = 'font-size:13px;color:#1a252f;border:none;outline:none;background:transparent;flex:1;width:100%;';
+      labelEl.replaceWith(input);
+      input.focus(); input.select();
+
+      const finish = async () => {
+        const newName = input.value.trim() || oldName;
+        const span = document.createElement('span');
+        span.className = 'item-label';
+        span.textContent = newName;
+        input.replaceWith(span);
+        if (newName === oldName) return;
+        const parentPrefix = prefixFor(colIndex);
+        try {
+          const r = await fetch(`${API_BASE}/rename-path`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ old_path: parentPrefix + oldName, new_path: parentPrefix + newName }),
+          });
+          if (!r.ok) throw new Error(await r.text());
+          divEl.dataset.minioName = newName;
+          if (sel[colIndex] === oldName) sel[colIndex] = newName;
+        } catch (err) {
+          span.textContent = oldName;
+          divEl.dataset.minioName = oldName;
+          alert('เปลี่ยนชื่อไม่สำเร็จ: ' + err.message);
+        }
+      };
+
+      input.onblur = finish;
+      input.onkeydown = ev => {
+        if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+        if (ev.key === 'Escape') { input.value = oldName; input.blur(); }
+      };
+    }
+
+    // ── OPEN FILE ─────────────────────────────────────────
+    async function openFile(file) {
+      if (new URLSearchParams(location.search).get('mode') === 'select') {
+        window.parent.postMessage({ type: 'file-selected', object_name: file.object_name }, '*');
+        return;
+      }
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (editableExt.includes(ext)) {
+        window.open(`Editor.html?object_name=${encodeURIComponent(file.object_name)}`, '_blank');
+        return;
+      }
+      const win = window.open('', '_blank');
+      try {
+        const r = await fetch(`${API_BASE}/browse/file-url?object_name=${encodeURIComponent(file.object_name)}`);
+        const { url } = await r.json();
+        if (win) win.location.href = url;
+      } catch {
+        if (win) win.close();
+        alert('ไม่สามารถเปิดไฟล์ได้');
+      }
+    }
+
+    // ── ADD FOLDER ────────────────────────────────────────
+    function showInput(colId) {
+      const col = document.getElementById(`col-${colId}`);
+      let box = document.getElementById(`input-box-${colId}`);
+      if (!box) {
+        prependInputBox(col, colId);
+        box = document.getElementById(`input-box-${colId}`);
+      }
+      box.style.display = 'block';
+      const input = document.getElementById(`new-item-${colId}`);
+      input.value = ''; input.focus();
+      input.onkeydown = e => {
+        if (e.key === 'Enter') addFolder(colId);
+        if (e.key === 'Escape') cancelInput(colId);
+      };
+    }
+
+    async function addFolder(colId) {
+      const input = document.getElementById(`new-item-${colId}`);
+      const name = input.value.trim();
+      cancelInput(colId);
+      if (!name) return;
+      const prefix = prefixFor(colId);
+      if (!prefix) { alert('กรุณาเลือก column ก่อนหน้าก่อน'); return; }
+      try {
+        const r = await fetch(`${API_BASE}/ensure-path`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: prefix + name + '/' }),
+        });
+        if (!r.ok) throw new Error(await r.text());
+        loadFolders(colId);
+      } catch (err) {
+        alert('สร้าง Folder ไม่สำเร็จ: ' + err.message);
+      }
+    }
+
+    function cancelInput(colId) {
+      const box = document.getElementById(`input-box-${colId}`);
+      if (box) box.style.display = 'none';
+    }
+
+    // ── UPLOAD FILE → MINIO ───────────────────────────────
+    function triggerUpload() {
+      if (!sel[0] || !sel[1] || !sel[2]) {
+        alert('กรุณาเลือก Object Type → Manufacturer → Year ก่อน Upload');
+        return;
+      }
+      document.getElementById('file-upload-input').value = '';
+      document.getElementById('file-upload-input').click();
+    }
+
+    document.getElementById('file-upload-input').addEventListener('change', async e => {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
+      e.target.value = '';
+      const prefix = prefixFor(3);
+      for (const file of files) {
+        try {
+          const form = new FormData();
+          form.append('file', file);
+          const r = await fetch(`${API_BASE}/browse/upload?prefix=${encodeURIComponent(prefix)}`, {
+            method: 'POST', body: form,
+          });
+          if (!r.ok) throw new Error(await r.text());
+        } catch (err) {
+          alert(`Upload "${file.name}" ไม่สำเร็จ: ${err.message}`);
+        }
+      }
+      loadFiles();
+    });
+
+    // ── INIT ──────────────────────────────────────────────
+    if (IS_SELECT) {
+      document.querySelector('.header-right').style.display = 'none';
+      document.querySelectorAll('.sort-btn').forEach(b => b.style.display = 'none');
+    }
+    loadFolders(0);
+  </script>
+
+</body>
+</html>

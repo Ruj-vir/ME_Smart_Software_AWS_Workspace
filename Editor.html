@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Editor | PTTGC QAQC ONLINE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+    .topbar {
+      height: 48px;
+      background: linear-gradient(to right, #d6eaf8, #aed6f1);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .topbar .back {
+      background: white;
+      border: 1px solid #0078d7;
+      color: #0078d7;
+      border-radius: 4px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-weight: bold;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .topbar .back:hover { background: #0078d7; color: white; }
+    .topbar .title { font-weight: bold; color: #154360; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    #placeholder { width: 100%; height: calc(100vh - 48px); }
+
+    #status {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: calc(100vh - 48px);
+      text-align: center; padding: 20px; color: #555;
+    }
+    #status.error { color: #c0392b; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <a class="back" id="backLink" href="#">← Back</a>
+    <div class="title" id="fileTitle">Loading...</div>
+  </div>
+
+  <div id="status">กำลังโหลดเอกสาร...</div>
+  <div id="placeholder" style="display:none;"></div>
+
+  <script>
+    const API_BASE = '/api';
+
+    const params     = new URLSearchParams(window.location.search);
+    const objectName = params.get('object_name');
+    const statusEl   = document.getElementById('status');
+    const titleEl    = document.getElementById('fileTitle');
+    const backEl     = document.getElementById('backLink');
+
+    const backParams = new URLSearchParams({
+      company: params.get('company') || '',
+      plant:   params.get('plant')   || '',
+      service: params.get('service') || '',
+      package: params.get('package') || '',
+      path:    params.get('path')    || '',
+    });
+    backEl.href = `/ui/Data.html?${backParams}`;
+
+    function showError(msg) {
+      statusEl.textContent = msg;
+      statusEl.classList.add('error');
+    }
+
+    if (!objectName) {
+      showError('ไม่พบไฟล์ที่ต้องการเปิด (missing object_name)');
+    } else {
+      titleEl.textContent = decodeURIComponent(objectName.split('/').pop());
+
+      fetch(`${API_BASE}/onlyoffice/config?object_name=${encodeURIComponent(objectName)}`)
+        .then(res => {
+          if (!res.ok) return res.json().then(e => { throw new Error(e.detail || 'โหลด config ไม่สำเร็จ'); });
+          return res.json();
+        })
+        .then(({ config, onlyofficeUrl }) => {
+          const script = document.createElement('script');
+          script.src = `${onlyofficeUrl}/web-apps/apps/api/documents/api.js`;
+          script.onload = () => {
+            statusEl.style.display = 'none';
+            document.getElementById('placeholder').style.display = 'block';
+            new DocsAPI.DocEditor('placeholder', config);
+          };
+          script.onerror = () => {
+            showError('ไม่สามารถโหลด OnlyOffice ได้ — ตรวจสอบว่า OnlyOffice Document Server กำลังทำงานอยู่ที่ ' + onlyofficeUrl);
+          };
+          document.body.appendChild(script);
+        })
+        .catch(err => showError('เกิดข้อผิดพลาด: ' + err.message));
+    }
+  </script>
+</body>
+</html>
