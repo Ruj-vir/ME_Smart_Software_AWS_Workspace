@@ -1,0 +1,325 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QAQC ONLINE APPLICATION</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom right, #f0f8ff, #eaf2f8);
+      min-height: 100vh;
+    }
+
+    .header {
+      background: linear-gradient(to right, #d6eaf8, #aed6f1);
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .logo {
+      height: 50px;
+      margin-bottom: 4px;
+    }
+
+    .company-name {
+      font-size: 13px;
+      font-style: italic;
+      color: #2c3e50;
+    }
+
+    .center-title {
+      flex: 1;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      color: #154360;
+      margin-right: 100px;
+    }
+
+    .content {
+      max-width: 900px;
+      margin: 30px auto;
+      text-align: center;
+    }
+
+    .button-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 40px;
+    }
+
+    .custom-button {
+      background: linear-gradient(to right, #5dade2, #3498db);
+      color: white;
+      padding: 30px 20px;
+      font-size: 20px;
+      border: none;
+      border-radius: 14px;
+      min-width: 180px;
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+      transition: transform 0.2s;
+    }
+
+    .custom-button:hover {
+      transform: translateY(-4px);
+    }
+
+    .button-actions {
+      position: absolute;
+      top: 5px;
+      right: 8px;
+      display: flex;
+      gap: 5px;
+    }
+
+    .action-btn {
+      background: rgba(255, 255, 255, 0.7);
+      border: none;
+      padding: 2px 6px;
+      font-size: 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .add-btn {
+      background-color: #27ae60;
+      color: white;
+      padding: 15px 30px;
+      font-size: 20px;
+      border: none;
+      border-radius: 14px;
+      margin-top: 30px;
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
+
+    .add-btn:hover {
+      background-color: #219150;
+    }
+
+    input.rename-input {
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 8px;
+      text-align: center;
+      width: 90%;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 15% auto;
+      padding: 20px 30px;
+      border-radius: 12px;
+      width: 300px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    .modal input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin: 15px 0;
+    }
+
+    .modal button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 5px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .btn-confirm {
+      background-color: #3498db;
+      color: white;
+    }
+
+    .btn-cancel {
+      background-color: #ccc;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-container">
+      <img src="GCME_Logo.png" alt="Company Logo" class="logo">
+      <div class="company-name">GC Maintenance and Engineering Co.,LTD.</div>
+    </div>
+    <div class="center-title">ME SMART</div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content">
+    <div id="breadcrumb" style="text-align: left; margin-bottom: 20px; font-size: 14px; color: #34495e;"></div>
+    <h2>Select Your Plant</h2>
+    <div class="button-list" id="buttonList">
+      <!-- Dynamic buttons -->
+    </div>
+    <button class="add-btn" onclick="showModal()">+ Add plant</button>
+  </div>
+
+  <!-- Modal Input -->
+  <div id="addModal" class="modal">
+    <div class="modal-content">
+      <h3>Enter Plant Name</h3>
+      <input type="text" id="newButtonLabel" placeholder="Please Fill-in your plant name">
+      <div>
+        <button class="btn-confirm" onclick="createButton()">Create</button>
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const buttonList = document.getElementById("buttonList");
+    const modal = document.getElementById("addModal");
+    const input = document.getElementById("newButtonLabel");
+
+    function showModal() {
+      modal.style.display = "block";
+      input.value = "";
+      input.focus();
+    }
+
+    function closeModal() {
+      modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+      if (event.target == modal) closeModal();
+    }
+
+    function createButton() {
+      const label = input.value.trim();
+      if (!label) {
+        alert("Please enter a button name.");
+        return;
+      }
+      addNewButton(label);
+      closeModal();
+    }
+
+    function addNewButton(label = "New Button") {
+      const wrapper = document.createElement("div");
+      wrapper.className = "custom-button";
+      wrapper.style.position = "relative";
+
+      const span = document.createElement("span");
+      span.textContent = label;
+
+      wrapper.onclick = () => {
+        const encodedLabel = encodeURIComponent(label);
+        window.location.href = `Package Selection.html?plant=${encodedLabel}`;
+      };
+
+      const actions = document.createElement("div");
+      actions.className = "button-actions";
+
+      const editBtn = document.createElement("button");
+      editBtn.className = "action-btn";
+      editBtn.innerHTML = "✏️";
+      editBtn.onclick = (event) => {
+        event.stopPropagation();
+        renameButton(span);
+      };
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "action-btn";
+      deleteBtn.innerHTML = "🗑️";
+      deleteBtn.onclick = (event) => {
+        event.stopPropagation();
+        wrapper.remove();
+      };
+
+      actions.appendChild(editBtn);
+      actions.appendChild(deleteBtn);
+
+      wrapper.appendChild(actions);
+      wrapper.appendChild(span);
+      buttonList.appendChild(wrapper);
+    }
+
+    function renameButton(span) {
+      const oldText = span.textContent;
+      const input = document.createElement("input");
+      input.className = "rename-input";
+      input.type = "text";
+      input.value = oldText;
+
+      span.replaceWith(input);
+      input.focus();
+
+      input.onblur = () => {
+        const newSpan = document.createElement("span");
+        newSpan.textContent = input.value || oldText;
+        input.replaceWith(newSpan);
+      };
+    }
+
+    // Generate content based on plant name
+    window.addEventListener("DOMContentLoaded", () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const cleintName = urlParams.get("plant") || "Client";
+
+      document.getElementById("breadcrumb").innerHTML = `
+        <a href="Main.html" style="text-decoration: none; color: #2980b9;">Home</a> &gt; ${cleintName}
+      `;
+
+      const mainTitle = document.querySelector("h2");
+      if (mainTitle) mainTitle.textContent = `Please Select Area - ${cleintName}`;
+
+      let plantButtons = [];
+      if (cleintName === "PTTGC") {
+        plantButtons = ["A-MN", "R-MN", "O-MN1", "O-MN2", "PH-MN", "E-MN", "U-TN", "GCO"];
+      } else if (cleintName === "PTT") {
+        plantButtons = ["LNG", "GSP", ];
+      }
+
+      plantButtons.forEach(label => {
+        addNewButton(label);
+      });
+    });
+  </script>
+
+</body>
+</html>

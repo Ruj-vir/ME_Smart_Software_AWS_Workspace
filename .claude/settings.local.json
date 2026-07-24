@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(code-review)",
+      "Skill(code-review:*)",
+      "Bash(cd /c/Users/26009623/Downloads/ME_Smart_Coding_Alphaproject2026/ME_Smart_Software && ls -la backend/ 2>/dev/null | head -30)",
+      "Read(//c/c/Users/26009623/Downloads/ME_Smart_Coding_Alphaproject2026/ME_Smart_Software/**)",
+      "Bash(cd /c/Users/26009623/Downloads/ME_Smart_Coding_Alphaproject2026/ME_Smart_Software && find . -type d | sort)",
+      "Read(//c/c/Users/26009623/Downloads/ME_Smart_Coding_Alphaproject2026/**)",
+      "PowerShell(Start-Sleep -Seconds 4; try { $r = Invoke-WebRequest -Uri \"http://localhost:8000/\" -TimeoutSec 3; Write-Host \"Backend รันสำเร็จ: $\\($r.StatusCode\\)\" } catch { Write-Host \"ยังไม่ขึ้น: $\\($_.Exception.Message\\)\" })"
+    ]
+  }
+}

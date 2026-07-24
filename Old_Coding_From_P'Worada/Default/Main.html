@@ -1,0 +1,134 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ME SMART</title>
+  <style>
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-image: url("BG.png"); 
+      background-size: cover; 
+      background-repeat: no-repeat;
+      background-position: center center;
+      /* background: linear-gradient(to bottom right, oklab(37.63% -0.00781 -0.24137), hwb(235 0% 37%)); */
+      min-height: 100vh;
+    }
+
+    /* HEADER 
+    .header {
+      background: linear-gradient(to right, #d6eaf8, #aed6f1);
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    } */
+
+    .logo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .logo {
+      height: 50px;
+      margin-bottom: 4px;
+    }
+
+    .company-name {
+      font-size: 13px;
+      font-style: italic;
+      color: #2c3e50;
+    }
+
+    .center-title {
+      flex: 1;
+      text-align: center;
+      font-size: 50px;
+      font-weight: bold;
+      color: #ffffff;
+      margin-right: 100px;
+    }
+
+    /* BUTTON ZONE */
+    .button-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      justify-content: center;
+      align-items: center;
+      max-width: 800px;
+      margin: 10px auto;
+    }
+
+    .big-button {
+      background: linear-gradient(to right, hsl(0, 0%, 100%), hwb(255 92% 0%));
+      color: rgb(89, 0, 255);
+      padding: 30px 30px;
+      font-size: 26px;
+      border: none;
+      border-radius: 20px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.3s, background 0.3s;
+    }
+
+    .big-button:hover {
+      transform: translateY(-5px);
+      background: linear-gradient(to right, #2e86c1, #2471a3);
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25);
+    }
+
+    @media (max-width: 700px) {
+      .button-container {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        margin-top: 80px;
+      }
+
+      .center-title {
+        font-size: 22px;
+        margin-right: 0;
+        margin-top: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Section -->
+  <div class="header">
+    <div class="logo-container">
+      <img src="GCME_Logo.png" alt="Company Logo" class="logo">
+      <div class="company-name">GC Maintenance and Engineering Co.,LTD.</div>
+    </div>
+    <div class="center-title">ME SMART</div>
+  </div>
+
+  <!-- Button Section -->
+  <div class="button-container">
+    <button class="big-button" onclick="location.href='Plant Selection.html?plant=PTTGC'">
+     <img src="PTTGC Logo.png" class="logo" alt="PTTGC"></button>
+    <button class="big-button" onclick="location.href='Plant Selection.html?plant=PTT'">
+     <img src="PTT Logo.png" class="logo" alt="PTT"></button>
+    <button class="big-button" onclick="location.href='Plant Selection.html?plant=GPSC'">
+     <img src="GPSC Logo.png" class="logo" alt="GPSC"></button>
+    <button class="big-button" onclick="location.href='Plant Selection.html?plant=ThaiOil'">
+     <img src="Thai Oil Logo.png" class="logo" alt="Thai Oil"></button>
+    <button class="big-button" onclick="location.href='Plant Selection.html?plant=HMC'">
+     <img src="HMC Logo.png" class="logo" alt="HMC"></button>
+    <button class="big-button" onclick="location.href='Plant Selection.html?plant=Other'">Other</button>
+  </div>
+
+</body>
+</html>

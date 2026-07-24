@@ -1,0 +1,676 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QAQC Step</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom right, #f0f8ff, #eaf2f8);
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(to right, #d6eaf8, #aed6f1);
+      padding: 28px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      position: sticky; top: 0; z-index: 10;
+      border-top-left-radius: 12px; border-top-right-radius: 12px;
+    }
+    .logo-container { display: flex; flex-direction: column; align-items: flex-start; }
+    .logo { height: 50px; margin-bottom: 4px; }
+    .company-name { font-size: 13px; font-style: italic; color: #2c3e50; }
+    .center-title { flex: 1; text-align: center; font-size: 24px; font-weight: bold; color: #154360; }
+
+    /* HEADER NAV (right side inside header) */
+    .header-nav {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      width: 360px;
+      flex-shrink: 0;
+      min-width: 0;
+    }
+
+    .hn-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #154360;
+      cursor: pointer;
+      padding: 7px 16px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: 20px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      transition: background 0.2s, box-shadow 0.2s;
+      user-select: none;
+    }
+
+    .hn-label:hover {
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    }
+
+    .hn-label .hn-arrow { font-size: 10px; transition: transform 0.25s; }
+    .hn-label.open .hn-arrow { transform: rotate(180deg); }
+
+    .hn-grid {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      width: 100%;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+    }
+
+    .hn-item { display: flex; align-items: center; gap: 3px; min-width: 0; }
+
+    .hn-btn {
+      flex: 1; min-width: 0;
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      color: #154360; font-size: 11px; font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .hn-btn:hover { background: #ffffff; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
+    .hn-btn .btn-icon { font-size: 14px; flex-shrink: 0; }
+    .hn-btn .btn-text { white-space: nowrap; min-width: 0; }
+
+    @media (max-width: 900px) { .header-nav { display: none; } }
+
+    .tab-header { display: flex; justify-content: flex-start; gap: 10px; padding: 15px 40px 15px; }
+    .tab-button {
+      padding: 10px 40px; font-size: 16px; font-weight: bold;
+      border: 2px solid #0078d7; background: white; color: #0078d7;
+      border-radius: 8px; cursor: pointer;
+    }
+    .tab-button:hover, .tab-button.active { background-color: #0078d7; color: white; }
+    .tab-content { display: flex; flex-direction: column; padding: 0 40px; }
+    .tab-pane { display: none; width: 100%; }
+    .tab-pane.active { display: flex; flex-direction: row; }
+
+    .sub-tab-header { display: none; justify-content: flex-start; gap: 8px; padding: 0 40px 12px; }
+    .sub-tab-header.visible { display: flex; }
+    .sub-tab-button {
+      padding: 7px 24px; font-size: 14px; font-weight: bold;
+      border: 2px solid #0078d7; background: white; color: #0078d7;
+      border-radius: 8px; cursor: pointer;
+    }
+    .sub-tab-button:hover, .sub-tab-button.active { background-color: #0078d7; color: white; }
+    .sub-pane { display: none; width: 100%; flex-direction: column; gap: 8px; }
+    .sub-pane.active { display: flex; }
+
+    #leftFolders { width: 200px; display: flex; flex-direction: column; gap: 12px; padding-right: 10px; }
+    .sticky-index-button { position: sticky; top: 100px; padding: 20px 0; z-index: 1; }
+    .folder-entry { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: background 0.2s; background-color: #ffffff; }
+    .folder-entry:hover { background-color: #eef6ff; }
+    .folder-icon { width: 28px; height: 28px; }
+    .folder-name { font-weight: 300; color: #154360; }
+    #folderContent {
+      flex: 1; background: #ffffff; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .file-entry { margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .popup-image { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; max-height: 90%; z-index: 999; border: 2px solid #333; display: none; }
+    .thumbnail { width: 80px; height: 80px; object-fit: cover; cursor: pointer; margin-right: 10px; }
+    .pdf-viewer { display: none; position: fixed; top: 5%; left: 5%; width: 90%; height: 90%; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.4); z-index: 1000; }
+    .pdf-viewer iframe { width: 100%; height: 100%; border: none; }
+    .close-pdf { position: absolute; top: 5px; right: 10px; background: red; color: white; border: none; font-weight: bold; padding: 5px 10px; cursor: pointer; }
+    .floating-btn { position: fixed; bottom: 20px; right: 20px; background: #0078d7; color: white; border: none; border-radius: 50%; font-size: 24px; width: 50px; height: 50px; cursor: pointer; }
+
+    .table-wrap { width: 100%; overflow: auto; margin-top: 12px; }
+    table.qaqc-control { width: 100%; border-collapse: collapse; background: #fff; }
+    table.qaqc-control th, table.qaqc-control td { border: 1px solid #d9e2ef; padding: 8px 10px; font-size: 14px; vertical-align: top; }
+    table.qaqc-control thead th { position: sticky; top: 0; background: #f3f8ff; color: #154360; z-index: 1; }
+    .last-col-input { width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; font-size: 14px; outline: none; }
+    .last-col-input:focus { border-color: #0078d7; box-shadow: 0 0 0 2px rgba(0,120,215,0.15); }
+    .edit-meta { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    .upload-row { display: flex; align-items: center; gap: 10px; }
+    .hint { font-size: 12px; color: #475569; }
+
+    /* Bank Form Modal */
+    #bankFormModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9999; align-items:center; justify-content:center; }
+    #bankFormModal.open { display:flex; }
+    #bankFormModal .modal-box { width:90%; height:85vh; background:#fff; border-radius:10px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,.3); }
+    #bankFormModal .modal-header { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; background:#d6eaf8; border-bottom:1px solid #aed6f1; }
+    #bankFormModal .modal-header span { font-weight:bold; color:#154360; font-size:16px; }
+    #bankFormModal .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:#154360; line-height:1; }
+    #bankFormModal iframe { flex:1; border:none; }
+
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo-container">
+      <img src="GCME_Logo.png" alt="GCME Logo" class="logo" />
+      <div class="company-name">GC Maintenance and Engineering Co.,LTD.</div>
+    </div>
+    <div class="center-title">QAQC ONLINE APPLICATION - QAQC Step</div>
+
+    <div class="header-nav">
+      <div class="hn-label" id="hnLabel" onclick="toggleBox()">
+        <span>General Form</span>
+        <span class="hn-arrow">▾</span>
+      </div>
+      <div id="myBox" class="hn-grid" style="display: none;">
+        <div class="hn-item">
+          <button class="hn-btn" onclick="location.href='MaintenanceReport.html'">
+            <span class="btn-icon">🔧</span>
+            <span class="btn-text">Maintenance Report</span>
+          </button>
+        </div>
+        <div class="hn-item">
+          <button class="hn-btn" onclick="location.href='InspectionReport.html'">
+            <span class="btn-icon">🔍</span>
+            <span class="btn-text">Inspection Report</span>
+          </button>
+        </div>
+        <div class="hn-item">
+          <button class="hn-btn" onclick="location.href='SparePartReport.html'">
+            <span class="btn-icon">⚙️</span>
+            <span class="btn-text">Spare Part Report</span>
+          </button>
+        </div>
+        <div class="hn-item">
+          <button class="hn-btn" onclick="location.href='PhotographerReport.html'">
+            <span class="btn-icon">📷</span>
+            <span class="btn-text">Photographer Report</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="tab-header">
+    <button class="tab-button active" data-tab="tab1">ITP Check list</button>
+    <button class="tab-button" data-tab="tab2">Maintenance Record</button>
+    <button class="tab-button" data-tab="tab3">QAQC control</button>
+    <button class="tab-button" data-tab="tab4">Special request</button>
+  </div>
+
+  <div class="sub-tab-header" id="maintenanceSubTabs">
+    <button class="sub-tab-button active" data-subtab="subtab1">Maintenance Report</button>
+    <button class="sub-tab-button" data-subtab="subtab2">Inspection Report</button>
+    <button class="sub-tab-button" data-subtab="subtab3">Spare Part Report</button>
+    <button class="sub-tab-button" data-subtab="subtab4">Photographer Report</button>
+  </div>
+
+  <div class="tab-content">
+    <div class="tab-pane active" id="tab1">
+      <div id="leftFolders">
+        <div class="sticky-index-button">
+          <button onclick="document.getElementById('indexUpload').click()">INDEX Upload</button>
+          <input type="file" id="indexUpload" accept=".xlsx" style="display:none;" />
+        </div>
+      </div>
+      <div id="folderContent"></div>
+    </div>
+
+    <div class="tab-pane" id="tab2" style="flex-direction: column; gap: 8px;">
+      <div class="sub-pane active" id="subtab1">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('subtab1')">Upload Bank form</button>
+          <span id="selectedBankForm-subtab1" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button id="recordBtn-subtab1" onclick="recordFile('subtab1')" style="display:none;">Record</button>
+        </div>
+        <div id="recordedFilesList-subtab1" style="margin-top:8px;"></div>
+        <div class="table-wrap" id="controlTableWrap-subtab1"></div>
+      </div>
+      <div class="sub-pane" id="subtab2">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('subtab2')">Upload Bank form</button>
+          <span id="selectedBankForm-subtab2" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button id="recordBtn-subtab2" onclick="recordFile('subtab2')" style="display:none;">Record</button>
+        </div>
+        <div id="recordedFilesList-subtab2" style="margin-top:8px;"></div>
+        <div class="table-wrap" id="controlTableWrap-subtab2"></div>
+      </div>
+      <div class="sub-pane" id="subtab3">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('subtab3')">Upload Bank form</button>
+          <span id="selectedBankForm-subtab3" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button id="recordBtn-subtab3" onclick="recordFile('subtab3')" style="display:none;">Record</button>
+        </div>
+        <div id="recordedFilesList-subtab3" style="margin-top:8px;"></div>
+        <div class="table-wrap" id="controlTableWrap-subtab3"></div>
+      </div>
+      <div class="sub-pane" id="subtab4">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('subtab4')">Upload Bank form</button>
+          <span id="selectedBankForm-subtab4" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button id="recordBtn-subtab4" onclick="recordFile('subtab4')" style="display:none;">Record</button>
+        </div>
+        <div id="recordedFilesList-subtab4" style="margin-top:8px;"></div>
+        <div class="table-wrap" id="controlTableWrap-subtab4"></div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="tab3">
+      <input type="file" id="uploadExcel" accept=".xlsx" />
+      <div id="excelTable"></div>
+    </div>
+
+    <div class="tab-pane" id="tab4">
+      <button onclick="addRow()">Add row</button>
+      <table id="specialRequest">
+        <thead>
+          <tr><th>No.</th><th>Date</th><th>Component part</th><th>Detail of Work</th><th>Status of work</th><th>Status to Approve</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <img id="popupImage" class="popup-image" onclick="this.style.display='none'" />
+
+  <div class="pdf-viewer" id="pdfViewer">
+    <button class="close-pdf" onclick="closePDF()">x</button>
+    <iframe id="pdfFrame"></iframe>
+  </div>
+
+  <!-- Bank Form Modal -->
+  <div id="bankFormModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>Browse Bank Form</span>
+        <button class="modal-close" onclick="closeBankFormModal()">&#x2715;</button>
+      </div>
+      <iframe id="bankFormIframe" src=""></iframe>
+    </div>
+  </div>
+
+  <script>
+    function toggleBox() {
+      const element = document.getElementById('myBox');
+      const label = document.getElementById('hnLabel');
+      if (element.style.display === 'none') {
+        element.style.display = 'grid';
+        label.classList.add('open');
+      } else {
+        element.style.display = 'none';
+        label.classList.remove('open');
+      }
+    }
+
+    document.querySelectorAll('.tab-button').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+        const subHeader = document.getElementById('maintenanceSubTabs');
+        if (btn.dataset.tab === 'tab2') {
+          subHeader.classList.add('visible');
+          loadRecordedFiles(activeSubtab);
+        } else {
+          subHeader.classList.remove('visible');
+        }
+      };
+    });
+
+    document.querySelectorAll('.sub-tab-button').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.sub-tab-button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.sub-pane').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        activeSubtab = btn.dataset.subtab;
+        document.getElementById(activeSubtab).classList.add('active');
+        loadRecordedFiles(activeSubtab);
+      };
+    });
+
+    let lastPDF = null;
+    function closePDF() {
+      document.getElementById('pdfViewer').style.display = 'none';
+      document.getElementById('pdfFrame').src = '';
+    }
+
+    document.getElementById('uploadExcel').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      const table = document.createElement('table');
+      table.innerHTML = '<thead><tr>' + json[0].map(h => `<th>${h || ''}</th>`).join('') + '<th>Status</th></tr>';
+      const tbody = document.createElement('tbody');
+      json.slice(1).forEach(row => {
+        const tr = document.createElement('tr');
+        row.forEach(cell => tr.innerHTML += `<td>${cell == null ? '' : cell}</td>`);
+        const select = document.createElement('select');
+        ['Pending', 'Complete', 'Rework'].forEach(v => {
+          const o = document.createElement('option'); o.value = o.text = v; select.appendChild(o);
+        });
+        const td = document.createElement('td');
+        td.appendChild(select);
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      const container = document.getElementById('excelTable');
+      container.innerHTML = '';
+      container.appendChild(table);
+    });
+
+    function addRow() {
+      const tbody = document.getElementById('specialRequest').querySelector('tbody');
+      const tr = document.createElement('tr');
+      const no = tbody.rows.length + 1;
+      tr.innerHTML = `<td>${no}</td>
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>`;
+      const select1 = document.createElement('select');
+      ['Pending', 'Complete'].forEach(v => {
+        const o = document.createElement('option'); o.value = o.text = v; select1.appendChild(o);
+      });
+      const select2 = document.createElement('select');
+      ['Accept', 'Unaccepted', 'Pending'].forEach(v => {
+        const o = document.createElement('option'); o.value = o.text = v; select2.appendChild(o);
+      });
+      const td1 = document.createElement('td'); td1.appendChild(select1);
+      const td2 = document.createElement('td'); td2.appendChild(select2);
+      tr.appendChild(td1); tr.appendChild(td2);
+      tbody.appendChild(tr);
+    }
+
+    function renderFiles(folderName) {
+      const container = document.createElement('div');
+      const fileInput = document.createElement('input');
+      const uploadBtn = document.createElement('button');
+      const recordBtn = document.createElement('button');
+      const fileList = document.createElement('div');
+      let lastFileBlob = null;
+
+      fileInput.type = 'file';
+      fileInput.accept = '.xlsx';
+      fileInput.style.display = 'none';
+      fileInput.id = `upload_${folderName}`;
+
+      uploadBtn.textContent = 'Upload blank form';
+      uploadBtn.onclick = () => fileInput.click();
+
+      recordBtn.textContent = 'Record';
+      recordBtn.style.marginLeft = '10px';
+      recordBtn.onclick = () => {
+        if (lastFileBlob) {
+          const file = new File([lastFileBlob], `Record_${new Date().toISOString().replace(/[:.]/g,'_')}.xlsx`, {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          });
+          handleFileUpload(file, fileList);
+        } else {
+          alert('Please upload a blank form first.');
+        }
+      };
+
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        lastFileBlob = file.slice();
+        handleFileUpload(file, fileList);
+      });
+
+      container.appendChild(uploadBtn);
+      container.appendChild(recordBtn);
+      container.appendChild(fileInput);
+      container.appendChild(fileList);
+      document.getElementById('folderContent').innerHTML = '';
+      document.getElementById('folderContent').appendChild(container);
+    }
+
+    function handleFileUpload(file, fileList) {
+      const fileURL = URL.createObjectURL(file);
+      const entry = document.createElement('div');
+      entry.className = 'file-entry';
+      entry.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:20px; margin-right:8px;"/><span>${file.name}</span>`;
+
+      const tabs = document.createElement('div');
+      tabs.className = 'file-tabs';
+      const tabNames = ['Picture', 'Result', 'Note'];
+      const tabContents = {};
+      const tabContentWrapper = document.createElement('div');
+      tabContentWrapper.className = 'file-tab-content';
+
+      tabNames.forEach(tab => {
+        const btn = document.createElement('button');
+        btn.textContent = tab;
+        btn.onclick = () => {
+          tabContentWrapper.innerHTML = '';
+          tabContentWrapper.appendChild(tabContents[tab]);
+        };
+        tabs.appendChild(btn);
+
+        const contentDiv = document.createElement('div');
+        if (tab === 'Picture') {
+          const picInput = document.createElement('input');
+          picInput.type = 'file'; picInput.accept = 'image/*'; picInput.multiple = true;
+          picInput.onchange = () => {
+            Array.from(picInput.files).forEach(imgFile => {
+              const img = document.createElement('img');
+              img.src = URL.createObjectURL(imgFile);
+              img.className = 'thumbnail';
+              img.onclick = () => {
+                const popup = document.getElementById('popupImage');
+                popup.src = img.src; popup.style.display = 'block';
+              };
+              contentDiv.appendChild(img);
+            });
+          };
+          contentDiv.appendChild(picInput);
+        }
+        if (tab === 'Result') {
+          const select = document.createElement('select');
+          ['Accepted', 'Pending', 'Unaccepted'].forEach(opt => {
+            const option = document.createElement('option');
+            option.value = option.text = opt;
+            select.appendChild(option);
+          });
+          const saveBtn = document.createElement('button');
+          saveBtn.textContent = 'Save Result';
+          contentDiv.appendChild(select);
+          contentDiv.appendChild(saveBtn);
+        }
+        if (tab === 'Note') {
+          const textarea = document.createElement('textarea');
+          textarea.rows = 4; textarea.cols = 50;
+          const saveBtn = document.createElement('button');
+          saveBtn.textContent = 'Save Note';
+          contentDiv.appendChild(textarea);
+          contentDiv.appendChild(saveBtn);
+        }
+        tabContents[tab] = contentDiv;
+      });
+
+      entry.appendChild(tabs);
+      entry.appendChild(tabContentWrapper);
+
+      entry.ondblclick = () => {
+        const excelOnlineUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileURL)}`;
+        window.open(excelOnlineUrl, '_blank');
+      };
+
+      fileList.prepend(entry);
+    }
+
+    document.getElementById('indexUpload').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        const leftFolders = document.getElementById('leftFolders');
+        leftFolders.innerHTML = '<div class="sticky-index-button">' + document.querySelector('.sticky-index-button').innerHTML + '</div>';
+        for (let i = 6; i < rows.length; i++) {
+          const name = rows[i] && rows[i][1];
+          if (name) {
+            const entry = document.createElement('div');
+            entry.className = 'folder-entry';
+            entry.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/715/715676.png" class="folder-icon"/><div class="folder-name">${name}</div>`;
+            entry.addEventListener('click', () => renderFiles(name));
+            leftFolders.appendChild(entry);
+          }
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    const REPORT_CONFIG = {
+      subtab1: {
+        src: 'MaintenanceReport.html',
+        dest: 'PTTGC/Test/Rotating Equipment/Test123/QAQCStep/MaintenanceRecord/MaintenanceReport/'
+      },
+      subtab2: {
+        src: 'InspectionReport.html',
+        dest: 'PTTGC/Test/Rotating Equipment/Test123/QAQCStep/MaintenanceRecord/InspectionReport/'
+      },
+      subtab3: {
+        src: 'SparePartReport.html',
+        dest: 'PTTGC/Test/Rotating Equipment/Test123/QAQCStep/MaintenanceRecord/SparePartReport/'
+      },
+      subtab4: {
+        src: 'PhotographerReport.html',
+        dest: 'PTTGC/Test/Rotating Equipment/Test123/QAQCStep/MaintenanceRecord/PhotographerReport/'
+      }
+    };
+
+    let activeSubtab = 'subtab1';
+    const selectedObjectNames = { subtab1: null, subtab2: null, subtab3: null, subtab4: null };
+
+    function openBankFormModal(subtabId) {
+      activeSubtab = subtabId;
+      const modal = document.getElementById('bankFormModal');
+      const iframe = document.getElementById('bankFormIframe');
+      iframe.src = REPORT_CONFIG[subtabId].src + '?mode=select';
+      modal.classList.add('open');
+    }
+
+    function closeBankFormModal() {
+      const modal = document.getElementById('bankFormModal');
+      modal.classList.remove('open');
+      document.getElementById('bankFormIframe').src = '';
+    }
+
+    document.getElementById('bankFormModal').addEventListener('click', function(e) {
+      if (e.target === this) closeBankFormModal();
+    });
+
+    window.addEventListener('message', function(e) {
+      if (e.data && e.data.type === 'file-selected') {
+        closeBankFormModal();
+        selectedObjectNames[activeSubtab] = e.data.object_name;
+        const filename = e.data.object_name.split('/').pop();
+        document.getElementById(`selectedBankForm-${activeSubtab}`).textContent = filename;
+        document.getElementById(`recordBtn-${activeSubtab}`).style.display = 'inline-block';
+      }
+    });
+
+    async function loadRecordedFiles(subtabId) {
+      const dest = REPORT_CONFIG[subtabId].dest;
+      const list = document.getElementById(`recordedFilesList-${subtabId}`);
+      list.innerHTML = '';
+      try {
+        const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
+        if (!r.ok) return;
+        const { files } = await r.json();
+        files.forEach(f => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;color:#154360;';
+          const name = document.createElement('span');
+          name.textContent = f.name;
+          name.style.cssText = 'cursor:pointer;text-decoration:underline;color:#0078d7;';
+          name.onclick = () => window.open(
+            `Editor.html?object_name=${encodeURIComponent(f.object_name)}`, '_blank'
+          );
+          const lastEdit = document.createElement('span');
+          lastEdit.style.cssText = 'font-size:11px;color:#6b7280;';
+          if (f.last_modified) {
+            const dt   = new Date(f.last_modified);
+            const dd   = String(dt.getDate()).padStart(2,'0');
+            const mm   = String(dt.getMonth()+1).padStart(2,'0');
+            const yyyy = dt.getFullYear();
+            const hh   = String(dt.getHours()).padStart(2,'0');
+            const min  = String(dt.getMinutes()).padStart(2,'0');
+            lastEdit.textContent = `Last Edit: ${dd}/${mm}/${yyyy} ${hh}:${min}`;
+          }
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'Delete';
+          delBtn.onclick = async () => {
+            if (!confirm(`ลบ "${f.name}"?`)) return;
+            try {
+              await fetch(`/api/browse/file?object_name=${encodeURIComponent(f.object_name)}`, { method: 'DELETE' });
+              row.remove();
+            } catch { alert('ลบไม่สำเร็จ'); }
+          };
+          row.append(name, lastEdit, delBtn);
+          list.appendChild(row);
+        });
+      } catch {}
+    }
+
+    async function recordFile(subtabId) {
+      const selectedObjectName = selectedObjectNames[subtabId];
+      if (!selectedObjectName) return;
+      const dest = REPORT_CONFIG[subtabId].dest;
+      const now = new Date();
+      const dd   = String(now.getDate()).padStart(2, '0');
+      const mm   = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      const datePrefix = `${dd}${mm}${yyyy}`;
+      const originalName = selectedObjectName.split('/').pop();
+
+      let seq = 1;
+      try {
+        const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
+        if (r.ok) {
+          const { files } = await r.json();
+          const matches = files.filter(f =>
+            f.name.startsWith(`${datePrefix}_`) && f.name.endsWith(`_${originalName}`)
+          );
+          seq = matches.length + 1;
+        }
+      } catch {}
+
+      const newName = `${datePrefix}_${seq}_${originalName}`;
+      const destObject = dest + newName;
+      try {
+        const r = await fetch('/api/copy-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ src_object: selectedObjectName, dst_object: destObject }),
+        });
+        if (!r.ok) throw new Error(await r.text());
+        alert(`บันทึกสำเร็จ: ${newName}`);
+        loadRecordedFiles(subtabId);
+      } catch (err) {
+        alert('บันทึกไม่สำเร็จ: ' + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

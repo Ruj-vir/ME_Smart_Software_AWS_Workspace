@@ -1,0 +1,153 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QAQC | Default Package</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom right, #f0f8ff, #eaf2f8);
+      min-height: 100vh;
+    }
+
+    .header {
+      background: linear-gradient(to right, #d6eaf8, #aed6f1);
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .logo {
+      height: 50px;
+      margin-bottom: 4px;
+    }
+
+    .company-name {
+      font-size: 13px;
+      font-style: italic;
+      color: #2c3e50;
+    }
+
+    .center-title {
+      flex: 1;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      color: #154360;
+      margin-right: 100px;
+    }
+
+    .content {
+      max-width: 900px;
+      margin: 30px auto;
+      text-align: center;
+    }
+
+    .breadcrumb {
+      text-align: left;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: #34495e;
+    }
+
+    .breadcrumb a {
+      text-decoration: none;
+      color: #2980b9;
+    }
+
+    h2 {
+      margin-bottom: 40px;
+    }
+
+    .grid-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 40px;
+      justify-content: center;
+    }
+
+    .section-button {
+      background: linear-gradient(to right, #5dade2, #3498db);
+      color: white;
+      font-size: 20px;
+      padding: 40px 20px;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: transform 0.2s;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .section-button:hover {
+      transform: translateY(-5px);
+      background: linear-gradient(to right, #2e86c1, #2471a3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-container">
+      <img src="GCME_Logo.png" alt="Company Logo" class="logo">
+      <div class="company-name">GC Maintenance and Engineering Co.,LTD.</div>
+    </div>
+    <div class="center-title">ME SMART</div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content">
+    <div class="breadcrumb">
+      <a href="Main.html">Home</a> &gt;
+      <a href="Plant Selection.html">Plant Selection</a> &gt;
+      <a id="link-to-package-selection" href="#">Package Selection</a> &gt;
+      <span id="breadcrumb-package">...</span>
+    </div>
+
+    <h2>Package: <span id="package-name">...</span><br>Plant: <span id="plant-name">...</span></h2>
+
+    <div class="grid-buttons">
+      <button class="section-button"><a href="Data.html">Data</a></button>
+      <button class="section-button"><a href="Progress.html">Progress</a></button>
+      <button class="section-button"><a href="QAQC Step.html">QAQC Step</a></button>
+      <button class="section-button"><a href="Report.html">Report</a></button>
+    </div>
+  </div>
+
+  <!-- Script -->
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const plant = urlParams.get("plant");
+    const pkg = urlParams.get("package");
+
+    if (plant && pkg) {
+      document.getElementById("plant-name").textContent = decodeURIComponent(plant);
+      document.getElementById("package-name").textContent = decodeURIComponent(pkg);
+      document.getElementById("breadcrumb-package").textContent = decodeURIComponent(pkg);
+      document.getElementById("link-to-package-selection").href = "Package Selection.html?plant=" + encodeURIComponent(plant);
+
+      document.getElementById("data-btn").onclick = () => {
+        window.location.href = `Data.html?plant=${encodeURIComponent(plant)}&package=${encodeURIComponent(pkg)}`;
+      };
+    }
+  </script>
+
+</body>
+</html>

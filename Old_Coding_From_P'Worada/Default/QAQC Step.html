@@ -1,0 +1,428 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QAQC Step</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom right, #f0f8ff, #eaf2f8);
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(to right, #d6eaf8, #aed6f1);
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      position: sticky; top: 0; z-index: 10;
+      border-top-left-radius: 12px; border-top-right-radius: 12px;
+    }
+    .logo-container { display: flex; flex-direction: column; align-items: flex-start; }
+    .logo { height: 50px; margin-bottom: 4px; }
+    .company-name { font-size: 13px; font-style: italic; color: #2c3e50; }
+    .center-title { flex: 1; text-align: center; font-size: 24px; font-weight: bold; color: #154360; margin-right: 100px; }
+
+    .tab-header { display: flex; justify-content: flex-start; gap: 10px; padding: 15px 40px 15px; }
+    .tab-button {
+      padding: 10px 40px; font-size: 16px; font-weight: bold;
+      border: 2px solid #0078d7; background: white; color: #0078d7;
+      border-radius: 8px; cursor: pointer;
+    }
+    .tab-button:hover, .tab-button.active { background-color: #0078d7; color: white; }
+    .tab-content { display: flex; flex-direction: column; padding: 0 40px; }
+    .tab-pane { display: none; width: 100%; }
+    .tab-pane.active { display: flex; flex-direction: row; }
+
+    #leftFolders { width: 200px; display: flex; flex-direction: column; gap: 12px; padding-right: 10px; }
+    .sticky-index-button { position: sticky; top: 100px; padding: 20px 0; z-index: 1; }
+    .folder-entry { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: background 0.2s; background-color: #ffffff; }
+    .folder-entry:hover { background-color: #eef6ff; }
+    .folder-icon { width: 28px; height: 28px; }
+    .folder-name { font-weight: 300; color: #154360; }
+    #folderContent {
+      flex: 1; background: #ffffff; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .file-entry { margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .popup-image { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; max-height: 90%; z-index: 999; border: 2px solid #333; display: none; }
+    .thumbnail { width: 80px; height: 80px; object-fit: cover; cursor: pointer; margin-right: 10px; }
+    .pdf-viewer { display: none; position: fixed; top: 5%; left: 5%; width: 90%; height: 90%; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.4); z-index: 1000; }
+    .pdf-viewer iframe { width: 100%; height: 100%; border: none; }
+    .close-pdf { position: absolute; top: 5px; right: 10px; background: red; color: white; border: none; font-weight: bold; padding: 5px 10px; cursor: pointer; }
+    .floating-btn { position: fixed; bottom: 20px; right: 20px; background: #0078d7; color: white; border: none; border-radius: 50%; font-size: 24px; width: 50px; height: 50px; cursor: pointer; }
+
+    .table-wrap { width: 100%; overflow: auto; margin-top: 12px; }
+    table.qaqc-control { width: 100%; border-collapse: collapse; background: #fff; }
+    table.qaqc-control th, table.qaqc-control td { border: 1px solid #d9e2ef; padding: 8px 10px; font-size: 14px; vertical-align: top; }
+    table.qaqc-control thead th { position: sticky; top: 0; background: #f3f8ff; color: #154360; z-index: 1; }
+    .last-col-input { width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; font-size: 14px; outline: none; }
+    .last-col-input:focus { border-color: #0078d7; box-shadow: 0 0 0 2px rgba(0,120,215,0.15); }
+    .edit-meta { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    .upload-row { display: flex; align-items: center; gap: 10px; }
+    .hint { font-size: 12px; color: #475569; }
+    
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo-container">
+      <img src="GCME_Logo.png" alt="GCME Logo" class="logo" />
+      <div class="company-name">GC Maintenance and Engineering Co.,LTD.</div>
+    </div>
+    <div class="center-title">QAQC ONLINE APPLICATION - QAQC Step</div>
+    <div style="width: 40px;"></div>
+  </header>
+
+  <div class="tab-header">
+    <button class="tab-button active" data-tab="tab1">Inspection sheet</button>
+    <button class="tab-button" data-tab="tab2">QAQC control</button>
+    <button class="tab-button" data-tab="tab3">ITP Check list</button>
+    <button class="tab-button" data-tab="tab4">Special request</button>
+  </div>
+
+  <div class="tab-content">
+    <div class="tab-pane active" id="tab1">
+      <div id="leftFolders">
+        <div class="sticky-index-button">
+          <button onclick="document.getElementById('indexUpload').click()">INDEX Upload</button>
+          <input type="file" id="indexUpload" accept=".xlsx" style="display:none;" />
+        </div>
+      </div>
+      <div id="folderContent"></div>
+    </div>
+
+    <div class="tab-pane" id="tab2" style="flex-direction: column; gap: 8px;">
+      <div class="upload-row">
+        <label for="uploadExcelControl"><strong>Upload QAQC Control sheet:</strong></label>
+        <input type="file" id="uploadExcelControl" accept=".xlsx,.xls" />
+        <span class="hint">Please upload QAQC control sheel in excel form</span>
+      </div>
+      <div class="table-wrap" id="controlTableWrap"></div>
+    </div>
+
+    <div class="tab-pane" id="tab3">
+      <input type="file" id="uploadExcel" accept=".xlsx" />
+      <div id="excelTable"></div>
+    </div>
+
+    <div class="tab-pane" id="tab4">
+      <button onclick="addRow()">Add row</button>
+      <table id="specialRequest">
+        <thead>
+          <tr><th>No.</th><th>Date</th><th>Component part</th><th>Detail of Work</th><th>Status of work</th><th>Status to Approve</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <img id="popupImage" class="popup-image" onclick="this.style.display='none'" />
+
+  <div class="pdf-viewer" id="pdfViewer">
+    <button class="close-pdf" onclick="closePDF()">x</button>
+    <iframe id="pdfFrame"></iframe>
+  </div>
+
+  <script>
+    document.querySelectorAll('.tab-button').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      };
+    });
+
+    let lastPDF = null;
+    function closePDF() {
+      document.getElementById('pdfViewer').style.display = 'none';
+      document.getElementById('pdfFrame').src = '';
+    }
+
+    document.getElementById('uploadExcel').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      const table = document.createElement('table');
+      table.innerHTML = '<thead><tr>' + json[0].map(h => `<th>${h || ''}</th>`).join('') + '<th>Status</th></tr>';
+      const tbody = document.createElement('tbody');
+      json.slice(1).forEach(row => {
+        const tr = document.createElement('tr');
+        row.forEach(cell => tr.innerHTML += `<td>${cell == null ? '' : cell}</td>`);
+        const select = document.createElement('select');
+        ['Pending', 'Complete', 'Rework'].forEach(v => {
+          const o = document.createElement('option'); o.value = o.text = v; select.appendChild(o);
+        });
+        const td = document.createElement('td');
+        td.appendChild(select);
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      const container = document.getElementById('excelTable');
+      container.innerHTML = '';
+      container.appendChild(table);
+    });
+
+    function addRow() {
+      const tbody = document.getElementById('specialRequest').querySelector('tbody');
+      const tr = document.createElement('tr');
+      const no = tbody.rows.length + 1;
+      tr.innerHTML = `<td>${no}</td>
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>`;
+      const select1 = document.createElement('select');
+      ['Pending', 'Complete'].forEach(v => {
+        const o = document.createElement('option'); o.value = o.text = v; select1.appendChild(o);
+      });
+      const select2 = document.createElement('select');
+      ['Accept', 'Unaccepted', 'Pending'].forEach(v => {
+        const o = document.createElement('option'); o.value = o.text = v; select2.appendChild(o);
+      });
+      const td1 = document.createElement('td'); td1.appendChild(select1);
+      const td2 = document.createElement('td'); td2.appendChild(select2);
+      tr.appendChild(td1); tr.appendChild(td2);
+      tbody.appendChild(tr);
+    }
+
+    function renderFiles(folderName) {
+      const container = document.createElement('div');
+      const fileInput = document.createElement('input');
+      const uploadBtn = document.createElement('button');
+      const recordBtn = document.createElement('button');
+      const fileList = document.createElement('div');
+      let lastFileBlob = null;
+
+      fileInput.type = 'file';
+      fileInput.accept = '.xlsx';
+      fileInput.style.display = 'none';
+      fileInput.id = `upload_${folderName}`;
+
+      uploadBtn.textContent = 'Upload blank form';
+      uploadBtn.onclick = () => fileInput.click();
+
+      recordBtn.textContent = 'Record';
+      recordBtn.style.marginLeft = '10px';
+      recordBtn.onclick = () => {
+        if (lastFileBlob) {
+          const file = new File([lastFileBlob], `Record_${new Date().toISOString().replace(/[:.]/g,'_')}.xlsx`, {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          });
+          handleFileUpload(file, fileList);
+        } else {
+          alert('Please upload a blank form first.');
+        }
+      };
+
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        lastFileBlob = file.slice();
+        handleFileUpload(file, fileList);
+      });
+
+      container.appendChild(uploadBtn);
+      container.appendChild(recordBtn);
+      container.appendChild(fileInput);
+      container.appendChild(fileList);
+      document.getElementById('folderContent').innerHTML = '';
+      document.getElementById('folderContent').appendChild(container);
+    }
+
+    function handleFileUpload(file, fileList) {
+      const fileURL = URL.createObjectURL(file);
+      const entry = document.createElement('div');
+      entry.className = 'file-entry';
+      entry.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:20px; margin-right:8px;"/><span>${file.name}</span>`;
+
+      const tabs = document.createElement('div');
+      tabs.className = 'file-tabs';
+      const tabNames = ['Picture', 'Result', 'Note'];
+      const tabContents = {};
+      const tabContentWrapper = document.createElement('div');
+      tabContentWrapper.className = 'file-tab-content';
+
+      tabNames.forEach(tab => {
+        const btn = document.createElement('button');
+        btn.textContent = tab;
+        btn.onclick = () => {
+          tabContentWrapper.innerHTML = '';
+          tabContentWrapper.appendChild(tabContents[tab]);
+        };
+        tabs.appendChild(btn);
+
+        const contentDiv = document.createElement('div');
+        if (tab === 'Picture') {
+          const picInput = document.createElement('input');
+          picInput.type = 'file'; picInput.accept = 'image/*'; picInput.multiple = true;
+          picInput.onchange = () => {
+            Array.from(picInput.files).forEach(imgFile => {
+              const img = document.createElement('img');
+              img.src = URL.createObjectURL(imgFile);
+              img.className = 'thumbnail';
+              img.onclick = () => {
+                const popup = document.getElementById('popupImage');
+                popup.src = img.src; popup.style.display = 'block';
+              };
+              contentDiv.appendChild(img);
+            });
+          };
+          contentDiv.appendChild(picInput);
+        }
+        if (tab === 'Result') {
+          const select = document.createElement('select');
+          ['Accepted', 'Pending', 'Unaccepted'].forEach(opt => {
+            const option = document.createElement('option');
+            option.value = option.text = opt;
+            select.appendChild(option);
+          });
+          const saveBtn = document.createElement('button');
+          saveBtn.textContent = 'Save Result';
+          contentDiv.appendChild(select);
+          contentDiv.appendChild(saveBtn);
+        }
+        if (tab === 'Note') {
+          const textarea = document.createElement('textarea');
+          textarea.rows = 4; textarea.cols = 50;
+          const saveBtn = document.createElement('button');
+          saveBtn.textContent = 'Save Note';
+          contentDiv.appendChild(textarea);
+          contentDiv.appendChild(saveBtn);
+        }
+        tabContents[tab] = contentDiv;
+      });
+
+      entry.appendChild(tabs);
+      entry.appendChild(tabContentWrapper);
+
+      entry.ondblclick = () => {
+        const excelOnlineUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileURL)}`;
+        window.open(excelOnlineUrl, '_blank');
+      };
+
+      fileList.prepend(entry);
+    }
+
+    document.getElementById('indexUpload').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        const leftFolders = document.getElementById('leftFolders');
+        leftFolders.innerHTML = '<div class="sticky-index-button">' + document.querySelector('.sticky-index-button').innerHTML + '</div>';
+        for (let i = 6; i < rows.length; i++) {
+          const name = rows[i] && rows[i][1];
+          if (name) {
+            const entry = document.createElement('div');
+            entry.className = 'folder-entry';
+            entry.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/715/715676.png" class="folder-icon"/><div class="folder-name">${name}</div>`;
+            entry.addEventListener('click', () => renderFiles(name));
+            leftFolders.appendChild(entry);
+          }
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    const uploadExcelControl = document.getElementById('uploadExcelControl');
+    const controlTableWrap = document.getElementById('controlTableWrap');
+
+    uploadExcelControl.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: false });
+
+      if (!rows || rows.length === 0) {
+        controlTableWrap.innerHTML = '<div class="hint">ไฟล์ว่างหรืออ่านไม่สำเร็จ</div>';
+        return;
+      }
+
+      const headers = (rows[0] || []).map((h, i) => (h == null || h === '') ? `Column ${i+1}` : String(h));
+
+      const table = document.createElement('table');
+      table.className = 'qaqc-control';
+
+      const thead = document.createElement('thead');
+      const trHead = document.createElement('tr');
+      headers.forEach(h => {
+        const th = document.createElement('th');
+        th.textContent = h;
+        trHead.appendChild(th);
+      });
+      thead.appendChild(trHead);
+      table.appendChild(thead);
+
+      // tbody
+      const tbody = document.createElement('tbody');
+      const lastColIndex = headers.length - 1;
+
+      rows.slice(1).forEach((rowArr, rIdx) => {
+        const tr = document.createElement('tr');
+
+        headers.forEach((_, cIdx) => {
+          const td = document.createElement('td');
+          const val = (rowArr && rowArr[cIdx] != null) ? rowArr[cIdx] : '';
+
+          if (cIdx === lastColIndex) {
+            const wrapper = document.createElement('div');
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'last-col-input';
+            input.value = String(val);
+
+            const meta = document.createElement('div');
+            meta.className = 'edit-meta';
+            meta.textContent = 'Last edited: —';
+
+            const updateStamp = () => {
+              const now = new Date();
+              const thTime = now.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok', hour12: false });
+              meta.textContent = `Last edited: ${thTime}`;
+            };
+
+            input.addEventListener('change', updateStamp);
+            input.addEventListener('blur', (ev) => {
+              if (ev.target.value !== String(val)) updateStamp();
+            });
+            input.addEventListener('keyup', (ev) => {
+              if (ev.key === 'Enter') { ev.target.blur(); }
+            });
+
+            wrapper.appendChild(input);
+            wrapper.appendChild(meta);
+            td.appendChild(wrapper);
+          } else {
+            td.textContent = String(val);
+          }
+
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+
+      controlTableWrap.innerHTML = '';
+      controlTableWrap.appendChild(table);
+    });
+  </script>
+</body>
+</html>

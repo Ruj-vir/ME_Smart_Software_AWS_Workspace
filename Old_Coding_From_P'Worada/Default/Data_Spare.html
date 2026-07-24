@@ -1,0 +1,466 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Data Folder System</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background: #f4f4f4;
+    position: relative;
+    min-height: 100vh;
+    padding-bottom: 90px; /* กันปุ่ม home ทับ */
+  }
+  header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  /* โลโก้ซ้ายบน */
+  #logo {
+    width: 120px;
+    height: auto;
+  }
+  /* ช่องโลโก้และปุ่ม + */
+  .top-right {
+    margin-left: auto;
+    position: relative;
+  }
+
+  /* ปุ่ม + วงกลมสีขาว */
+  .add-button {
+    width: 40px;
+    height: 40px;
+    background: white;
+    border: 2px solid #0078d7;
+    border-radius: 50%;
+    font-size: 28px;
+    color: #0078d7;
+    line-height: 38px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 0 8px #0078d7aa;
+    position: relative;
+    z-index: 100;
+  }
+  .add-button:hover {
+    background: #0078d7;
+    color: white;
+  }
+
+  .container {
+    background: white;
+    padding: 20px;
+    border-radius: 6px;
+    max-width: 900px;
+    margin: auto;
+    box-shadow: 0 0 10px #ccc;
+  }
+  .breadcrumb {
+    margin-bottom: 15px;
+    font-size: 14px;
+  }
+  .breadcrumb span {
+    cursor: pointer;
+    color: #0078d7;
+    margin-right: 5px;
+  }
+  .breadcrumb span:last-child {
+    color: #333;
+    cursor: default;
+  }
+
+  .folders, .files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .folder, .file {
+    width: 120px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+  }
+  .folder img, .file img {
+    width: 64px;
+    height: 64px;
+  }
+  .folder:hover {
+    background: #e0f0ff;
+    border-radius: 8px;
+  }
+  .folder .name, .file .name {
+    margin-top: 8px;
+    word-break: break-word;
+  }
+
+  /* Popup option add-button */
+  .popup-options {
+    position: absolute;
+    top: 50px;
+    right: 0;
+    background: white;
+    border: 1px solid #0078d7;
+    border-radius: 6px;
+    box-shadow: 0 0 10px #0078d7aa;
+    display: none;
+    flex-direction: column;
+    width: 140px;
+    z-index: 101;
+  }
+  .popup-options.show {
+    display: flex;
+  }
+  .popup-options button {
+    background: none;
+    border: none;
+    padding: 10px 15px;
+    text-align: left;
+    cursor: pointer;
+    font-weight: bold;
+    color: #0078d7;
+    border-bottom: 1px solid #0078d7;
+  }
+  .popup-options button:last-child {
+    border-bottom: none;
+  }
+  .popup-options button:hover {
+    background: #0078d7;
+    color: white;
+  }
+
+  input[type="file"] {
+    display: none;
+  }
+
+  /* ปุ่ม Transfer to Excel */
+  #transferBtnWrapper {
+    margin-bottom: 15px;
+  }
+  #transferBtnWrapper button {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 3px 6px #aaa;
+    transition: background-color 0.3s ease;
+  }
+  #transferBtnWrapper button:hover {
+    background-color: #1e7e34;
+  }
+
+  /* ปุ่ม Home ด้านล่างตรงกลาง */
+  #homeBtn {
+    position: fixed;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 300;
+    width: 50px;
+    height: 50px;
+    padding: 0;
+  }
+  #homeBtn svg {
+    fill: #0078d7;
+    width: 50px;
+    height: 50px;
+    transition: fill 0.3s;
+  }
+  #homeBtn:hover svg {
+    fill: #004a9f;
+  }
+
+  /* Popup เมนู Home */
+  #homePopup {
+    position: fixed;
+    bottom: 75px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    gap: 12px;
+    background: transparent;
+    z-index: 310;
+    flex-wrap: nowrap;
+  }
+  #homePopup.show {
+    display: flex;
+  }
+  #homePopup button {
+    background-color: #0078d7;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 3px 8px #004a9faa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    transition: background-color 0.3s;
+  }
+  #homePopup button:hover {
+    background-color: #004a9f;
+  }
+  #homePopup button:focus {
+    outline: 2px solid #fff;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <!-- Logo ด้านซ้าย -->
+  <img src="GCME_Logo.png" alt="GCME Logo" id="logo" />
+  
+  <!-- ปุ่ม + ด้านบนขวา -->
+  <div class="top-right">
+    <div class="add-button" id="addBtn" title="Add">+</div>
+    <div class="popup-options" id="popupOptions">
+      <button id="newFolderBtn">New folder</button>
+      <button id="uploadFileBtn">Upload file</button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <!-- ปุ่ม Transfer to Excel (ซ่อนไว้ก่อน) -->
+  <div id="transferBtnWrapper" style="display: none;">
+    <button onclick="location.href='Transfer data to excel.html'">
+      ➤ Transfer data to Excel
+    </button>
+  </div>
+
+  <div class="folders" id="folderList"></div>
+  <div class="files" id="fileList"></div>
+</div>
+
+<!-- ปุ่ม Home รูปบ้าน ด้านล่างกลาง -->
+<button id="homeBtn" title="Home" aria-label="Home">
+  <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+    <path d="M32 12l-20 20h6v20h12V38h4v14h12V32h6z"/>
+  </svg>
+</button>
+
+<!-- Popup เมนู Home -->
+<div id="homePopup" aria-label="Home menu options">
+  <button data-link="data.html" title="Data" aria-label="Data">Data</button>
+  <button data-link="process.html" title="Process" aria-label="Process">Process</button>
+  <button data-link="QAQC online.html" title="Home" aria-label="Home">Home</button>
+  <button data-link="inspection.html" title="Inspection" aria-label="Inspection">Inspection</button>
+  <button data-link="report.html" title="Report" aria-label="Report">Report</button>
+</div>
+
+<input type="file" id="fileInput" />
+
+<script>
+  const folderIcon = 'https://cdn-icons-png.flaticon.com/512/715/715676.png';
+  const fileIcon = 'https://cdn-icons-png.flaticon.com/512/136/136534.png';
+  const excelIcon = 'https://cdn-icons-png.flaticon.com/512/732/732220.png';
+
+  let data = {
+    name: 'Root',
+    folders: [
+      { name: 'P&ID', folders: [], files: [] },
+      { name: 'Sectional Drawing', folders: [], files: [] },
+      { name: 'ITP', folders: [], files: [] },
+      { name: 'Scope of work', folders: [], files: [] },
+      { name: 'Spare part list', folders: [], files: [] },
+      { name: 'Picture', folders: [], files: [] },
+    ],
+    files: []
+  };
+
+  let path = [];
+
+  const folderListEl = document.getElementById('folderList');
+  const fileListEl = document.getElementById('fileList');
+  const breadcrumbEl = document.getElementById('breadcrumb');
+  const addBtn = document.getElementById('addBtn');
+  const popupOptions = document.getElementById('popupOptions');
+  const newFolderBtn = document.getElementById('newFolderBtn');
+  const uploadFileBtn = document.getElementById('uploadFileBtn');
+  const fileInput = document.getElementById('fileInput');
+  const homeBtn = document.getElementById('homeBtn');
+  const homePopup = document.getElementById('homePopup');
+  const transferBtnWrapper = document.getElementById('transferBtnWrapper');
+
+  function getCurrentFolder() {
+    let current = data;
+    for (let p of path) {
+      current = current.folders.find(f => f.name === p);
+      if (!current) break;
+    }
+    return current || data;
+  }
+
+  function renderBreadcrumb() {
+    if (path.length === 0) {
+      breadcrumbEl.innerHTML = `<span>Root</span>`;
+      return;
+    }
+    let html = `<span style="color:#0078d7; cursor:pointer;" data-index="-1">Root</span> &gt; `;
+    path.forEach((p, i) => {
+      if(i === path.length -1) {
+        html += `<span>${p}</span>`;
+      } else {
+        html += `<span style="color:#0078d7; cursor:pointer;" data-index="${i}">${p}</span> &gt; `;
+      }
+    });
+    breadcrumbEl.innerHTML = html;
+
+    breadcrumbEl.querySelectorAll('span[data-index]').forEach(span => {
+      span.addEventListener('click', e => {
+        const idx = parseInt(e.target.getAttribute('data-index'));
+        if (idx === -1) path = [];
+        else path = path.slice(0, idx+1);
+        renderView();
+      });
+    });
+  }
+
+  function renderView() {
+    const currentFolder = getCurrentFolder();
+    renderBreadcrumb();
+
+    folderListEl.innerHTML = '';
+    currentFolder.folders.forEach(f => {
+      const div = document.createElement('div');
+      div.className = 'folder';
+      div.title = f.name;
+      div.innerHTML = `<img src="${folderIcon}" alt="Folder" /><div class="name">${f.name}</div>`;
+      div.addEventListener('dblclick', () => {
+        path.push(f.name);
+        renderView();
+      });
+      folderListEl.appendChild(div);
+    });
+
+    fileListEl.innerHTML = '';
+    currentFolder.files.forEach(file => {
+      const div = document.createElement('div');
+      div.className = 'file';
+      div.title = file.name;
+      const ext = file.name.split('.').pop().toLowerCase();
+      let icon = fileIcon;
+      if (ext === 'xls' || ext === 'xlsx') icon = excelIcon;
+
+      div.innerHTML = `<img src="${icon}" alt="File" /><div class="name">${file.name}</div>`;
+      div.addEventListener('click', () => {
+        if(ext === 'xls' || ext === 'xlsx') {
+          const fileUrl = URL.createObjectURL(file.fileObject);
+          window.open(fileUrl, '_blank');
+        } else {
+          alert(`File preview not supported for "${file.name}"`);
+        }
+      });
+
+      fileListEl.appendChild(div);
+    });
+
+    // แสดงปุ่ม Transfer data to Excel เฉพาะโฟลเดอร์ ITP
+    if (path.length === 1 && path[0] === 'ITP') {
+      transferBtnWrapper.style.display = 'block';
+    } else {
+      transferBtnWrapper.style.display = 'none';
+    }
+  }
+
+  // Popup toggle add button
+  addBtn.addEventListener('mouseenter', () => {
+    popupOptions.classList.add('show');
+  });
+  addBtn.addEventListener('mouseleave', () => {
+    setTimeout(() => {
+      if (!popupOptions.matches(':hover') && !addBtn.matches(':hover')) {
+        popupOptions.classList.remove('show');
+      }
+    }, 300);
+  });
+  popupOptions.addEventListener('mouseleave', () => {
+    popupOptions.classList.remove('show');
+  });
+  popupOptions.addEventListener('mouseenter', () => {
+    popupOptions.classList.add('show');
+  });
+
+  newFolderBtn.addEventListener('click', () => {
+    const folderName = prompt('Enter new folder name:');
+    if(folderName) {
+      const current = getCurrentFolder();
+      if(current.folders.find(f => f.name.toLowerCase() === folderName.toLowerCase())) {
+        alert('Folder name already exists.');
+        return;
+      }
+      current.folders.push({ name: folderName, folders: [], files: [] });
+      popupOptions.classList.remove('show');
+      renderView();
+    }
+  });
+
+  uploadFileBtn.addEventListener('click', () => {
+    popupOptions.classList.remove('show');
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const files = e.target.files;
+    if(files.length === 0) return;
+    const current = getCurrentFolder();
+    for(let f of files) {
+      current.files.push({ name: f.name, fileObject: f });
+    }
+    fileInput.value = '';
+    renderView();
+  });
+
+  // Home popup toggle
+  let homePopupTimeout;
+  homeBtn.addEventListener('mouseenter', () => {
+    clearTimeout(homePopupTimeout);
+    homePopup.classList.add('show');
+  });
+  homeBtn.addEventListener('mouseleave', () => {
+    homePopupTimeout = setTimeout(() => {
+      if (!homePopup.matches(':hover') && !homeBtn.matches(':hover')) {
+        homePopup.classList.remove('show');
+      }
+    }, 300);
+  });
+  homePopup.addEventListener('mouseenter', () => {
+    clearTimeout(homePopupTimeout);
+    homePopup.classList.add('show');
+  });
+  homePopup.addEventListener('mouseleave', () => {
+    homePopup.classList.remove('show');
+  });
+
+  // คลิกลิงก์ใน home popup
+  homePopup.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const link = btn.getAttribute('data-link');
+      if(link) {
+        window.location.href = link;
+      }
+    });
+  });
+
+  renderView();
+</script>
+
+</body>
+</html>

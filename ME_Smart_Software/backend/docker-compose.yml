@@ -1,0 +1,112 @@
+services:
+
+  postgres:
+    image: docker.io/library/postgres:16-alpine
+    container_name: me-smart-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # [DISABLED] MinIO — ปัจจุบันใช้ AWS S3 แทน ดูค่าใน .env
+  # minio:
+  #   image: docker.io/minio/minio:latest
+  #   container_name: me-smart-minio
+  #   command: server /data --console-address ":9001"
+  #   environment:
+  #     MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+  #     MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+  #   ports:
+  #     - "9000:9000"
+  #     - "9001:9001"
+  #   volumes:
+  #     - minio_data:/data
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   restart: unless-stopped
+
+  pgadmin:
+    image: docker.io/dpage/pgadmin4:latest
+    container_name: me-smart-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
+      PGPASSFILE: /pgadmin4/pgpass
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin_servers.json:/pgadmin4/servers.json:ro
+      - ./pgadmin_pgpass:/pgadmin4/pgpass:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    image: docker.io/library/nginx:alpine
+    container_name: me-smart-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+      - onlyoffice
+      - pgadmin
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: me-smart-backend
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - ONLYOFFICE_BACKEND_URL=http://backend:8000
+      - ONLYOFFICE_DOCSERVER_URL=http://onlyoffice
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  onlyoffice:
+    image: docker.io/onlyoffice/documentserver:9.4
+    container_name: onlyoffice-documentserver
+    ports:
+      - "8081:80"
+    environment:
+      - JWT_ENABLED=${ONLYOFFICE_JWT_ENABLED}
+      - JWT_SECRET=${ONLYOFFICE_JWT_SECRET}
+      - JWT_HEADER=Authorization
+    extra_hosts:
+      - "host.containers.internal:host-gateway"
+    volumes:
+      - onlyoffice_data:/var/www/onlyoffice/Data
+      - onlyoffice_log:/var/log/onlyoffice
+      - onlyoffice_cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  # minio_data:
+  pgadmin_data:
+  onlyoffice_data:
+  onlyoffice_log:
+  onlyoffice_cache:

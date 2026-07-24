@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code Scan Report</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; margin:0;
+         background:#f4f6f9; color:#1c2733; }
+  header { background:#1c2733; color:#fff; padding:24px 32px; }
+  header h1 { margin:0 0 4px; font-size:20px; }
+  header .meta { font-size:13px; opacity:.75; }
+  .wrap { max-width:1100px; margin:0 auto; padding:24px 32px 48px; }
+  .cards { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:8px; }
+  .card { background:#fff; border:1px solid #e3e8ee; border-radius:10px;
+          padding:16px 20px; min-width:120px; flex:1; text-align:center; }
+  .card.gate { border-width:2px; }
+  .card .big { font-size:28px; font-weight:700; }
+  .card .lbl { font-size:12px; color:#6b7886; margin-top:4px; }
+  h2 { font-size:16px; margin:32px 0 12px; }
+  h2 .count { color:#6b7886; font-weight:400; font-size:14px; }
+  table { width:100%; border-collapse:collapse; background:#fff;
+          border:1px solid #e3e8ee; border-radius:10px; overflow:hidden; }
+  th, td { text-align:left; padding:10px 14px; font-size:13px;
+           border-bottom:1px solid #eef1f5; vertical-align:top; }
+  th { background:#f7f9fb; color:#6b7886; font-weight:600; }
+  tr:last-child td { border-bottom:none; }
+  .mono { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size:12px; }
+  .badge { color:#fff; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; }
+  .empty { color:#1f9d57; background:#fff; border:1px solid #e3e8ee;
+           border-radius:10px; padding:14px; }
+</style></head>
+<body>
+<header>
+  <h1>รายงานสแกนคุณภาพโค้ด</h1>
+  <div class="meta">เป้าหมาย: backend &nbsp;·&nbsp; สร้างเมื่อ: 2026-06-20 18:31
+       &nbsp;·&nbsp; Ruff + Bandit + mypy</div>
+</header>
+<div class="wrap">
+  <div class="cards"><div class="card gate" style="border-color:#d6334c"><div class="big" style="color:#d6334c">FAILED</div><div class="lbl">Quality Gate</div></div><div class="card"><div class="big">15</div><div class="lbl">Issues ทั้งหมด</div></div><div class="card"><div class="big" style="color:#d6334c">1</div><div class="lbl">Critical</div></div><div class="card"><div class="big" style="color:#e8833a">5</div><div class="lbl">Major</div></div><div class="card"><div class="big" style="color:#d9a300">4</div><div class="lbl">Warning</div></div><div class="card"><div class="big" style="color:#5a8dd6">5</div><div class="lbl">Minor</div></div></div>
+  <h2>Ruff — Lint / Code Smell <span class="count">(4)</span></h2><table><thead><tr><th>Severity</th><th>ตำแหน่ง</th><th>Rule</th><th>รายละเอียด</th></tr></thead><tbody><tr><td><span class="badge" style="background:#d9a300">Warning</span></td><td class="mono">backend\create_paths.py:11</td><td class="mono">E401</td><td>Multiple imports on one line</td></tr><tr><td><span class="badge" style="background:#d9a300">Warning</span></td><td class="mono">backend\server.py:13</td><td class="mono">E401</td><td>Multiple imports on one line</td></tr><tr><td><span class="badge" style="background:#d9a300">Warning</span></td><td class="mono">backend\server.py:14</td><td class="mono">E401</td><td>Multiple imports on one line</td></tr><tr><td><span class="badge" style="background:#d9a300">Warning</span></td><td class="mono">backend\server.py:15</td><td class="mono">E401</td><td>Multiple imports on one line</td></tr></tbody></table><h2>Bandit — Security <span class="count">(2)</span></h2><table><thead><tr><th>Severity</th><th>ตำแหน่ง</th><th>Rule</th><th>รายละเอียด</th></tr></thead><tbody><tr><td><span class="badge" style="background:#d6334c">Critical</span></td><td class="mono">backend\server.py:300</td><td class="mono">B324</td><td>Use of weak MD5 hash for security. Consider usedforsecurity=False</td></tr><tr><td><span class="badge" style="background:#5a8dd6">Minor</span></td><td class="mono">backend\server.py:338</td><td class="mono">B110</td><td>Try, Except, Pass detected.</td></tr></tbody></table><h2>mypy — Type Check <span class="count">(9)</span></h2><table><thead><tr><th>Severity</th><th>ตำแหน่ง</th><th>Rule</th><th>รายละเอียด</th></tr></thead><tbody><tr><td><span class="badge" style="background:#e8833a">Major</span></td><td class="mono">backend\server.py:13</td><td class="mono">import-untyped</td><td>Library stubs not installed for &quot;psycopg2.extras&quot;</td></tr><tr><td><span class="badge" style="background:#e8833a">Major</span></td><td class="mono">backend\server.py:13</td><td class="mono">import-untyped</td><td>Library stubs not installed for &quot;psycopg2&quot;</td></tr><tr><td><span class="badge" style="background:#e8833a">Major</span></td><td class="mono">backend\server.py:15</td><td class="mono">import-untyped</td><td>Skipping analyzing &quot;msal&quot;: module is installed, but missing library stubs or py.typed marker</td></tr><tr><td><span class="badge" style="background:#e8833a">Major</span></td><td class="mono">backend\server.py:15</td><td class="mono">import-untyped</td><td>Library stubs not installed for &quot;requests&quot;</td></tr><tr><td><span class="badge" style="background:#e8833a">Major</span></td><td class="mono">backend\server.py:299</td><td class="mono">union-attr</td><td>Item &quot;None&quot; of &quot;str | None&quot; has no attribute &quot;strip&quot;</td></tr><tr><td><span class="badge" style="background:#5a8dd6">Minor</span></td><td class="mono">backend\server.py:13</td><td class="mono">type</td><td>Hint: &quot;python3 -m pip install types-psycopg2&quot;</td></tr><tr><td><span class="badge" style="background:#5a8dd6">Minor</span></td><td class="mono">backend\server.py:13</td><td class="mono">type</td><td>(or run &quot;mypy --install-types&quot; to install all missing stub packages)</td></tr><tr><td><span class="badge" style="background:#5a8dd6">Minor</span></td><td class="mono">backend\server.py:13</td><td class="mono">type</td><td>See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports</td></tr><tr><td><span class="badge" style="background:#5a8dd6">Minor</span></td><td class="mono">backend\server.py:15</td><td class="mono">type</td><td>Hint: &quot;python3 -m pip install types-requests&quot;</td></tr></tbody></table>
+</div>
+</body></html>

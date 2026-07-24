@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+minio
+python-multipart
+psycopg2-binary
+msal
+requests
+python-dotenv
+PyJWT

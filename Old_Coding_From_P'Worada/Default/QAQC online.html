@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QAQC Online Application</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #d6eaf8, #ffffff);
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      background-color: #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      height: 50px;
+    }
+
+    .title {
+      flex: 1;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .menu {
+      max-width: 400px;
+      margin: 100px auto 0;
+      padding: 30px;
+      background-color: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .menu a {
+      display: block;
+      margin: 15px auto;
+      padding: 12px 20px;
+      font-size: 18px;
+      color: #ffffff;
+      background-color: #1e90ff;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: background-color 0.3s ease, transform 0.2s;
+    }
+
+    .menu a:hover {
+      background-color: #0066cc;
+      transform: translateY(-2px);
+    }
+
+    @media screen and (max-width: 500px) {
+      .menu {
+        margin-top: 50px;
+        padding: 20px;
+      }
+
+      .title {
+        font-size: 22px;
+      }
+
+      .menu a {
+        font-size: 16px;
+        padding: 10px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="GCME_Logo.png" alt="Logo" class="logo">
+    <div class="title">QAQC Online Application</div>
+    <div style="width:50px"></div> <!-- เว้นพื้นที่ให้หัวข้อตรงกลาง -->
+  </div>
+
+  <div class="menu">
+    <a href="data.html">📊 Data</a>
+    <a href="progress.html">📈 Progress</a>
+    <a href="inspection.html">📝 Inspection Sheet</a>
+    <a href="report.html">📄 Report</a>
+  </div>
+</body>
+</html>

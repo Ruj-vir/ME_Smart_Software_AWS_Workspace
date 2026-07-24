@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Transfer Data from PDF to Excel</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+  h1 { color: #0078d7; }
+  label { font-weight: bold; margin-top: 15px; display: block; }
+  select, input[type="file"] {
+    padding: 8px; width: 300px; margin-top: 5px; font-size: 16px;
+  }
+  button {
+    margin-top: 20px; padding: 10px 25px; font-weight: bold; border: none;
+    border-radius: 5px; cursor: pointer; color: white;
+  }
+  #chooseColumnsBtn { background-color: #28a745; }
+  #previewTable {
+    margin-top: 25px; border-collapse: collapse; width: 100%;
+    max-width: 800px; box-shadow: 0 0 10px #ccc;
+  }
+  #previewTable th, #previewTable td {
+    border: 1px solid #ddd; padding: 8px;
+  }
+  #previewTable th { background-color: #0078d7; color: white; }
+  #actions { margin-top: 20px; }
+  #actions button { margin-right: 10px; }
+  #headerPopup {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center;
+  }
+  #headerPopupContent {
+    background: white; padding: 25px; border-radius: 8px;
+    max-width: 400px; width: 90%; max-height: 80vh; overflow-y: auto;
+  }
+  #headerCheckboxes label { display: block; margin: 5px 0; }
+  td[contenteditable="true"] {
+    background-color: #fff8dc;
+  }
+</style>
+</head>
+<body>
+<h1>Transfer Data from PDF to Excel</h1>
+<label for="pdfUploadInput">Upload PDF File:</label>
+<input type="file" id="pdfUploadInput" accept="application/pdf">
+<button id="chooseColumnsBtn" disabled>Choose Columns to Transfer</button>
+<div id="headerPopup">
+  <div id="headerPopupContent">
+    <h3>Select Columns to Extract:</h3>
+    <div id="headerCheckboxes">Loading headers...</div>
+    <button id="confirmHeadersBtn">Confirm</button>
+  </div>
+</div>
+<div id="previewArea" style="display:none;">
+  <h2>Preview Data</h2>
+  <table id="previewTable"></table>
+  <div id="actions">
+    <button id="acceptBtn" style="background-color: #28a745;">Accept</button>
+    <button id="editBtn" style="background-color: #dc3545;">Edit Columns</button>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script>
+let uploadedPDF = null;
+let extractedData = [];
+let selectedHeaders = [];
+const pdfUploadInput = document.getElementById('pdfUploadInput');
+const chooseColumnsBtn = document.getElementById('chooseColumnsBtn');
+const headerPopup = document.getElementById('headerPopup');
+const headerCheckboxes = document.getElementById('headerCheckboxes');
+const confirmHeadersBtn = document.getElementById('confirmHeadersBtn');
+const previewArea = document.getElementById('previewArea');
+const previewTable = document.getElementById('previewTable');
+const acceptBtn = document.getElementById('acceptBtn');
+const editBtn = document.getElementById('editBtn');
+
+pdfUploadInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file && file.type === 'application/pdf') {
+    uploadedPDF = file;
+    chooseColumnsBtn.disabled = false;
+    previewArea.style.display = 'none';
+  }
+});
+
+chooseColumnsBtn.addEventListener('click', async () => {
+  if (!uploadedPDF) return;
+  headerPopup.style.display = 'flex';
+  headerCheckboxes.innerHTML = 'Loading headers...';
+  try {
+    const headers = await extractHeadersFromPDF(uploadedPDF);
+    headerCheckboxes.innerHTML = '';
+    headers.forEach(h => {
+      const div = document.createElement('div');
+      div.innerHTML = `<label><input type="checkbox" value="${h}" checked /> ${h}</label>`;
+      headerCheckboxes.appendChild(div);
+    });
+  } catch (e) {
+    headerCheckboxes.innerHTML = 'Error reading headers: ' + e.message;
+  }
+});
+
+confirmHeadersBtn.addEventListener('click', () => {
+  const checkboxes = document.querySelectorAll('#headerCheckboxes input:checked');
+  selectedHeaders = Array.from(checkboxes).map(cb => cb.value);
+  headerPopup.style.display = 'none';
+  extractDataFromPDF(uploadedPDF, selectedHeaders);
+});
+
+editBtn.addEventListener('click', () => {
+  previewArea.style.display = 'block';
+  Array.from(previewTable.querySelectorAll('td')).forEach(td => td.contentEditable = true);
+});
+
+acceptBtn.addEventListener('click', () => {
+  // อัปเดต extractedData จากตาราง
+  const trs = previewTable.querySelectorAll('tbody tr');
+  extractedData = Array.from(trs).map(tr => {
+    const tds = tr.querySelectorAll('td');
+    const row = {};
+    selectedHeaders.forEach((h, i) => {
+      row[h] = tds[i].textContent.trim();
+    });
+    return row;
+  });
+  const ws = XLSX.utils.json_to_sheet(extractedData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data');
+  XLSX.writeFile(wb, 'ExportedData.xlsx');
+});
+
+async function extractHeadersFromPDF(file) {
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
+  const page = await pdf.getPage(1);
+  const content = await page.getTextContent();
+  const tolerance = 2;
+  let rows = [];
+  content.items.forEach(item => {
+    const y = Math.round(item.transform[5]);
+    let row = rows.find(r => Math.abs(r.y - y) <= tolerance);
+    if (!row) row = { y: y, items: [] }, rows.push(row);
+    row.items.push(item);
+  });
+  rows.sort((a,b) => b.y - a.y);
+  for (let row of rows) {
+    const words = row.items.map(i => i.str);
+    if (words.length >= 2) return [...new Set(words)];
+  }
+  return [];
+}
+
+async function extractDataFromPDF(file, headers) {
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
+  let pageText = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const tolerance = 2;
+    let rows = [];
+    content.items.forEach(item => {
+      const y = Math.round(item.transform[5]);
+      let row = rows.find(r => Math.abs(r.y - y) <= tolerance);
+      if (!row) row = { y: y, items: [] }, rows.push(row);
+      row.items.push(item);
+    });
+    rows.sort((a,b) => b.y - a.y);
+    rows.forEach(r => {
+      const cols = r.items.map(i => i.str.trim()).filter(Boolean);
+      if (cols.length > 0) pageText.push(cols);
+    });
+  }
+  let headerIndex = -1;
+  let foundHeaders = [];
+  for (let i = 0; i < pageText.length; i++) {
+    const line = pageText[i];
+    const lowerLine = line.map(x => x.toLowerCase());
+    const matchCount = headers.filter(h => lowerLine.includes(h.toLowerCase())).length;
+    if (matchCount >= headers.length / 2) {
+      headerIndex = i;
+      foundHeaders = line;
+      break;
+    }
+  }
+  if (headerIndex === -1) return alert("Header not found");
+  const headerMap = {};
+  foundHeaders.forEach((h, i) => {
+    headers.forEach(selH => {
+      if (h.toLowerCase() === selH.toLowerCase()) headerMap[selH] = i;
+    });
+  });
+  extractedData = [];
+  for (let i = headerIndex + 1; i < pageText.length; i++) {
+    const row = pageText[i];
+    const maxCol = Math.max(...Object.values(headerMap));
+    if (row.length <= maxCol) continue;
+    const rowObj = {};
+    headers.forEach(h => {
+      const idx = headerMap[h];
+      rowObj[h] = row[idx] || row[idx - 1] || '';
+    });
+    extractedData.push(rowObj);
+  }
+  showPreviewTable(extractedData, headers);
+}
+
+function showPreviewTable(data, headers) {
+  if (!data.length) {
+    previewTable.innerHTML = '<tr><td>No data found.</td></tr>';
+    previewArea.style.display = 'block';
+    return;
+  }
+  let html = '<thead><tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr></thead><tbody>';
+  data.forEach(row => {
+    html += '<tr>' + headers.map(h => `<td contenteditable="true">${row[h]}</td>`).join('') + '</tr>';
+  });
+  html += '</tbody>';
+  previewTable.innerHTML = html;
+  previewArea.style.display = 'block';
+}
+</script>
+</body>
+</html>

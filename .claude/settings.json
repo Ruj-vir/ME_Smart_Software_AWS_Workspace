@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Start-Sleep -Seconds 3; try { $r = Invoke-WebRequest -Uri \"http://localhost:8000/api/browse?prefix=/\" -TimeoutSec 5 -UseBasicParsing; Write-Host \"OK: $\\($r.StatusCode\\)\"; Write-Host $r.Content } catch { Write-Host \"Error: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(curl.exe -s -m 5 \"http://localhost:8000/\" 2>&1)",
+      "PowerShell(curl.exe -v -m 5 \"http://localhost:8000/api/browse?prefix=test\" 2>&1)",
+      "PowerShell(Stop-Process -Id 27856 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 46900 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(netstat -ano)",
+      "PowerShell(wsl -e bash -c \"ps aux | grep uvicorn | grep -v grep\" 2>&1)",
+      "PowerShell(wsl -e bash -c \"curl -s -m 5 'http://localhost:8000/api/browse?prefix=/' 2>&1\")",
+      "PowerShell(wsl -e bash -c \"curl -v -m 5 'http://127.0.0.1:8000/api/browse?prefix=test' 2>&1\")",
+      "PowerShell(wsl -e bash -c \"ps aux | grep -E '\\(uvicorn|python\\)' | grep -v grep\" 2>&1)",
+      "PowerShell(wsl -e bash -c \"kill -9 1026827 2>&1; sleep 1; echo 'Killed. Checking port...'; ss -tlnp | grep 8000\")",
+      "PowerShell(wsl -u root -e bash -c \"kill -9 1026827 2>&1; sleep 1; ss -tlnp | grep 8000\")",
+      "PowerShell(wsl -u root -e bash -c \"podman ps 2>&1\")",
+      "PowerShell(wsl -u root -e bash -c \"podman logs me-smart-backend 2>&1 | tail -30\")",
+      "PowerShell(wsl -u root -e bash -c \"cd /mnt/c/Users/26009623/Downloads/ME_Smart_Coding_Alphaproject2026/ME_Smart_Software/backend && podman-compose up -d backend 2>&1\")"
+    ]
+  }
+}

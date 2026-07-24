@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Excel Upload & Edit</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f0f8ff;
+    }
+    h2 {
+      color: #333;
+    }
+    table {
+      border-collapse: collapse;
+      margin-top: 20px;
+      width: 100%;
+    }
+    table, th, td {
+      border: 1px solid #aaa;
+      padding: 8px;
+      text-align: center;
+    }
+    input[type="file"] {
+      margin-bottom: 20px;
+    }
+    .btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>Upload and Edit Excel File</h2>
+  <input type="file" id="upload" accept=".xlsx, .xls" />
+  <div id="table-container"></div>
+  <button class="btn" onclick="saveData()">Save Data</button>
+
+  <script>
+    let globalData = [];
+
+    document.getElementById('upload').addEventListener('change', handleFile, false);
+
+    function handleFile(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        globalData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+        displayTable(globalData);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function displayTable(data) {
+      let html = '<table contenteditable="true">';
+      data.forEach(row => {
+        html += '<tr>';
+        row.forEach(cell => {
+          html += `<td>${cell !== undefined ? cell : ''}</td>`;
+        });
+        html += '</tr>';
+      });
+      html += '</table>';
+      document.getElementById('table-container').innerHTML = html;
+    }
+
+    function saveData() {
+      const table = document.querySelector('table');
+      const newData = [];
+      for (let row of table.rows) {
+        const rowData = [];
+        for (let cell of row.cells) {
+          rowData.push(cell.innerText);
+        }
+        newData.push(rowData);
+      }
+      globalData = newData;
+
+      alert("Data saved in memory! (ยังไม่บันทึกเป็นไฟล์)");
+      console.log("Saved Data:", globalData);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Inspection Sheet</title>
+
+  <!-- Luckysheet -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/css/plugins.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/css/luckysheet.css" />
+  <script src="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/js/plugin.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/luckysheet.umd.js"></script>
+
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Font Awesome (สำหรับ icon บ้าน) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      position: relative;
+      min-height: 100vh;
+      padding-bottom: 70px; /* สำหรับ space ปุ่ม Home */
+    }
+
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    #uploadArea {
+      margin-bottom: 20px;
+    }
+
+    #excelContainer {
+      width: 100%;
+      height: 75vh;
+      border: 1px solid #ccc;
+    }
+
+    /* ปุ่ม Home */
+    .home-button {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 16px;
+      border-radius: 50%;
+      font-size: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      cursor: pointer;
+      z-index: 100;
+      text-align: center;
+    }
+
+    .home-button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+  <h2 id="pageTitle">Upload inspection sheet of ...</h2>
+
+  <div id="uploadArea">
+    <input type="file" id="fileInput" accept=".xlsx,.xls" />
+  </div>
+
+  <div id="excelContainer"></div>
+
+  <!-- ปุ่มกลับ Home -->
+  <a href="QAQC online.html" class="home-button" title="Back to Home">
+    <i class="fas fa-home"></i>
+  </a>
+
+  <script>
+    // ดึงชื่อ component จาก URL
+    function getComponentName() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('component') || "Unknown Component";
+    }
+
+    // แสดงชื่อหัวข้อ
+    const componentName = getComponentName();
+    document.getElementById("pageTitle").textContent = `Upload inspection sheet of ${componentName}`;
+
+    // อัปโหลด Excel
+    document.getElementById("fileInput").addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+
+        const sheets = workbook.SheetNames.map(name => {
+          const worksheet = workbook.Sheets[name];
+          const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
+
+          return {
+            name: name,
+            celldata: json.map((row, r) =>
+              row.map((val, c) => ({
+                r,
+                c,
+                v: { v: val, m: val }
+              }))
+            ).flat()
+          };
+        });
+
+        document.getElementById("excelContainer").innerHTML = "";
+        luckysheet.create({
+          container: 'excelContainer',
+          data: sheets,
+          showinfobar: true,
+          showtoolbar: true,
+          showsheetbar: true,
+          lang: 'en'
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  </script>
+
+</body>
+</html>
