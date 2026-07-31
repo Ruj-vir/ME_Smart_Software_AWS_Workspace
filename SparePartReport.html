@@ -174,7 +174,7 @@
     </div>
     <div class="page-title">General Form – Spare Part Report</div>
     <div class="header-right">
-      <a class="breadcrumb" href="Main.html">General Form</a>
+      <a class="breadcrumb" id="generalFormLink" href="Main.html">General Form</a>
       <div class="user-avatar">W</div>
     </div>
   </div>
@@ -384,6 +384,10 @@
       menu.className = 'item-menu';
       menu.style.display = 'none';
 
+      const editEl = document.createElement('div');
+      editEl.textContent = 'Edit';
+      editEl.addEventListener('click', e => { e.stopPropagation(); renameFileLabel(div, label, menu, file); });
+
       const delEl = document.createElement('div');
       delEl.textContent = 'Delete';
       delEl.addEventListener('click', async e => {
@@ -397,7 +401,7 @@
       });
 
       if (!IS_SELECT) {
-        menu.appendChild(delEl);
+        menu.append(editEl, delEl);
         div.append(label, menuBtn, menu);
       } else {
         div.append(label);
@@ -462,6 +466,66 @@
       input.onkeydown = ev => {
         if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
         if (ev.key === 'Escape') { input.value = oldName; input.blur(); }
+      };
+    }
+
+    // ── RENAME FILE (calls /api/rename-file) ─────────────────
+    async function renameFileLabel(divEl, labelEl, menuEl, file) {
+      menuEl.style.display = 'none';
+      const oldName = file.name;
+      const dotIdx = oldName.lastIndexOf('.');
+      const hasExt = dotIdx > 0;
+      const baseName = hasExt ? oldName.slice(0, dotIdx) : oldName;
+      const ext = hasExt ? oldName.slice(dotIdx) : '';
+
+      const wrap = document.createElement('span');
+      wrap.className = 'item-label';
+      wrap.style.cssText = 'display:flex;align-items:center;flex:1;overflow:hidden;';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = baseName;
+      input.style.cssText = 'font-size:13px;color:#1a252f;border:none;outline:none;background:transparent;flex:1;min-width:0;';
+
+      const extSpan = document.createElement('span');
+      extSpan.textContent = ext;
+      extSpan.style.cssText = 'color:#888;white-space:nowrap;flex-shrink:0;';
+
+      wrap.append(input, extSpan);
+      labelEl.replaceWith(wrap);
+      input.focus(); input.select();
+
+      const finish = async () => {
+        const newBase = input.value.trim() || baseName;
+        const newName = newBase + ext;
+        const span = document.createElement('span');
+        span.className = 'item-label';
+        span.title = newName;
+        span.textContent = newName;
+        wrap.replaceWith(span);
+        if (newName === oldName) return;
+        const oldObject = file.object_name;
+        const newObject = oldObject.slice(0, oldObject.lastIndexOf('/') + 1) + newName;
+        try {
+          const r = await fetch(`${API_BASE}/rename-file`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ old_object: oldObject, new_object: newObject }),
+          });
+          if (!r.ok) throw new Error(await r.text());
+          file.name = newName;
+          file.object_name = newObject;
+        } catch (err) {
+          span.textContent = oldName;
+          span.title = oldName;
+          alert('เปลี่ยนชื่อไม่สำเร็จ: ' + err.message);
+        }
+      };
+
+      input.onblur = finish;
+      input.onkeydown = ev => {
+        if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+        if (ev.key === 'Escape') { input.value = baseName; input.blur(); }
       };
     }
 
@@ -560,6 +624,13 @@
     });
 
     // ── INIT ──────────────────────────────────────────────
+    (() => {
+      const qp = new URLSearchParams(location.search);
+      const backParams = new URLSearchParams();
+      ['company', 'plant', 'service'].forEach(k => { if (qp.get(k)) backParams.set(k, qp.get(k)); });
+      const qs = backParams.toString();
+      document.getElementById('generalFormLink').href = 'Package Selection.html' + (qs ? '?' + qs : '');
+    })();
     if (IS_SELECT) {
       document.querySelector('.header-right').style.display = 'none';
       document.querySelectorAll('.sort-btn').forEach(b => b.style.display = 'none');

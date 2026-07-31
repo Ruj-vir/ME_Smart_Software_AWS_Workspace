@@ -113,6 +113,8 @@
 
     .sub-tab-header { display: none; justify-content: flex-start; gap: 8px; padding: 0 40px 12px; }
     .sub-tab-header.visible { display: flex; }
+    .sub-tab-dest-info { display: none; padding: 0 40px 10px; font-size: 12px; color: #7f8c8d; font-family: 'Consolas', monospace; word-break: break-all; }
+    .sub-tab-dest-info.visible { display: block; }
     .sub-tab-button {
       padding: 7px 24px; font-size: 14px; font-weight: bold;
       border: 2px solid #0078d7; background: white; color: #0078d7;
@@ -176,25 +178,25 @@
       </div>
       <div id="myBox" class="hn-grid" style="display: none;">
         <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='MaintenanceReport.html'">
+          <button class="hn-btn" onclick="location.href='MaintenanceReport.html' + location.search">
             <span class="btn-icon">🔧</span>
             <span class="btn-text">Maintenance Report</span>
           </button>
         </div>
         <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='InspectionReport.html'">
+          <button class="hn-btn" onclick="location.href='InspectionReport.html' + location.search">
             <span class="btn-icon">🔍</span>
             <span class="btn-text">Inspection Report</span>
           </button>
         </div>
         <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='SparePartReport.html'">
+          <button class="hn-btn" onclick="location.href='SparePartReport.html' + location.search">
             <span class="btn-icon">⚙️</span>
             <span class="btn-text">Spare Part Report</span>
           </button>
         </div>
         <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='PhotographerReport.html'">
+          <button class="hn-btn" onclick="location.href='PhotographerReport.html' + location.search">
             <span class="btn-icon">📷</span>
             <span class="btn-text">Photographer Report</span>
           </button>
@@ -216,6 +218,7 @@
     <button class="sub-tab-button" data-subtab="subtab3">Spare Part Report</button>
     <button class="sub-tab-button" data-subtab="subtab4">Photographer Report</button>
   </div>
+  <div class="sub-tab-dest-info" id="subtabDestInfo"></div>
 
   <div class="tab-content">
     <div class="tab-pane active" id="tab1">
@@ -321,11 +324,15 @@
         btn.classList.add('active');
         document.getElementById(btn.dataset.tab).classList.add('active');
         const subHeader = document.getElementById('maintenanceSubTabs');
+        const destInfo = document.getElementById('subtabDestInfo');
         if (btn.dataset.tab === 'tab2') {
           subHeader.classList.add('visible');
+          destInfo.classList.add('visible');
           loadRecordedFiles(activeSubtab);
+          updateDestInfo();
         } else {
           subHeader.classList.remove('visible');
+          destInfo.classList.remove('visible');
         }
       };
     });
@@ -338,6 +345,7 @@
         activeSubtab = btn.dataset.subtab;
         document.getElementById(activeSubtab).classList.add('active');
         loadRecordedFiles(activeSubtab);
+        updateDestInfo();
       };
     });
 
@@ -540,27 +548,41 @@
       reader.readAsArrayBuffer(file);
     });
 
+    // ── CONTEXT จาก URL (company/plant/service/package ที่ส่งมาจาก Package Default.html) ──
+    const urlParams = new URLSearchParams(window.location.search);
+    const company = urlParams.get("company") || "";
+    const plant   = urlParams.get("plant")   || "";
+    const service = urlParams.get("service") || "";
+    const pkg     = urlParams.get("package") || "";
+    const CONTEXT_BASE = [company, plant, service, pkg].filter(Boolean).join('/');
+    const CONTEXT_PREFIX = CONTEXT_BASE ? CONTEXT_BASE + '/' : '';
+
     const REPORT_CONFIG = {
       subtab1: {
         src: 'MaintenanceReport.html',
-        dest: 'PTTGC/Test/Rotating Equipment/Test123/QAQCStep/MaintenanceRecord/MaintenanceReport/'
+        dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/MaintenanceReport/`
       },
       subtab2: {
         src: 'InspectionReport.html',
-        dest: 'PTTGC/Test/Rotating Equipment/Test123/QAQCStep/MaintenanceRecord/InspectionReport/'
+        dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/InspectionReport/`
       },
       subtab3: {
         src: 'SparePartReport.html',
-        dest: 'PTTGC/Test/Rotating Equipment/Test123/QAQCStep/MaintenanceRecord/SparePartReport/'
+        dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/SparePartReport/`
       },
       subtab4: {
         src: 'PhotographerReport.html',
-        dest: 'PTTGC/Test/Rotating Equipment/Test123/QAQCStep/MaintenanceRecord/PhotographerReport/'
+        dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/PhotographerReport/`
       }
     };
 
     let activeSubtab = 'subtab1';
     const selectedObjectNames = { subtab1: null, subtab2: null, subtab3: null, subtab4: null };
+
+    function updateDestInfo() {
+      document.getElementById('subtabDestInfo').textContent =
+        'บันทึกไปที่: ' + REPORT_CONFIG[activeSubtab].dest;
+    }
 
     function openBankFormModal(subtabId) {
       activeSubtab = subtabId;
