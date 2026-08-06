@@ -60,14 +60,19 @@
     const titleEl    = document.getElementById('fileTitle');
     const backEl     = document.getElementById('backLink');
 
-    const backParams = new URLSearchParams({
-      company: params.get('company') || '',
-      plant:   params.get('plant')   || '',
-      service: params.get('service') || '',
-      package: params.get('package') || '',
-      path:    params.get('path')    || '',
-    });
-    backEl.href = `/ui/Data.html?${backParams}`;
+    const returnUrl = params.get('return_url');
+    if (returnUrl) {
+      backEl.href = returnUrl;
+    } else {
+      const backParams = new URLSearchParams({
+        company: params.get('company') || '',
+        plant:   params.get('plant')   || '',
+        service: params.get('service') || '',
+        package: params.get('package') || '',
+        path:    params.get('path')    || '',
+      });
+      backEl.href = `/ui/Data.html?${backParams}`;
+    }
 
     function showError(msg) {
       statusEl.textContent = msg;

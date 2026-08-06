@@ -537,7 +537,8 @@
       }
       const ext = file.name.split('.').pop().toLowerCase();
       if (editableExt.includes(ext)) {
-        window.open(`Editor.html?object_name=${encodeURIComponent(file.object_name)}`, '_blank');
+        const returnUrl = location.pathname + location.search;
+        window.open(`Editor.html?object_name=${encodeURIComponent(file.object_name)}&return_url=${encodeURIComponent(returnUrl)}`, '_blank');
         return;
       }
       const win = window.open('', '_blank');
