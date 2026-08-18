@@ -248,11 +248,45 @@
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
     }
 
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 6px;
+    }
+
     .panel-title {
       font-size: 20px;
       font-weight: 700;
       color: #1a252f;
       margin-bottom: 6px;
+    }
+
+    .panel-header .panel-title {
+      font-size: 13px;
+      margin-bottom: 0;
+    }
+
+    .btn-generate {
+      background: linear-gradient(to right, #5dade2, #3498db);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 9px 22px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      box-shadow: 0 4px 10px rgba(52, 152, 219, 0.35);
+      transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+    }
+
+    .btn-generate:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(52, 152, 219, 0.45);
+      background: linear-gradient(to right, #4fa8de, #2e86c1);
     }
 
     .panel-subtitle {
@@ -262,10 +296,104 @@
     }
 
     .report-type-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       font-size: 15px;
       font-weight: 600;
       color: #2c3e50;
       margin-bottom: 14px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .report-type-label .rt-arrow {
+      font-size: 20px;
+      font-weight: 700;
+      color: #3498db;
+      transform: rotate(-90deg);
+      transition: transform 0.25s;
+    }
+
+    .report-type-label.open .rt-arrow {
+      transform: rotate(0deg);
+    }
+
+    .check-list {
+      display: none;
+    }
+
+    .check-list.open {
+      display: block;
+    }
+
+    .check-row.type-row {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .check-row .row-arrow {
+      margin-left: auto;
+      font-size: 14px;
+      font-weight: 700;
+      color: #3498db;
+      transform: rotate(-90deg);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .check-row.type-row.open .row-arrow {
+      transform: rotate(0deg);
+    }
+
+    .file-sublist {
+      display: none;
+      padding: 2px 0 10px 30px;
+    }
+
+    .file-sublist.open {
+      display: block;
+    }
+
+    .file-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      font-size: 13px;
+      color: #34495e;
+    }
+
+    .file-row input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: #3498db;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .file-row .file-name {
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+      color: #2980b9;
+      text-decoration: underline;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-row .file-date {
+      font-size: 11px;
+      color: #95a5a6;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .file-loading, .file-empty {
+      font-size: 12px;
+      color: #95a5a6;
+      padding: 6px 0;
     }
 
     /* Checkbox rows */
@@ -294,23 +422,6 @@
       color: #2c3e50;
       flex: 1;
       cursor: pointer;
-    }
-
-    .btn-select-file {
-      background: white;
-      border: 1.5px solid #aed6f1;
-      color: #2980b9;
-      border-radius: 20px;
-      padding: 5px 14px;
-      font-size: 13px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.2s, border-color 0.2s;
-    }
-
-    .btn-select-file:hover {
-      background: #eaf4fb;
-      border-color: #3498db;
     }
 
     /* ===== PREVIEW PANEL ===== */
@@ -491,33 +602,49 @@
 
       <!-- LEFT: Report Builder -->
       <div class="panel">
-        <div class="panel-title">Report Builder</div>
-        <div class="panel-subtitle">Using data from maintenance record</div>
+        <div class="panel-header">
+          <div class="panel-title">Document List</div>
+          <button class="btn-generate" onclick="generateReport()">Generate Report</button>
+        </div>
+        <!-- <div class="panel-subtitle">Using data from maintenance record</div> -->
 
-        <div class="report-type-label">Tet. Maintenance Report</div>
-
-        <div class="check-row">
-          <input type="checkbox" id="chk1">
-          <label for="chk1">Repection Report</label>
-          <button class="btn-select-file" onclick="selectFile('repection')">Select file</button>
+        <div class="report-type-label" id="mrToggle" onclick="toggleRecordList()">
+          <span class="rt-arrow" id="mrArrow">▾</span>
+          <span>Maintenance Record</span>
         </div>
 
-        <div class="check-row">
-          <input type="checkbox" id="chk2">
-          <label for="chk2">Spare Part Report</label>
-          <button class="btn-select-file" onclick="selectFile('sparepart')">Select file</button>
-        </div>
+        <div class="check-list" id="mrList">
+          <div class="report-item">
+            <div class="check-row type-row" onclick="toggleFileGroup('maintenance', event)">
+              <label>Maintenance Report</label>
+              <span class="row-arrow">▾</span>
+            </div>
+            <div class="file-sublist" id="files-maintenance"></div>
+          </div>
 
-        <div class="check-row">
-          <input type="checkbox" id="chk3" checked>
-          <label for="chk3">Photo Report</label>
-          <button class="btn-select-file" onclick="selectFile('photo')">Select file</button>
-        </div>
+          <div class="report-item">
+            <div class="check-row type-row" onclick="toggleFileGroup('inspection', event)">
+              <label>Inspection Report</label>
+              <span class="row-arrow">▾</span>
+            </div>
+            <div class="file-sublist" id="files-inspection"></div>
+          </div>
 
-        <div class="check-row">
-          <input type="checkbox" id="chk4">
-          <label for="chk4">Special Request</label>
-          <button class="btn-select-file" onclick="selectFile('special')">Select file</button>
+          <div class="report-item">
+            <div class="check-row type-row" onclick="toggleFileGroup('sparepart', event)">
+              <label>Spare Part Report</label>
+              <span class="row-arrow">▾</span>
+            </div>
+            <div class="file-sublist" id="files-sparepart"></div>
+          </div>
+
+          <div class="report-item">
+            <div class="check-row type-row" onclick="toggleFileGroup('photographer', event)">
+              <label>Photographer Report</label>
+              <span class="row-arrow">▾</span>
+            </div>
+            <div class="file-sublist" id="files-photographer"></div>
+          </div>
         </div>
       </div>
 
@@ -541,7 +668,7 @@
 
     <!-- Action Buttons -->
     <div class="action-bar">
-      <button class="btn-action primary" onclick="generateReport()">Generate Report</button>
+      
       <button class="btn-action" onclick="exportPDF()">Export PDF</button>
       <button class="btn-action" onclick="exportExcel()">Export Excel</button>
     </div>
@@ -565,17 +692,30 @@
     const API_BASE = '/api';
 
     // Read URL params
-    const params = new URLSearchParams(window.location.search);
+    const params  = new URLSearchParams(window.location.search);
     const company = params.get("company") || "Client";
     const plant   = params.get("plant")   || "";
     const pkg     = params.get("package") || "";
+    const service = params.get("service") || "";
+
+    // Prefix used to browse files already recorded under QAQC Step ▸ Maintenance Record
+    const CONTEXT_BASE = [params.get("company") || "", plant, service, pkg].filter(Boolean).join('/');
+    const CONTEXT_PREFIX = CONTEXT_BASE ? CONTEXT_BASE + '/' : '';
+
+    const REPORT_TYPE_FOLDER = {
+      maintenance:  'MaintenanceReport',
+      inspection:   'InspectionReport',
+      sparepart:    'SparePartReport',
+      photographer: 'PhotographerReport',
+    };
 
     // Breadcrumb
     document.getElementById("breadcrumb").innerHTML = `
       <a href="Main.html">Home</a> &gt;
       <a href="Plant Selection.html?plant=${encodeURIComponent(company)}">${company}</a>
-      ${plant ? ` &gt; <a href="Package Selection.html?company=${encodeURIComponent(company)}&plant=${encodeURIComponent(plant)}">${decodeURIComponent(plant)}</a>` : ""}
-      ${pkg ? ` &gt; <a href="Package Default.html?company=${encodeURIComponent(company)}&plant=${encodeURIComponent(plant)}&package=${encodeURIComponent(pkg)}">${decodeURIComponent(pkg)}</a>` : ""}
+      ${plant ? ` &gt; <a href="Service.html?company=${encodeURIComponent(company)}&plant=${encodeURIComponent(plant)}">${decodeURIComponent(plant)}</a>` : ""}
+      ${service ? ` &gt; <a href="Package Selection.html?company=${encodeURIComponent(company)}&plant=${encodeURIComponent(plant)}&service=${encodeURIComponent(service)}">${decodeURIComponent(service)}</a>` : ""}
+      ${pkg ? ` &gt; <a href="Package Default.html?company=${encodeURIComponent(company)}&plant=${encodeURIComponent(plant)}&service=${encodeURIComponent(service)}&package=${encodeURIComponent(pkg)}">${decodeURIComponent(pkg)}</a>` : ""}
        &gt; Report Management
     `;
 
@@ -607,48 +747,81 @@
       // TODO: wire to real search API
     }
 
-    // Hidden file inputs per report type
-    const fileInputs = {};
-    function selectFile(type) {
-      if (!fileInputs[type]) {
-        const fi = document.createElement("input");
-        fi.type = "file";
-        fi.accept = ".pdf,.docx,.xlsx,.jpg,.png";
-        fi.style.display = "none";
-        document.body.appendChild(fi);
-        fileInputs[type] = fi;
-        fi.addEventListener("change", () => {
-          const file = fi.files[0];
-          if (!file) return;
-          console.log(`Selected for ${type}:`, file.name);
-          // If photo, show preview
-          if (type === "photo" && file.type.startsWith("image/")) {
-            showImagePreview(file);
-          }
-        });
-      }
-      fileInputs[type].click();
+    function toggleRecordList() {
+      const list  = document.getElementById('mrList');
+      const label = document.getElementById('mrToggle');
+      list.classList.toggle('open');
+      label.classList.toggle('open');
     }
 
-    function showImagePreview(file) {
-      const reader = new FileReader();
-      reader.onload = e => {
-        const box = document.getElementById("previewBox");
-        box.innerHTML = `
-          <img src="${e.target.result}" alt="Preview">
-          <div class="preview-badge">Report Preview</div>
-        `;
-      };
-      reader.readAsDataURL(file);
+    // Which report-type file lists have already been fetched (lazy-load once per group)
+    const loadedFileGroups = new Set();
+
+    async function toggleFileGroup(key, evt) {
+      const row  = evt.currentTarget;
+      const list = document.getElementById(`files-${key}`);
+      const open = row.classList.toggle('open');
+      list.classList.toggle('open', open);
+      if (open && !loadedFileGroups.has(key)) {
+        loadedFileGroups.add(key);
+        await loadReportFiles(key);
+      }
+    }
+
+    async function loadReportFiles(key) {
+      const list = document.getElementById(`files-${key}`);
+      list.innerHTML = '<div class="file-loading">กำลังโหลด...</div>';
+      const dest = `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/${REPORT_TYPE_FOLDER[key]}/`;
+      try {
+        const res = await fetch(`${API_BASE}/browse?prefix=${encodeURIComponent(dest)}`);
+        if (!res.ok) throw new Error(res.status);
+        const { files } = await res.json();
+        list.innerHTML = '';
+        if (!files || files.length === 0) {
+          list.innerHTML = '<div class="file-empty">ยังไม่มีไฟล์ในโฟลเดอร์นี้</div>';
+          return;
+        }
+        files.forEach((f, i) => {
+          const row = document.createElement('div');
+          row.className = 'file-row';
+
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.id = `file-${key}-${i}`;
+          cb.dataset.objectName = f.object_name;
+
+          const name = document.createElement('label');
+          name.className = 'file-name';
+          name.htmlFor = cb.id;
+          name.textContent = f.name;
+          name.title = 'เปิดไฟล์';
+          name.onclick = e => {
+            e.preventDefault(); // don't toggle the checkbox — open the file instead
+            window.open(`Editor.html?object_name=${encodeURIComponent(f.object_name)}&return_url=${encodeURIComponent(location.pathname + location.search)}`, '_blank');
+          };
+
+          row.append(cb, name);
+
+          if (f.last_modified) {
+            const date = document.createElement('span');
+            date.className = 'file-date';
+            date.textContent = new Date(f.last_modified).toLocaleDateString('th-TH');
+            row.appendChild(date);
+          }
+
+          list.appendChild(row);
+        });
+      } catch {
+        list.innerHTML = '<div class="file-empty">⚠️ โหลดไฟล์ไม่สำเร็จ</div>';
+      }
     }
 
     function generateReport() {
-      const checked = ['chk1','chk2','chk3','chk4']
-        .filter(id => document.getElementById(id).checked)
-        .map(id => document.querySelector(`label[for="${id}"]`).textContent);
+      const selectedFiles = Array.from(document.querySelectorAll('.file-row input[type="checkbox"]:checked'))
+        .map(cb => cb.nextElementSibling.textContent);
 
-      if (checked.length === 0) {
-        alert("Please select at least one report type.");
+      if (selectedFiles.length === 0) {
+        alert("Please select at least one file.");
         return;
       }
 
@@ -660,10 +833,10 @@
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
           </svg>
-          Generating report for: ${checked.join(", ")}…
+          Generating report for: ${selectedFiles.join(", ")}…
         </div>
       `;
-      console.log("Generate report for:", checked);
+      console.log("Generate report for files:", selectedFiles);
       // TODO: wire to real report generation API
     }
 

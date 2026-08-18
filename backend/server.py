@@ -296,6 +296,17 @@ def browse_file_url(object_name: str):
     url = mc.presigned_get_object(MINIO_BUCKET, object_name, expires=timedelta(hours=1))
     return {"url": url}
 
+@app.get("/api/browse/file-content")
+def browse_file_content(object_name: str):
+    try:
+        resp = mc.get_object(MINIO_BUCKET, object_name)
+        content = resp.read()
+        resp.close()
+        resp.release_conn()
+    except S3Error:
+        raise HTTPException(status_code=404, detail="file not found")
+    return Response(content=content, media_type="application/octet-stream")
+
 @app.delete("/api/browse/file")
 def browse_delete_file(object_name: str):
     mc.remove_object(MINIO_BUCKET, object_name)

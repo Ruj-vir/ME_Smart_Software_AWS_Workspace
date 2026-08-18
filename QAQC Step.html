@@ -100,6 +100,10 @@
 
     @media (max-width: 900px) { .header-nav { display: none; } }
 
+    .breadcrumb { text-align: left; padding: 15px 40px 0; font-size: 14px; color: #34495e; }
+    .breadcrumb a { text-decoration: none; color: #2980b9; }
+    .breadcrumb a:hover { text-decoration: underline; }
+
     .tab-header { display: flex; justify-content: flex-start; gap: 10px; padding: 15px 40px 15px; }
     .tab-button {
       padding: 10px 40px; font-size: 16px; font-weight: bold;
@@ -161,6 +165,82 @@
     #bankFormModal .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:#154360; line-height:1; }
     #bankFormModal iframe { flex:1; border:none; }
 
+    /* Recorded files table */
+    .recorded-files-card {
+      margin-top: 8px; background: #fff; border: 1px solid #d7dde3; border-radius: 10px;
+      overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    table.recorded-files { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.recorded-files thead th {
+      background: #f0f4f6; text-align: left; padding: 11px 14px;
+      font-weight: 700; color: #374151; border-bottom: 2px solid #d7dde3;
+      white-space: nowrap;
+    }
+    table.recorded-files tbody td { padding: 7px 10px; border-bottom: 1px solid #eef1f3; vertical-align: middle; color: #1f2937; }
+    table.recorded-files tbody tr:last-child td { border-bottom: none; }
+    table.recorded-files tbody tr:hover { background: #fafcfb; }
+    table.recorded-files .file-num { color: #6b7280; font-size: 12px; }
+    table.recorded-files .file-name { cursor: pointer; text-decoration: underline; color: #0078d7; }
+    table.recorded-files .file-date { font-size: 12px; color: #6b7280; white-space: nowrap; }
+    table.recorded-files .file-del {
+      border: none; background: transparent; color: #c0392b; cursor: pointer;
+      font-size: 16px; padding: 4px 8px; border-radius: 6px; line-height: 1;
+    }
+    table.recorded-files .file-del:hover { background: #fdecea; }
+    .recorded-files-empty {
+      margin-top: 8px; padding: 40px; text-align: center; color: #6b7280; font-size: 14px;
+      background: #fff; border: 1px solid #d7dde3; border-radius: 10px;
+    }
+
+    /* Inspection Record UI (subtab2 only) */
+    .insp-wrap { display: flex; margin-top: 8px; background: #fff; border: 1px solid #d7dde3; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04); min-height: 320px; }
+    .insp-aside { width: 260px; flex-shrink: 0; background: #f8fafc; border-right: 1px solid #d7dde3; display: flex; flex-direction: column; }
+    .insp-aside-head { padding: 10px 14px; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid #d7dde3; }
+    .insp-tablist { overflow-y: auto; flex: 1; padding: 6px; max-height: 420px; }
+    .insp-tab { display: flex; align-items: center; gap: 6px; padding: 8px 9px; margin: 2px 0; border-radius: 7px; cursor: pointer; font-size: 12.5px; color: #1f2937; border: 1px solid transparent; }
+    .insp-tab:hover { background: #eaf4fb; }
+    .insp-tab.active { background: #d6eaf8; border-color: #aed6f1; font-weight: 600; }
+    .insp-tab .insp-ic { width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0; background: #eaf4fb; color: #0078d7; display: grid; place-items: center; font-size: 10px; font-weight: 700; }
+    .insp-tab.active .insp-ic { background: rgba(255,255,255,.7); }
+    .insp-tab .insp-name { line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+    .insp-tab .insp-count { font-size: 10.5px; background: #eef1f4; color: #6b7280; border-radius: 20px; padding: 1px 7px; min-width: 20px; text-align: center; }
+    .insp-tab.active .insp-count { background: rgba(255,255,255,.7); }
+    .insp-tab .insp-act { border: none; background: transparent; cursor: pointer; font-size: 12px; padding: 3px 5px; border-radius: 5px; color: #6b7280; line-height: 1; flex-shrink: 0; }
+    .insp-tab .insp-act:hover { background: #fff; }
+    .insp-tab .insp-act.insp-del:hover { background: #fdecea; color: #c0392b; }
+    .insp-main { flex: 1; padding: 16px 18px; min-width: 0; overflow-x: auto; }
+    .insp-doc-head { margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .insp-doc-head .insp-crumb { font-size: 11.5px; color: #6b7280; margin-bottom: 3px; }
+    .insp-doc-head h3 { font-size: 15px; font-weight: 700; color: #154360; }
+    .insp-card { background: #fff; border: 1px solid #d7dde3; border-radius: 10px; overflow: hidden; }
+    .insp-card table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .insp-card thead th { background: #f0f4f6; text-align: left; padding: 10px 12px; font-weight: 700; color: #374151; border-bottom: 2px solid #d7dde3; white-space: nowrap; }
+    .insp-card tbody td { padding: 6px 9px; border-bottom: 1px solid #eef1f3; vertical-align: middle; }
+    .insp-card tbody tr:last-child td { border-bottom: none; }
+    .insp-card tbody tr:hover { background: #fafcfb; }
+    .insp-card input[type=date], .insp-card input[type=text], .insp-card select { width: 100%; padding: 6px 8px; border: 1px solid #d7dde3; border-radius: 6px; font-size: 13px; font-family: inherit; background: #fff; color: #1f2937; }
+    .insp-card input:focus, .insp-card select:focus { outline: none; border-color: #0078d7; box-shadow: 0 0 0 2px #eaf4fb; }
+    .insp-btn-addrow { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #aed6f1; border-radius: 6px; padding: 4px 11px; font-size: 11.5px; font-weight: 600; cursor: pointer; font-family: inherit; background: #d6eaf8; color: #154360; vertical-align: middle; }
+    .insp-btn-addrow:hover { background: #aed6f1; }
+    .insp-linkfile { color: #0078d7; text-decoration: underline; cursor: pointer; word-break: break-all; }
+    .insp-empty-main { padding: 40px; text-align: center; color: #6b7280; font-size: 13px; }
+
+    /* Delete Confirm Modal */
+    #deleteConfirmModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:10000; align-items:center; justify-content:center; }
+    #deleteConfirmModal.open { display:flex; }
+    #deleteConfirmModal .modal-box { width:360px; max-width:90%; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,.3); }
+    #deleteConfirmModal .modal-header { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; background:#d6eaf8; border-bottom:1px solid #aed6f1; }
+    #deleteConfirmModal .modal-header span { font-weight:bold; color:#154360; font-size:16px; }
+    #deleteConfirmModal .modal-close { background:none; border:none; font-size:20px; cursor:pointer; color:#154360; line-height:1; }
+    #deleteConfirmModal .modal-body { padding: 18px; font-size: 13px; color: #154360; line-height: 1.6; }
+    #deleteConfirmModal .modal-body strong { color: #c0392b; word-break: break-all; }
+    #deleteConfirmModal .modal-footer { display:flex; justify-content:flex-end; gap:10px; padding:12px 18px; background:#f8fafc; border-top:1px solid #e2e8f0; }
+    #deleteConfirmModal .modal-btn { border:none; border-radius:7px; padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+    #deleteConfirmModal .modal-btn-cancel { background:#eef1f4; color:#154360; }
+    #deleteConfirmModal .modal-btn-cancel:hover { background:#e2e7ec; }
+    #deleteConfirmModal .modal-btn-delete { background:#c0392b; color:#fff; }
+    #deleteConfirmModal .modal-btn-delete:hover { background:#a93226; }
+
   </style>
 </head>
 <body>
@@ -205,6 +285,8 @@
     </div>
   </header>
 
+  <div class="breadcrumb" id="breadcrumb"></div>
+
   <div class="tab-header">
     <button class="tab-button active" data-tab="tab1">ITP Check list</button>
     <button class="tab-button" data-tab="tab2">Maintenance Record</button>
@@ -245,7 +327,6 @@
         <div class="upload-row">
           <button onclick="openBankFormModal('subtab2')">Upload Bank form</button>
           <span id="selectedBankForm-subtab2" style="font-size:13px; color:#154360; font-weight:600;"></span>
-          <button id="recordBtn-subtab2" onclick="recordFile('subtab2')" style="display:none;">Record</button>
         </div>
         <div id="recordedFilesList-subtab2" style="margin-top:8px;"></div>
         <div class="table-wrap" id="controlTableWrap-subtab2"></div>
@@ -301,6 +382,24 @@
         <button class="modal-close" onclick="closeBankFormModal()">&#x2715;</button>
       </div>
       <iframe id="bankFormIframe" src=""></iframe>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div id="deleteConfirmModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>ยืนยันการลบ</span>
+        <button class="modal-close" onclick="closeDeleteConfirm()">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <p>คุณต้องการลบ <strong id="deleteConfirmFileName"></strong> ใช่หรือไม่?</p>
+        <p style="margin-top:6px; color:#6b7280;">เมื่อลบแล้วจะไม่สามารถกู้คืนกลับมาได้</p>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeDeleteConfirm()">ยกเลิก</button>
+        <button class="modal-btn modal-btn-delete" onclick="confirmDeleteFile()">ลบ</button>
+      </div>
     </div>
   </div>
 
@@ -557,6 +656,16 @@
     const CONTEXT_BASE = [company, plant, service, pkg].filter(Boolean).join('/');
     const CONTEXT_PREFIX = CONTEXT_BASE ? CONTEXT_BASE + '/' : '';
 
+    // Breadcrumb: Home > Company > Plant > Service > Package > QAQC Step
+    document.getElementById("breadcrumb").innerHTML = `
+      <a href="Main.html">Home</a> &gt;
+      <a href="Plant Selection.html?plant=${encodeURIComponent(company)}">${company}</a> &gt;
+      <a href="Service.html?company=${encodeURIComponent(company)}&plant=${encodeURIComponent(plant)}">${plant}</a> &gt;
+      <a href="Package Selection.html?company=${encodeURIComponent(company)}&plant=${encodeURIComponent(plant)}&service=${encodeURIComponent(service)}">${service}</a> &gt;
+      <a href="Package Default.html?company=${encodeURIComponent(company)}&plant=${encodeURIComponent(plant)}&service=${encodeURIComponent(service)}&package=${encodeURIComponent(pkg)}">${pkg}</a> &gt;
+      <span>QAQC Step</span>
+    `;
+
     const REPORT_CONFIG = {
       subtab1: {
         src: 'MaintenanceReport.html',
@@ -578,6 +687,12 @@
 
     let activeSubtab = 'subtab1';
     const selectedObjectNames = { subtab1: null, subtab2: null, subtab3: null, subtab4: null };
+
+    // Inspection Record UI state (subtab2 only) — records kept in-memory for now
+    // แต่ละแถวในตารางคือไฟล์เวอร์ชันจริงใน folder — inspectionRecords เก็บแค่ Record By/Result ต่อเวอร์ชัน
+    const inspectionRecords = {};              // object_name (เวอร์ชันไฟล์) -> {by, result}
+    const inspectionFilesCache = { subtab2: [] };
+    const activeInspFile = { subtab2: null };
 
     function updateDestInfo() {
       document.getElementById('subtabDestInfo').textContent =
@@ -603,12 +718,27 @@
     });
 
     window.addEventListener('message', function(e) {
-      if (e.data && e.data.type === 'file-selected') {
+      if (e.data && e.data.type === 'files-selected') {
         closeBankFormModal();
-        selectedObjectNames[activeSubtab] = e.data.object_name;
-        const filename = e.data.object_name.split('/').pop();
-        document.getElementById(`selectedBankForm-${activeSubtab}`).textContent = filename;
-        document.getElementById(`recordBtn-${activeSubtab}`).style.display = 'inline-block';
+        const names = e.data.object_names || [];
+        selectedObjectNames[activeSubtab] = names;
+
+        if (activeSubtab === 'subtab2') {
+          if (names.length) {
+            recordFile('subtab2', {
+              object_type: e.data.object_type || '',
+              manufacturer: e.data.manufacturer || '',
+              year: e.data.year || '',
+            });
+          }
+          return;
+        }
+
+        const label = names.length === 1
+          ? names[0].split('/').pop()
+          : `${names.length} files selected`;
+        document.getElementById(`selectedBankForm-${activeSubtab}`).textContent = names.length ? label : '';
+        document.getElementById(`recordBtn-${activeSubtab}`).style.display = names.length ? 'inline-block' : 'none';
       }
     });
 
@@ -616,21 +746,46 @@
       const dest = REPORT_CONFIG[subtabId].dest;
       const list = document.getElementById(`recordedFilesList-${subtabId}`);
       list.innerHTML = '';
+
+      if (subtabId === 'subtab2') {
+        await loadInspectionFiles(dest, list);
+        return;
+      }
+
       try {
         const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
         if (!r.ok) return;
         const { files } = await r.json();
-        files.forEach(f => {
-          const row = document.createElement('div');
-          row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;color:#154360;';
+        if (files.length === 0) {
+          list.innerHTML = '<div class="recorded-files-empty">ยังไม่มีไฟล์ที่บันทึก</div>';
+          return;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'recorded-files-card';
+        const table = document.createElement('table');
+        table.className = 'recorded-files';
+        table.innerHTML = '<thead><tr><th style="width:44px">#</th><th>File Name</th><th style="width:160px">Last Edit</th><th style="width:60px"></th></tr></thead>';
+        const tbody = document.createElement('tbody');
+
+        files.forEach((f, idx) => {
+          const tr = document.createElement('tr');
+
+          const numTd = document.createElement('td');
+          numTd.className = 'file-num';
+          numTd.textContent = idx + 1;
+
+          const nameTd = document.createElement('td');
           const name = document.createElement('span');
+          name.className = 'file-name';
           name.textContent = f.name;
-          name.style.cssText = 'cursor:pointer;text-decoration:underline;color:#0078d7;';
           name.onclick = () => window.open(
-            `Editor.html?object_name=${encodeURIComponent(f.object_name)}`, '_blank'
+            `Editor.html?object_name=${encodeURIComponent(f.object_name)}&return_url=${encodeURIComponent(location.pathname + location.search)}`, '_blank'
           );
-          const lastEdit = document.createElement('span');
-          lastEdit.style.cssText = 'font-size:11px;color:#6b7280;';
+          nameTd.appendChild(name);
+
+          const dateTd = document.createElement('td');
+          dateTd.className = 'file-date';
           if (f.last_modified) {
             const dt   = new Date(f.last_modified);
             const dd   = String(dt.getDate()).padStart(2,'0');
@@ -638,60 +793,395 @@
             const yyyy = dt.getFullYear();
             const hh   = String(dt.getHours()).padStart(2,'0');
             const min  = String(dt.getMinutes()).padStart(2,'0');
-            lastEdit.textContent = `Last Edit: ${dd}/${mm}/${yyyy} ${hh}:${min}`;
+            dateTd.textContent = `Last Edit: ${dd}/${mm}/${yyyy} ${hh}:${min}`;
           }
+
+          const delTd = document.createElement('td');
+          delTd.style.textAlign = 'center';
           const delBtn = document.createElement('button');
-          delBtn.textContent = 'Delete';
-          delBtn.onclick = async () => {
-            if (!confirm(`ลบ "${f.name}"?`)) return;
-            try {
-              await fetch(`/api/browse/file?object_name=${encodeURIComponent(f.object_name)}`, { method: 'DELETE' });
-              row.remove();
-            } catch { alert('ลบไม่สำเร็จ'); }
-          };
-          row.append(name, lastEdit, delBtn);
-          list.appendChild(row);
+          delBtn.className = 'file-del';
+          delBtn.title = 'ลบไฟล์';
+          delBtn.textContent = '✕';
+          delBtn.onclick = () => openDeleteConfirm(subtabId, f.object_name, `ไฟล์ "${f.name}"`);
+          delTd.appendChild(delBtn);
+
+          tr.append(numTd, nameTd, dateTd, delTd);
+          tbody.appendChild(tr);
         });
+
+        table.appendChild(tbody);
+        card.appendChild(table);
+        list.appendChild(card);
       } catch {}
     }
 
-    async function recordFile(subtabId) {
-      const selectedObjectName = selectedObjectNames[subtabId];
-      if (!selectedObjectName) return;
+    // ── DELETE CONFIRM MODAL (handles both whole-file delete and inspection-row delete) ──
+    let pendingDelete = null;
+    function openDeleteConfirm(subtabId, objectName, name, extra) {
+      pendingDelete = extra ? { subtabId, ...extra } : { subtabId, objectName, type: 'file' };
+      document.getElementById('deleteConfirmFileName').textContent = name;
+      document.getElementById('deleteConfirmModal').classList.add('open');
+    }
+    function closeDeleteConfirm() {
+      pendingDelete = null;
+      document.getElementById('deleteConfirmModal').classList.remove('open');
+    }
+    async function confirmDeleteFile() {
+      if (!pendingDelete) return;
+      const { subtabId, type } = pendingDelete;
+      if (type === 'folder') {
+        const { prefix, key } = pendingDelete;
+        try {
+          await fetch(`/api/delete-path?path=${encodeURIComponent(prefix)}`, { method: 'DELETE' });
+          delete inspectionRecords[key];
+          if (activeInspFile[subtabId] === key) activeInspFile[subtabId] = null;
+          loadRecordedFiles(subtabId);
+        } catch {
+          alert('ลบไม่สำเร็จ');
+        }
+        closeDeleteConfirm();
+        return;
+      }
+      const { objectName } = pendingDelete;
+      try {
+        await fetch(`/api/browse/file?object_name=${encodeURIComponent(objectName)}`, { method: 'DELETE' });
+        delete inspectionRecords[objectName];
+        if (activeInspFile[subtabId] === objectName) activeInspFile[subtabId] = null;
+        loadRecordedFiles(subtabId);
+      } catch {
+        alert('ลบไม่สำเร็จ');
+      }
+      closeDeleteConfirm();
+    }
+
+    // ── INSPECTION RECORD UI (subtab2) ──────────────────────
+    // Folder = ชื่อไฟล์ต้นฉบับ (เช่น Test222.xlsm) ไฟล์ข้างในเก็บชื่อเต็มพร้อม date/ลำดับ
+    // (เช่น 13082026_1_Test222.xlsm) — อัปโหลดซ้ำจากไฟล์ต้นฉบับเดียวกันจะรวมอยู่ folder เดียวกัน
+    const GEN_NAME_RE = /^\d{8}_\d+_(.+)$/;   // datePrefix_index_originalName
+    const INSP_META_FILENAME = '_meta.json';  // เก็บ Object Type/Manufacturer/Year ของไฟล์ต้นฉบับ ไว้ในโฟลเดอร์เดียวกัน
+
+    async function saveInspMeta(folderPrefix, meta) {
+      try {
+        const blob = new Blob([JSON.stringify(meta)], { type: 'application/json' });
+        const form = new FormData();
+        form.append('file', blob, INSP_META_FILENAME);
+        await fetch(`/api/browse/upload?prefix=${encodeURIComponent(folderPrefix)}`, { method: 'POST', body: form });
+      } catch {}
+    }
+
+    async function loadInspectionFiles(dest, list) {
+      const subtabId = 'subtab2';
+      try {
+        let r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
+        if (!r.ok) return;
+        let { folders, files: flatFiles } = await r.json();
+        let needsRelist = false;
+
+        // ย้ายไฟล์เก่าที่ยังวางแบบ flat อยู่ตรง prefix เข้า folder ตามชื่อไฟล์ต้นฉบับ
+        for (const f of flatFiles) {
+          const m = f.name.match(GEN_NAME_RE);
+          const originalName = m ? m[1] : f.name;
+          try {
+            await fetch('/api/rename-file', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ old_object: f.object_name, new_object: `${dest}${originalName}/${f.name}` }),
+            });
+            needsRelist = true;
+          } catch {}
+        }
+
+        // แก้ folder ที่ถูก migrate ผิดไว้ก่อนหน้า (ชื่อ folder เป็นชื่อเต็มพร้อม date/ลำดับ)
+        // ให้ย้ายไฟล์ข้างในไปรวมกับ folder ที่ใช้ชื่อไฟล์ต้นฉบับที่ถูกต้อง
+        for (const folder of folders) {
+          const m = folder.name.match(GEN_NAME_RE);
+          if (!m) continue;
+          const correctName = m[1];
+          try {
+            const fr = await fetch(`/api/browse?prefix=${encodeURIComponent(dest + folder.name + '/')}`);
+            if (!fr.ok) continue;
+            const { files: inner } = await fr.json();
+            for (const innerFile of inner) {
+              await fetch('/api/rename-file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ old_object: innerFile.object_name, new_object: `${dest}${correctName}/${innerFile.name}` }),
+              });
+            }
+            needsRelist = true;
+          } catch {}
+        }
+
+        if (needsRelist) {
+          r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
+          if (!r.ok) return;
+          ({ folders } = await r.json());
+        }
+
+        if (!folders.length) {
+          list.innerHTML = '<div class="recorded-files-empty">ยังไม่มีไฟล์ที่บันทึก</div>';
+          inspectionFilesCache.subtab2 = [];
+          activeInspFile.subtab2 = null;
+          return;
+        }
+
+        const files = [];
+        for (const folder of folders) {
+          const folderPrefix = `${dest}${folder.name}/`;
+          try {
+            const fr = await fetch(`/api/browse?prefix=${encodeURIComponent(folderPrefix)}`);
+            if (!fr.ok) continue;
+            const { files: rawInner } = await fr.json();
+            const metaEntry = rawInner.find(f => f.name === INSP_META_FILENAME);
+            const inner = rawInner.filter(f => f.name !== INSP_META_FILENAME);
+            if (!inner.length) continue;
+            // ไฟล์ล่าสุดใน folder (เวอร์ชันใหม่สุด) คือตัวแทนของ folder นี้
+            const main = inner.reduce((a, b) => new Date(b.last_modified) > new Date(a.last_modified) ? b : a);
+            let meta = null;
+            if (metaEntry) {
+              try {
+                const mr = await fetch(`/api/browse/file-content?object_name=${encodeURIComponent(metaEntry.object_name)}`);
+                if (mr.ok) meta = await mr.json();
+              } catch {}
+            }
+            files.push({ name: folder.name, object_name: main.object_name, last_modified: main.last_modified, versions: inner, meta });
+          } catch {}
+        }
+
+        inspectionFilesCache.subtab2 = files;
+        if (!activeInspFile.subtab2 || !files.some(f => f.name === activeInspFile.subtab2)) {
+          activeInspFile.subtab2 = files.length ? files[0].name : null;
+        }
+        renderInspectionUI(subtabId, list);
+      } catch {}
+    }
+
+    function renderInspectionUI(subtabId, container) {
+      const wrap = document.createElement('div');
+      wrap.className = 'insp-wrap';
+      wrap.innerHTML = `
+        <aside class="insp-aside">
+          <div class="insp-aside-head">รายการไฟล์ที่บันทึก</div>
+          <div class="insp-tablist" id="insp-tablist-${subtabId}"></div>
+        </aside>
+        <div class="insp-main" id="insp-main-${subtabId}"></div>`;
+      container.appendChild(wrap);
+      renderInspectionTabs(subtabId);
+      renderInspectionMain(subtabId);
+    }
+
+    function renderInspectionTabs(subtabId) {
+      const files = inspectionFilesCache[subtabId];
+      const box = document.getElementById(`insp-tablist-${subtabId}`);
+      box.innerHTML = '';
+      files.forEach(f => {
+        const versionCount = f.versions ? f.versions.length : 0;
+        const code = (f.name.split('.').pop() || '').slice(0, 3).toUpperCase() || '•';
+        const el = document.createElement('div');
+        el.className = 'insp-tab' + (f.name === activeInspFile[subtabId] ? ' active' : '');
+        el.innerHTML = `
+          <span class="insp-ic">${code}</span>
+          <span class="insp-name" title="${f.name}">${f.name}</span>
+          <span class="insp-count">${versionCount}</span>
+          <button type="button" class="insp-act insp-del" title="ลบไฟล์">✕</button>`;
+        el.addEventListener('click', (e) => {
+          if (e.target.closest('.insp-act')) return;
+          activeInspFile[subtabId] = f.name;
+          renderInspectionTabs(subtabId);
+          renderInspectionMain(subtabId);
+        });
+        el.querySelector('.insp-del').onclick = (e) => {
+          e.stopPropagation();
+          openDeleteConfirm(subtabId, null, `ไฟล์ "${f.name}"`, { type: 'folder', prefix: REPORT_CONFIG[subtabId].dest + f.name, key: f.name });
+        };
+        box.appendChild(el);
+      });
+    }
+
+    const INSP_RESULT_OPTIONS = ['', 'Pass', 'Fail', 'Need Repair', 'N/A'];
+
+    function formatInspDate(iso) {
+      if (!iso) return '-';
+      const dt = new Date(iso);
+      const dd = String(dt.getDate()).padStart(2, '0');
+      const mm = String(dt.getMonth() + 1).padStart(2, '0');
+      const yyyy = dt.getFullYear();
+      const hh = String(dt.getHours()).padStart(2, '0');
+      const min = String(dt.getMinutes()).padStart(2, '0');
+      return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+    }
+
+    // แต่ละแถว = ไฟล์เวอร์ชันจริงใน folder (เรียงเวอร์ชันใหม่สุดขึ้นก่อน)
+    function renderInspectionMain(subtabId) {
+      const main = document.getElementById(`insp-main-${subtabId}`);
+      const activeKey = activeInspFile[subtabId];
+      const file = inspectionFilesCache[subtabId].find(f => f.name === activeKey);
+      if (!file) { main.innerHTML = '<div class="insp-empty-main">เลือกไฟล์ทางซ้ายเพื่อบันทึกผลตรวจ</div>'; return; }
+      const versions = [...(file.versions || [])].sort((a, b) => new Date(b.last_modified) - new Date(a.last_modified));
+
+      const body = versions.length ? versions.map((v, idx) => {
+        const meta = inspectionRecords[v.object_name] || (inspectionRecords[v.object_name] = { by: '', result: '' });
+        const key = encodeURIComponent(v.object_name);
+        return `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${formatInspDate(v.last_modified)}</td>
+          <td><span class="insp-linkfile" title="${v.name}" onclick="openInspFile('${key}')">${v.name}</span></td>
+          <td><input type="text" placeholder="ชื่อผู้บันทึก" value="${meta.by}" onchange="updInspMeta('${key}','by',this.value)"></td>
+          <td><select onchange="updInspMeta('${key}','result',this.value)">${
+            INSP_RESULT_OPTIONS.map(o => `<option value="${o}" ${o === meta.result ? 'selected' : ''}>${o || '— เลือก —'}</option>`).join('')
+          }</select></td>
+        </tr>`;
+      }).join('')
+        : `<tr><td colspan="5" class="insp-empty-main">ยังไม่มีข้อมูล — กด "Record" เพื่อเริ่มบันทึก</td></tr>`;
+
+      const metaParts = file.meta
+        ? [file.meta.object_type, file.meta.manufacturer, file.meta.year].filter(Boolean)
+        : [];
+      const crumb = (metaParts.length ? metaParts : ['Inspection Report']).join(' › ') + ' › ' + file.name;
+
+      main.innerHTML = `
+        <div class="insp-doc-head">
+          <div>
+            <div class="insp-crumb">${crumb}</div>
+            <h3>${file.name}</h3>
+          </div>
+          <button type="button" class="insp-btn-addrow" onclick="recordInspVersion('${subtabId}')">Record</button>
+        </div>
+        <div class="insp-card">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:36px">#</th>
+                <th style="width:160px">Date Record</th>
+                <th>Link file</th>
+                <th style="width:170px">Record By</th>
+                <th style="width:140px">Result</th>
+              </tr>
+            </thead>
+            <tbody>${body}</tbody>
+          </table>
+        </div>`;
+    }
+
+    function openInspFile(encodedObjectName) {
+      const objectName = decodeURIComponent(encodedObjectName);
+      window.open(
+        `Editor.html?object_name=${encodeURIComponent(objectName)}&return_url=${encodeURIComponent(location.pathname + location.search)}`, '_blank'
+      );
+    }
+    function updInspMeta(encodedObjectName, field, val) {
+      const key = decodeURIComponent(encodedObjectName);
+      const meta = inspectionRecords[key] || (inspectionRecords[key] = { by: '', result: '' });
+      meta[field] = val;
+    }
+
+    // ปุ่ม Record: copy ไฟล์เวอร์ชันล่าสุดในไฟล์นี้ เป็นเวอร์ชันใหม่ (วันที่_ฉบับที่_ชื่อไฟล์) ในโฟลเดอร์เดิม
+    async function recordInspVersion(subtabId) {
+      const originalName = activeInspFile[subtabId];
+      const file = inspectionFilesCache[subtabId].find(f => f.name === originalName);
+      if (!file) return;
+      const dest = REPORT_CONFIG[subtabId].dest;
+      const folderPrefix = `${dest}${originalName}/`;
+      const now = new Date();
+      const datePrefix = `${String(now.getDate()).padStart(2, '0')}${String(now.getMonth() + 1).padStart(2, '0')}${now.getFullYear()}`;
+      try {
+        const fr = await fetch(`/api/browse?prefix=${encodeURIComponent(folderPrefix)}`);
+        const existing = fr.ok ? (await fr.json()).files : [];
+        const matches = existing.filter(f => f.name.startsWith(`${datePrefix}_`) && f.name.endsWith(`_${originalName}`));
+        const newName = `${datePrefix}_${matches.length + 1}_${originalName}`;
+        const r = await fetch('/api/copy-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ src_object: file.object_name, dst_object: folderPrefix + newName }),
+        });
+        if (!r.ok) throw new Error(await r.text());
+      } catch {
+        alert('บันทึกไม่สำเร็จ');
+        return;
+      }
+      loadRecordedFiles(subtabId);
+    }
+    document.getElementById('deleteConfirmModal').addEventListener('click', function(e) {
+      if (e.target === this) closeDeleteConfirm();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeDeleteConfirm();
+    });
+
+    async function recordFile(subtabId, inspMeta) {
+      const selectedObjects = selectedObjectNames[subtabId];
+      if (!selectedObjects || selectedObjects.length === 0) return;
       const dest = REPORT_CONFIG[subtabId].dest;
       const now = new Date();
       const dd   = String(now.getDate()).padStart(2, '0');
       const mm   = String(now.getMonth() + 1).padStart(2, '0');
       const yyyy = now.getFullYear();
       const datePrefix = `${dd}${mm}${yyyy}`;
-      const originalName = selectedObjectName.split('/').pop();
 
-      let seq = 1;
-      try {
-        const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
-        if (r.ok) {
-          const { files } = await r.json();
-          const matches = files.filter(f =>
-            f.name.startsWith(`${datePrefix}_`) && f.name.endsWith(`_${originalName}`)
-          );
-          seq = matches.length + 1;
-        }
-      } catch {}
+      const isInsp = subtabId === 'subtab2';
+      const statusEl = document.getElementById(`selectedBankForm-${subtabId}`);
+      if (isInsp && statusEl) statusEl.textContent = `กำลังบันทึก ${selectedObjects.length} ไฟล์...`;
 
-      const newName = `${datePrefix}_${seq}_${originalName}`;
-      const destObject = dest + newName;
-      try {
-        const r = await fetch('/api/copy-file', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ src_object: selectedObjectName, dst_object: destObject }),
-        });
-        if (!r.ok) throw new Error(await r.text());
-        alert(`บันทึกสำเร็จ: ${newName}`);
-        loadRecordedFiles(subtabId);
-      } catch (err) {
-        alert('บันทึกไม่สำเร็จ: ' + err.message);
+      let existingFiles = [];
+      if (!isInsp) {
+        try {
+          const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
+          if (r.ok) ({ files: existingFiles } = await r.json());
+        } catch {}
       }
+      const inspFolderCache = {}; // subtab2: originalName -> ไฟล์ที่มีอยู่แล้วใน folder นั้น
+
+      const savedNames = [];
+      const failedNames = [];
+      const duplicateNotices = []; // subtab2: originalName ที่เคยบันทึกไว้แล้ว → ข้าม ไม่บันทึกซ้ำ
+      for (const selectedObjectName of selectedObjects) {
+        const originalName = selectedObjectName.split('/').pop();
+        let matchPool = existingFiles;
+        if (isInsp) {
+          if (!inspFolderCache[originalName]) {
+            try {
+              const fr = await fetch(`/api/browse?prefix=${encodeURIComponent(dest + originalName + '/')}`);
+              inspFolderCache[originalName] = fr.ok ? (await fr.json()).files : [];
+            } catch { inspFolderCache[originalName] = []; }
+          }
+          matchPool = inspFolderCache[originalName];
+          if (matchPool.length) {
+            duplicateNotices.push(`${originalName} (มีอยู่แล้ว ${matchPool.length} เวอร์ชัน)`);
+            continue; // ไฟล์นี้เคยบันทึกไว้แล้ว ข้ามไปเลย ไม่บันทึกซ้ำ
+          }
+        }
+        const matches = matchPool.filter(f =>
+          f.name.startsWith(`${datePrefix}_`) && f.name.endsWith(`_${originalName}`)
+        );
+        const newName = `${datePrefix}_${matches.length + 1}_${originalName}`;
+        const destObject = isInsp ? `${dest}${originalName}/${newName}` : dest + newName;
+        try {
+          const r = await fetch('/api/copy-file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ src_object: selectedObjectName, dst_object: destObject }),
+          });
+          if (!r.ok) throw new Error(await r.text());
+          matchPool.push({ name: newName });
+          savedNames.push(newName);
+          if (isInsp && inspMeta) await saveInspMeta(`${dest}${originalName}/`, inspMeta);
+        } catch {
+          failedNames.push(originalName);
+        }
+      }
+
+      if (duplicateNotices.length) {
+        alert(`ไฟล์ต่อไปนี้เคยบันทึกไว้แล้ว จึงไม่บันทึกซ้ำ:\n${duplicateNotices.join('\n')}`);
+      }
+      if (savedNames.length) alert(`บันทึกสำเร็จ: ${savedNames.join(', ')}`);
+      if (failedNames.length) alert(`บันทึกไม่สำเร็จ: ${failedNames.join(', ')}`);
+
+      if (isInsp) {
+        selectedObjectNames[subtabId] = null;
+        if (statusEl) statusEl.textContent = '';
+      }
+      loadRecordedFiles(subtabId);
     }
   </script>
 </body>

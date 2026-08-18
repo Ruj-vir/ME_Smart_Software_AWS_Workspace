@@ -47,6 +47,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
       PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
       PGPASSFILE: /pgadmin4/pgpass
+      SCRIPT_NAME: /pgadmin
     volumes:
       - pgadmin_data:/var/lib/pgadmin
       - ./pgadmin_servers.json:/pgadmin4/servers.json:ro
