@@ -224,6 +224,11 @@
     .insp-btn-addrow:hover { background: #aed6f1; }
     .insp-linkfile { color: #0078d7; text-decoration: underline; cursor: pointer; word-break: break-all; }
     .insp-empty-main { padding: 40px; text-align: center; color: #6b7280; font-size: 13px; }
+    .insp-row-del {
+      border: none; background: transparent; color: #c0392b; cursor: pointer;
+      font-size: 14px; padding: 4px 8px; border-radius: 6px; line-height: 1;
+    }
+    .insp-row-del:hover { background: #fdecea; }
 
     /* Delete Confirm Modal */
     #deleteConfirmModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:10000; align-items:center; justify-content:center; }
@@ -1031,9 +1036,10 @@
           <td><select onchange="updInspMeta('${key}','result',this.value)">${
             INSP_RESULT_OPTIONS.map(o => `<option value="${o}" ${o === meta.result ? 'selected' : ''}>${o || '— เลือก —'}</option>`).join('')
           }</select></td>
+          <td style="text-align:center"><button type="button" class="insp-row-del" title="ลบเวอร์ชันนี้" onclick="deleteInspVersion('${subtabId}','${key}')">✕</button></td>
         </tr>`;
       }).join('')
-        : `<tr><td colspan="5" class="insp-empty-main">ยังไม่มีข้อมูล — กด "Record" เพื่อเริ่มบันทึก</td></tr>`;
+        : `<tr><td colspan="6" class="insp-empty-main">ยังไม่มีข้อมูล — กด "Record" เพื่อเริ่มบันทึก</td></tr>`;
 
       const metaParts = file.meta
         ? [file.meta.object_type, file.meta.manufacturer, file.meta.year].filter(Boolean)
@@ -1057,6 +1063,7 @@
                 <th>Link file</th>
                 <th style="width:170px">Record By</th>
                 <th style="width:140px">Result</th>
+                <th style="width:40px"></th>
               </tr>
             </thead>
             <tbody>${body}</tbody>
@@ -1074,6 +1081,11 @@
       const key = decodeURIComponent(encodedObjectName);
       const meta = inspectionRecords[key] || (inspectionRecords[key] = { by: '', result: '' });
       meta[field] = val;
+    }
+    function deleteInspVersion(subtabId, encodedObjectName) {
+      const objectName = decodeURIComponent(encodedObjectName);
+      const name = objectName.split('/').pop();
+      openDeleteConfirm(subtabId, objectName, `เวอร์ชัน "${name}"`);
     }
 
     // ปุ่ม Record: copy ไฟล์เวอร์ชันล่าสุดในไฟล์นี้ เป็นเวอร์ชันใหม่ (วันที่_ฉบับที่_ชื่อไฟล์) ในโฟลเดอร์เดิม
