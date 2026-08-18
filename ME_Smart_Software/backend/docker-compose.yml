@@ -17,6 +17,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   # [DISABLED] MinIO — ปัจจุบันใช้ AWS S3 แทน ดูค่าใน .env
   # minio:
@@ -46,6 +47,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
       PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
       PGPASSFILE: /pgadmin4/pgpass
+      SCRIPT_NAME: /pgadmin
     volumes:
       - pgadmin_data:/var/lib/pgadmin
       - ./pgadmin_servers.json:/pgadmin4/servers.json:ro

@@ -163,6 +163,17 @@
       font-size: 12px; padding: 8px 6px; color: #888;
     }
     .status-msg.error { color: #c0392b; }
+
+    .select-actions { display: none; align-items: center; gap: 10px; }
+    .select-all-label { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .file-select-checkbox { cursor: pointer; margin-right: 8px; flex-shrink: 0; }
+    .upload-blank-btn {
+      background: #2e86c1; border: none; color: #fff;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      padding: 5px 12px; border-radius: 4px; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .upload-blank-btn:hover { background: #21618c; }
   </style>
 </head>
 <body>
@@ -174,7 +185,7 @@
     </div>
     <div class="page-title">General Form – Inspection Report</div>
     <div class="header-right">
-      <a class="breadcrumb" href="Main.html">General Form</a>
+      <a class="breadcrumb" id="generalFormLink" href="Main.html">General Form</a>
       <div class="user-avatar">W</div>
     </div>
   </div>
@@ -213,6 +224,13 @@
       <div class="folder-header">
         <span>Form</span>
         <button class="sort-btn" onclick="triggerUpload()">Upload</button>
+        <div class="select-actions" id="selectActions">
+          <label class="select-all-label">
+            <input type="checkbox" id="selectAllFiles" onchange="toggleSelectAll(this.checked)">
+            Select all
+          </label>
+          <button class="upload-blank-btn" onclick="submitSelectedFiles()">Upload blank form</button>
+        </div>
       </div>
       <div class="folder-body" id="col-3"></div>
     </div>
@@ -274,6 +292,8 @@
         if (!res.ok) throw new Error(res.status);
         const { files } = await res.json();
         col.innerHTML = '';
+        const selectAll = document.getElementById('selectAllFiles');
+        if (selectAll) selectAll.checked = false;
         if (files.length === 0) {
           col.innerHTML = '<div class="status-msg">ยังไม่มีไฟล์ — กด Upload เพื่อเพิ่ม</div>';
         } else {
@@ -384,6 +404,10 @@
       menu.className = 'item-menu';
       menu.style.display = 'none';
 
+      const editEl = document.createElement('div');
+      editEl.textContent = 'Edit';
+      editEl.addEventListener('click', e => { e.stopPropagation(); renameFileLabel(div, label, menu, file); });
+
       const delEl = document.createElement('div');
       delEl.textContent = 'Delete';
       delEl.addEventListener('click', async e => {
@@ -396,15 +420,27 @@
         div.remove();
       });
 
+      let checkbox = null;
       if (!IS_SELECT) {
-        menu.appendChild(delEl);
+        menu.append(editEl, delEl);
         div.append(label, menuBtn, menu);
       } else {
-        div.append(label);
+        checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'file-select-checkbox';
+        checkbox.dataset.objectName = file.object_name;
+        checkbox.addEventListener('click', e => e.stopPropagation());
+        checkbox.addEventListener('change', updateSelectAllState);
+        div.append(checkbox, label);
       }
 
       div.addEventListener('click', e => {
         if (e.target.closest('.item-menu-btn') || e.target.closest('.item-menu')) return;
+        if (checkbox) {
+          checkbox.checked = !checkbox.checked;
+          updateSelectAllState();
+          return;
+        }
         openFile(file);
       });
 
@@ -465,15 +501,72 @@
       };
     }
 
+    // ── RENAME FILE (calls /api/rename-file) ─────────────────
+    async function renameFileLabel(divEl, labelEl, menuEl, file) {
+      menuEl.style.display = 'none';
+      const oldName = file.name;
+      const dotIdx = oldName.lastIndexOf('.');
+      const hasExt = dotIdx > 0;
+      const baseName = hasExt ? oldName.slice(0, dotIdx) : oldName;
+      const ext = hasExt ? oldName.slice(dotIdx) : '';
+
+      const wrap = document.createElement('span');
+      wrap.className = 'item-label';
+      wrap.style.cssText = 'display:flex;align-items:center;flex:1;overflow:hidden;';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = baseName;
+      input.style.cssText = 'font-size:13px;color:#1a252f;border:none;outline:none;background:transparent;flex:1;min-width:0;';
+
+      const extSpan = document.createElement('span');
+      extSpan.textContent = ext;
+      extSpan.style.cssText = 'color:#888;white-space:nowrap;flex-shrink:0;';
+
+      wrap.append(input, extSpan);
+      labelEl.replaceWith(wrap);
+      input.focus(); input.select();
+
+      const finish = async () => {
+        const newBase = input.value.trim() || baseName;
+        const newName = newBase + ext;
+        const span = document.createElement('span');
+        span.className = 'item-label';
+        span.title = newName;
+        span.textContent = newName;
+        wrap.replaceWith(span);
+        if (newName === oldName) return;
+        const oldObject = file.object_name;
+        const newObject = oldObject.slice(0, oldObject.lastIndexOf('/') + 1) + newName;
+        try {
+          const r = await fetch(`${API_BASE}/rename-file`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ old_object: oldObject, new_object: newObject }),
+          });
+          if (!r.ok) throw new Error(await r.text());
+          file.name = newName;
+          file.object_name = newObject;
+        } catch (err) {
+          span.textContent = oldName;
+          span.title = oldName;
+          alert('เปลี่ยนชื่อไม่สำเร็จ: ' + err.message);
+        }
+      };
+
+      input.onblur = finish;
+      input.onkeydown = ev => {
+        if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+        if (ev.key === 'Escape') { input.value = baseName; input.blur(); }
+      };
+    }
+
     // ── OPEN FILE ─────────────────────────────────────────
     async function openFile(file) {
-      if (new URLSearchParams(location.search).get('mode') === 'select') {
-        window.parent.postMessage({ type: 'file-selected', object_name: file.object_name }, '*');
-        return;
-      }
       const ext = file.name.split('.').pop().toLowerCase();
       if (editableExt.includes(ext)) {
-        window.open(`Editor.html?object_name=${encodeURIComponent(file.object_name)}`, '_blank');
+        const returnUrl = location.pathname + location.search;
+        window.open(`Editor.html?object_name=${encodeURIComponent(file.object_name)}&return_url=${encodeURIComponent(returnUrl)}`, '_blank');
         return;
       }
       const win = window.open('', '_blank');
@@ -560,9 +653,44 @@
     });
 
     // ── INIT ──────────────────────────────────────────────
+    (() => {
+      const qp = new URLSearchParams(location.search);
+      const backParams = new URLSearchParams();
+      ['company', 'plant', 'service'].forEach(k => { if (qp.get(k)) backParams.set(k, qp.get(k)); });
+      const qs = backParams.toString();
+      document.getElementById('generalFormLink').href = 'Package Selection.html' + (qs ? '?' + qs : '');
+    })();
+    // ── MULTI-SELECT (Bank Form picker) ───────────────────
+    function toggleSelectAll(checked) {
+      document.querySelectorAll('#col-3 .file-select-checkbox').forEach(cb => cb.checked = checked);
+    }
+
+    function updateSelectAllState() {
+      const boxes = document.querySelectorAll('#col-3 .file-select-checkbox');
+      const selectAll = document.getElementById('selectAllFiles');
+      if (selectAll) selectAll.checked = boxes.length > 0 && Array.from(boxes).every(cb => cb.checked);
+    }
+
+    function submitSelectedFiles() {
+      const checked = document.querySelectorAll('#col-3 .file-select-checkbox:checked');
+      if (checked.length === 0) {
+        alert('กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์');
+        return;
+      }
+      const object_names = Array.from(checked).map(cb => cb.dataset.objectName);
+      window.parent.postMessage({
+        type: 'files-selected',
+        object_names,
+        object_type: sel[0],
+        manufacturer: sel[1],
+        year: sel[2],
+      }, '*');
+    }
+
     if (IS_SELECT) {
       document.querySelector('.header-right').style.display = 'none';
       document.querySelectorAll('.sort-btn').forEach(b => b.style.display = 'none');
+      document.getElementById('selectActions').style.display = 'flex';
     }
     loadFolders(0);
   </script>
