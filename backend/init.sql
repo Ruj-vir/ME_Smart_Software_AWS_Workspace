@@ -35,6 +35,16 @@ CREATE TABLE IF NOT EXISTS files (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- ── Inspection Records (QAQC Step > Inspection Report) ──
+-- object_name คือ path เต็มของไฟล์เวอร์ชันนั้นใน MinIO/S3 (unique อยู่แล้วในตัว)
+CREATE TABLE IF NOT EXISTS inspection_records (
+    object_name TEXT        PRIMARY KEY,
+    record_by   VARCHAR(255) NOT NULL DEFAULT '',
+    result      VARCHAR(50)  NOT NULL DEFAULT '',
+    note        TEXT        NOT NULL DEFAULT '',
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ── สร้าง admin user ────────────────────────────────
 -- สร้าง user ผ่าน API หลัง service ขึ้นมาแล้ว:
 --   POST http://localhost:8000/api/register

@@ -224,11 +224,18 @@
     .insp-btn-addrow:hover { background: #aed6f1; }
     .insp-linkfile { color: #0078d7; text-decoration: underline; cursor: pointer; word-break: break-all; }
     .insp-empty-main { padding: 40px; text-align: center; color: #6b7280; font-size: 13px; }
+    .insp-row-actions { display: flex; align-items: center; justify-content: center; gap: 2px; }
     .insp-row-del {
       border: none; background: transparent; color: #c0392b; cursor: pointer;
       font-size: 14px; padding: 4px 8px; border-radius: 6px; line-height: 1;
     }
     .insp-row-del:hover { background: #fdecea; }
+    .insp-row-save {
+      border: none; background: transparent; color: #1e8449; cursor: pointer;
+      font-size: 14px; padding: 4px 8px; border-radius: 6px; line-height: 1;
+    }
+    .insp-row-save:hover { background: #eafaf1; }
+    .insp-row-save.saved { color: #0078d7; }
 
     /* Delete Confirm Modal */
     #deleteConfirmModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:10000; align-items:center; justify-content:center; }
@@ -693,9 +700,9 @@
     let activeSubtab = 'subtab1';
     const selectedObjectNames = { subtab1: null, subtab2: null, subtab3: null, subtab4: null };
 
-    // Inspection Record UI state (subtab2 only) — records kept in-memory for now
-    // แต่ละแถวในตารางคือไฟล์เวอร์ชันจริงใน folder — inspectionRecords เก็บแค่ Record By/Result ต่อเวอร์ชัน
-    const inspectionRecords = {};              // object_name (เวอร์ชันไฟล์) -> {by, result}
+    // Inspection Record UI state (subtab2 only) — sync กับตาราง inspection_records ใน Postgres
+    // แต่ละแถวในตารางคือไฟล์เวอร์ชันจริงใน folder — inspectionRecords เก็บแค่ Record By/Result/Note ต่อเวอร์ชัน
+    const inspectionRecords = {};              // object_name (เวอร์ชันไฟล์) -> {by, result, note}
     const inspectionFilesCache = { subtab2: [] };
     const activeInspFile = { subtab2: null };
 
@@ -747,16 +754,25 @@
       }
     });
 
-    async function loadRecordedFiles(subtabId) {
+    async function loadRecordedFiles(subtabId, { forceFresh = false } = {}) {
       const dest = REPORT_CONFIG[subtabId].dest;
       const list = document.getElementById(`recordedFilesList-${subtabId}`);
-      list.innerHTML = '';
 
       if (subtabId === 'subtab2') {
+        // มี cache จากการเปิดครั้งก่อนในเซสชันนี้ → แสดงทันทีจาก cache ก่อน (ไม่ต้องรอ network)
+        // แล้วค่อยรีเฟรชข้อมูลจริงเบื้องหลัง (stale-while-revalidate) — ยกเว้นตอนที่เพิ่ง
+        // แก้ไขข้อมูลเอง (ลบ/บันทึกเวอร์ชันใหม่) ที่ต้องการผลลัพธ์สดใหม่แน่นอน จึง forceFresh
+        if (inspectionFilesCache.subtab2.length && !forceFresh) {
+          renderInspectionUI('subtab2', list);
+          loadInspectionFiles(dest, list);
+          return;
+        }
+        list.innerHTML = '';
         await loadInspectionFiles(dest, list);
         return;
       }
 
+      list.innerHTML = '';
       try {
         const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
         if (!r.ok) return;
@@ -838,9 +854,10 @@
         const { prefix, key } = pendingDelete;
         try {
           await fetch(`/api/delete-path?path=${encodeURIComponent(prefix)}`, { method: 'DELETE' });
+          await fetch(`/api/inspection-records?prefix=${encodeURIComponent(prefix)}`, { method: 'DELETE' });
           delete inspectionRecords[key];
           if (activeInspFile[subtabId] === key) activeInspFile[subtabId] = null;
-          loadRecordedFiles(subtabId);
+          loadRecordedFiles(subtabId, { forceFresh: true });
         } catch {
           alert('ลบไม่สำเร็จ');
         }
@@ -850,9 +867,10 @@
       const { objectName } = pendingDelete;
       try {
         await fetch(`/api/browse/file?object_name=${encodeURIComponent(objectName)}`, { method: 'DELETE' });
+        await fetch(`/api/inspection-records?object_name=${encodeURIComponent(objectName)}`, { method: 'DELETE' });
         delete inspectionRecords[objectName];
         if (activeInspFile[subtabId] === objectName) activeInspFile[subtabId] = null;
-        loadRecordedFiles(subtabId);
+        loadRecordedFiles(subtabId, { forceFresh: true });
       } catch {
         alert('ลบไม่สำเร็จ');
       }
@@ -874,10 +892,21 @@
       } catch {}
     }
 
+    async function fetchInspectionRecords(prefix) {
+      try {
+        const r = await fetch(`/api/inspection-records?prefix=${encodeURIComponent(prefix)}`);
+        if (!r.ok) return;
+        Object.assign(inspectionRecords, await r.json());
+      } catch {}
+    }
+
     async function loadInspectionFiles(dest, list) {
       const subtabId = 'subtab2';
       try {
-        let r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
+        const [r] = await Promise.all([
+          fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`),
+          fetchInspectionRecords(dest),
+        ]);
         if (!r.ok) return;
         let { folders, files: flatFiles } = await r.json();
         let needsRelist = false;
@@ -918,9 +947,9 @@
         }
 
         if (needsRelist) {
-          r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
-          if (!r.ok) return;
-          ({ folders } = await r.json());
+          const r2 = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
+          if (!r2.ok) return;
+          ({ folders } = await r2.json());
         }
 
         if (!folders.length) {
@@ -930,16 +959,17 @@
           return;
         }
 
-        const files = [];
-        for (const folder of folders) {
+        // ยิง /api/browse ของทุกโฟลเดอร์พร้อมกัน (แทนการ await ทีละโฟลเดอร์แบบเรียงคิว)
+        // เพื่อลดเวลาโหลดจาก O(จำนวนโฟลเดอร์ * round-trip) เหลือแค่ ~1 round-trip
+        const folderResults = await Promise.all(folders.map(async (folder) => {
           const folderPrefix = `${dest}${folder.name}/`;
           try {
             const fr = await fetch(`/api/browse?prefix=${encodeURIComponent(folderPrefix)}`);
-            if (!fr.ok) continue;
+            if (!fr.ok) return null;
             const { files: rawInner } = await fr.json();
             const metaEntry = rawInner.find(f => f.name === INSP_META_FILENAME);
             const inner = rawInner.filter(f => f.name !== INSP_META_FILENAME);
-            if (!inner.length) continue;
+            if (!inner.length) return null;
             // ไฟล์ล่าสุดใน folder (เวอร์ชันใหม่สุด) คือตัวแทนของ folder นี้
             const main = inner.reduce((a, b) => new Date(b.last_modified) > new Date(a.last_modified) ? b : a);
             let meta = null;
@@ -949,9 +979,12 @@
                 if (mr.ok) meta = await mr.json();
               } catch {}
             }
-            files.push({ name: folder.name, object_name: main.object_name, last_modified: main.last_modified, versions: inner, meta });
-          } catch {}
-        }
+            return { name: folder.name, object_name: main.object_name, last_modified: main.last_modified, versions: inner, meta };
+          } catch {
+            return null;
+          }
+        }));
+        const files = folderResults.filter(Boolean);
 
         inspectionFilesCache.subtab2 = files;
         if (!activeInspFile.subtab2 || !files.some(f => f.name === activeInspFile.subtab2)) {
@@ -962,6 +995,7 @@
     }
 
     function renderInspectionUI(subtabId, container) {
+      container.innerHTML = ''; // ล้างของเดิม (เช่น cache ที่เรนเดอร์ไปก่อน) แล้วค่อยใส่ของใหม่ทับ
       const wrap = document.createElement('div');
       wrap.className = 'insp-wrap';
       wrap.innerHTML = `
@@ -1025,7 +1059,7 @@
       const versions = [...(file.versions || [])].sort((a, b) => new Date(b.last_modified) - new Date(a.last_modified));
 
       const body = versions.length ? versions.map((v, idx) => {
-        const meta = inspectionRecords[v.object_name] || (inspectionRecords[v.object_name] = { by: '', result: '' });
+        const meta = inspectionRecords[v.object_name] || (inspectionRecords[v.object_name] = { by: '', result: '', note: '' });
         const key = encodeURIComponent(v.object_name);
         return `
         <tr>
@@ -1036,10 +1070,16 @@
           <td><select onchange="updInspMeta('${key}','result',this.value)">${
             INSP_RESULT_OPTIONS.map(o => `<option value="${o}" ${o === meta.result ? 'selected' : ''}>${o || '— เลือก —'}</option>`).join('')
           }</select></td>
-          <td style="text-align:center"><button type="button" class="insp-row-del" title="ลบเวอร์ชันนี้" onclick="deleteInspVersion('${subtabId}','${key}')">✕</button></td>
+          <td><input type="text" placeholder="หมายเหตุ" value="${meta.note || ''}" onchange="updInspMeta('${key}','note',this.value)"></td>
+          <td>
+            <div class="insp-row-actions">
+              <button type="button" class="insp-row-save" title="บันทึก Record By / Result / Note" onclick="saveInspRecordBtn('${key}', this)">💾</button>
+              <button type="button" class="insp-row-del" title="ลบเวอร์ชันนี้" onclick="deleteInspVersion('${subtabId}','${key}')">✕</button>
+            </div>
+          </td>
         </tr>`;
       }).join('')
-        : `<tr><td colspan="6" class="insp-empty-main">ยังไม่มีข้อมูล — กด "Record" เพื่อเริ่มบันทึก</td></tr>`;
+        : `<tr><td colspan="7" class="insp-empty-main">ยังไม่มีข้อมูล — กด "Record" เพื่อเริ่มบันทึก</td></tr>`;
 
       const metaParts = file.meta
         ? [file.meta.object_type, file.meta.manufacturer, file.meta.year].filter(Boolean)
@@ -1063,7 +1103,8 @@
                 <th>Link file</th>
                 <th style="width:170px">Record By</th>
                 <th style="width:140px">Result</th>
-                <th style="width:40px"></th>
+                <th style="width:180px">Note</th>
+                <th style="width:70px"></th>
               </tr>
             </thead>
             <tbody>${body}</tbody>
@@ -1078,9 +1119,35 @@
       );
     }
     function updInspMeta(encodedObjectName, field, val) {
+      // แก้แค่ค่าใน memory เท่านั้น — ไม่บันทึกลง DB จนกว่าจะกดปุ่ม 💾 ต่อแถว
       const key = decodeURIComponent(encodedObjectName);
-      const meta = inspectionRecords[key] || (inspectionRecords[key] = { by: '', result: '' });
+      const meta = inspectionRecords[key] || (inspectionRecords[key] = { by: '', result: '', note: '' });
       meta[field] = val;
+    }
+    async function saveInspRecord(objectName, meta) {
+      try {
+        const r = await fetch('/api/inspection-records', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ object_name: objectName, by: meta.by, result: meta.result, note: meta.note }),
+        });
+        return r.ok;
+      } catch {
+        return false;
+      }
+    }
+    async function saveInspRecordBtn(encodedObjectName, btn) {
+      const key = decodeURIComponent(encodedObjectName);
+      const meta = inspectionRecords[key] || (inspectionRecords[key] = { by: '', result: '', note: '' });
+      btn.disabled = true;
+      const ok = await saveInspRecord(key, meta);
+      btn.textContent = ok ? '✓' : '✕';
+      btn.classList.toggle('saved', ok);
+      setTimeout(() => {
+        btn.textContent = '💾';
+        btn.classList.remove('saved');
+        btn.disabled = false;
+      }, 1000);
     }
     function deleteInspVersion(subtabId, encodedObjectName) {
       const objectName = decodeURIComponent(encodedObjectName);
@@ -1112,7 +1179,7 @@
         alert('บันทึกไม่สำเร็จ');
         return;
       }
-      loadRecordedFiles(subtabId);
+      loadRecordedFiles(subtabId, { forceFresh: true });
     }
     document.getElementById('deleteConfirmModal').addEventListener('click', function(e) {
       if (e.target === this) closeDeleteConfirm();
@@ -1193,7 +1260,7 @@
         selectedObjectNames[subtabId] = null;
         if (statusEl) statusEl.textContent = '';
       }
-      loadRecordedFiles(subtabId);
+      loadRecordedFiles(subtabId, { forceFresh: isInsp });
     }
   </script>
 </body>

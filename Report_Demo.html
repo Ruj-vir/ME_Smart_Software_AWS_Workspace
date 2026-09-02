@@ -364,12 +364,55 @@
       color: #34495e;
     }
 
-    .file-row input[type="checkbox"] {
+    .file-row input[type="checkbox"],
+    .file-row input[type="radio"] {
       width: 15px;
       height: 15px;
       accent-color: #3498db;
       cursor: pointer;
       flex-shrink: 0;
+    }
+
+    .folder-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 13px;
+      color: #34495e;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .folder-row .folder-arrow {
+      font-size: 12px;
+      font-weight: 700;
+      color: #3498db;
+      transform: rotate(-90deg);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .folder-row.open .folder-arrow {
+      transform: rotate(0deg);
+    }
+
+    .folder-row .folder-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .folder-files {
+      display: none;
+      padding: 2px 0 6px 22px;
+    }
+
+    .folder-files.open {
+      display: block;
     }
 
     .file-row .file-name {
@@ -475,6 +518,59 @@
       display: block;
       margin: 0 auto 12px;
       opacity: 0.4;
+    }
+
+    .pdf-spinner {
+      width: 34px;
+      height: 34px;
+      margin: 0 auto 14px;
+      border: 3.5px solid #d4e6f1;
+      border-top-color: #3498db;
+      border-radius: 50%;
+      animation: pdf-spin 0.8s linear infinite;
+    }
+
+    @keyframes pdf-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .pdf-wait-timer {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #95a5a6;
+    }
+
+    .pdf-preview-wrap {
+      width: 100%;
+      height: 100%;
+      min-height: 380px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pdf-preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: #5a6b7a;
+      background: #eef5fc;
+      border-bottom: 1.5px solid #d4e6f1;
+    }
+
+    .pdf-preview-toolbar .btn-action {
+      padding: 6px 14px;
+      font-size: 12px;
+    }
+
+    .pdf-preview-frame {
+      flex: 1;
+      width: 100%;
+      min-height: 340px;
+      border: 0;
+      background: #fff;
     }
 
     /* ===== BOTTOM ACTION BUTTONS ===== */
@@ -768,6 +864,110 @@
       }
     }
 
+    // Sidecar metadata file written alongside Inspection Report folders (not a real version)
+    const INSP_META_FILENAME = '_meta.json';
+    const loadedInspectionFolders = new Set();
+
+    function buildFileRow(groupKey, f, idx, opts = {}) {
+      const row = document.createElement('div');
+      row.className = 'file-row';
+
+      const input = document.createElement('input');
+      input.type = opts.radioGroup ? 'radio' : 'checkbox';
+      input.id = `file-${groupKey}-${idx}`;
+      if (opts.radioGroup) input.name = opts.radioGroup;
+      if (opts.checked) input.checked = true;
+      input.dataset.objectName = f.object_name;
+
+      // Radio groups don't natively support deselecting the checked option —
+      // clicking the already-selected version again clears the selection.
+      if (opts.radioGroup) {
+        input.addEventListener('mousedown', () => {
+          input.dataset.wasChecked = input.checked ? '1' : '';
+        });
+        input.addEventListener('click', () => {
+          if (input.dataset.wasChecked === '1') input.checked = false;
+        });
+      }
+
+      const name = document.createElement('label');
+      name.className = 'file-name';
+      name.htmlFor = input.id;
+      name.textContent = f.name;
+      name.title = 'เปิดไฟล์';
+      name.onclick = e => {
+        e.preventDefault(); // don't toggle the input — open the file instead
+        window.open(`Editor.html?object_name=${encodeURIComponent(f.object_name)}&return_url=${encodeURIComponent(location.pathname + location.search)}`, '_blank');
+      };
+
+      row.append(input, name);
+
+      if (f.last_modified) {
+        const date = document.createElement('span');
+        date.className = 'file-date';
+        date.textContent = new Date(f.last_modified).toLocaleDateString('th-TH');
+        row.appendChild(date);
+      }
+
+      return row;
+    }
+
+    // Inspection Report is stored as one folder per original filename, each folder
+    // holding the recorded versions — so it needs a folder → file (single-select) drilldown
+    // instead of the flat file list the other report types use.
+    function renderInspectionFolders(list, folders, key) {
+      if (!folders || folders.length === 0) {
+        list.innerHTML = '<div class="file-empty">ยังไม่มีไฟล์ในโฟลเดอร์นี้</div>';
+        return;
+      }
+      folders.forEach((folder, fi) => {
+        const row = document.createElement('div');
+        row.className = 'folder-row';
+        row.innerHTML = '<span class="folder-arrow">▾</span><span>📁</span><span class="folder-name"></span>';
+        row.querySelector('.folder-name').textContent = folder.name;
+
+        const inner = document.createElement('div');
+        inner.className = 'folder-files';
+        const innerId = `insp-folder-${fi}`;
+
+        const toggle = async () => {
+          const open = row.classList.toggle('open');
+          inner.classList.toggle('open', open);
+          if (open && !loadedInspectionFolders.has(innerId)) {
+            loadedInspectionFolders.add(innerId);
+            await loadInspectionFolderFiles(key, folder.name, inner, fi);
+          }
+        };
+        row.onclick = toggle;
+
+        list.append(row, inner);
+        toggle(); // auto-expand every folder as soon as the list renders
+      });
+    }
+
+    async function loadInspectionFolderFiles(key, folderName, container, folderIndex) {
+      container.innerHTML = '<div class="file-loading">กำลังโหลด...</div>';
+      const dest = `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/${REPORT_TYPE_FOLDER[key]}/${folderName}/`;
+      try {
+        const res = await fetch(`${API_BASE}/browse?prefix=${encodeURIComponent(dest)}`);
+        if (!res.ok) throw new Error(res.status);
+        const { files } = await res.json();
+        const versions = (files || [])
+          .filter(f => f.name !== INSP_META_FILENAME)
+          .sort((a, b) => new Date(b.last_modified) - new Date(a.last_modified));
+        container.innerHTML = '';
+        if (versions.length === 0) {
+          container.innerHTML = '<div class="file-empty">ยังไม่มีไฟล์ในโฟลเดอร์นี้</div>';
+          return;
+        }
+        const radioGroup = `insp-version-${folderIndex}`;
+        // Default-select the newest version (index 0, since versions[] is sorted newest-first)
+        versions.forEach((f, i) => container.appendChild(buildFileRow(key, f, i, { radioGroup, checked: i === 0 })));
+      } catch {
+        container.innerHTML = '<div class="file-empty">⚠️ โหลดไฟล์ไม่สำเร็จ</div>';
+      }
+    }
+
     async function loadReportFiles(key) {
       const list = document.getElementById(`files-${key}`);
       list.innerHTML = '<div class="file-loading">กำลังโหลด...</div>';
@@ -775,69 +975,132 @@
       try {
         const res = await fetch(`${API_BASE}/browse?prefix=${encodeURIComponent(dest)}`);
         if (!res.ok) throw new Error(res.status);
-        const { files } = await res.json();
+        const { folders, files } = await res.json();
         list.innerHTML = '';
+
+        if (key === 'inspection') {
+          renderInspectionFolders(list, folders, key);
+          return;
+        }
+
         if (!files || files.length === 0) {
           list.innerHTML = '<div class="file-empty">ยังไม่มีไฟล์ในโฟลเดอร์นี้</div>';
           return;
         }
-        files.forEach((f, i) => {
-          const row = document.createElement('div');
-          row.className = 'file-row';
-
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.id = `file-${key}-${i}`;
-          cb.dataset.objectName = f.object_name;
-
-          const name = document.createElement('label');
-          name.className = 'file-name';
-          name.htmlFor = cb.id;
-          name.textContent = f.name;
-          name.title = 'เปิดไฟล์';
-          name.onclick = e => {
-            e.preventDefault(); // don't toggle the checkbox — open the file instead
-            window.open(`Editor.html?object_name=${encodeURIComponent(f.object_name)}&return_url=${encodeURIComponent(location.pathname + location.search)}`, '_blank');
-          };
-
-          row.append(cb, name);
-
-          if (f.last_modified) {
-            const date = document.createElement('span');
-            date.className = 'file-date';
-            date.textContent = new Date(f.last_modified).toLocaleDateString('th-TH');
-            row.appendChild(date);
-          }
-
-          list.appendChild(row);
-        });
+        files.forEach((f, i) => list.appendChild(buildFileRow(key, f, i)));
       } catch {
         list.innerHTML = '<div class="file-empty">⚠️ โหลดไฟล์ไม่สำเร็จ</div>';
       }
     }
 
-    function generateReport() {
-      const selectedFiles = Array.from(document.querySelectorAll('.file-row input[type="checkbox"]:checked'))
-        .map(cb => cb.nextElementSibling.textContent);
+    // Blob URL of the last combined PDF preview (not saved to MinIO — preview only until confirmed later)
+    let combinedPdfBlobUrl = null;
+    // object_names selected for the last combined PDF, reused for the "download ZIP" button
+    let lastCombinedObjectNames = [];
 
-      if (selectedFiles.length === 0) {
+    async function generateReport() {
+      const selectedInputs = Array.from(document.querySelectorAll('.file-row input:checked'));
+
+      if (selectedInputs.length === 0) {
         alert("Please select at least one file.");
         return;
       }
 
-      // Show simple preview placeholder text
+      const objectNames = selectedInputs.map(i => i.dataset.objectName);
+      const fileNames   = selectedInputs.map(i => i.nextElementSibling.textContent);
+      lastCombinedObjectNames = objectNames;
+
       const box = document.getElementById("previewBox");
       box.innerHTML = `
         <div class="preview-placeholder">
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#aab8c4" stroke-width="1.5">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-          </svg>
-          Generating report for: ${selectedFiles.join(", ")}…
+          <div class="pdf-spinner"></div>
+          <div>กำลังรวมไฟล์เป็น PDF (${fileNames.length} ไฟล์)…</div>
+          <div class="pdf-wait-timer">รอมาแล้ว <span id="pdfWaitSeconds">0</span> วินาที</div>
         </div>
       `;
-      console.log("Generate report for files:", selectedFiles);
-      // TODO: wire to real report generation API
+
+      // No progress feed from the backend (single blocking request) — count elapsed
+      // time instead of a real countdown, just so the user knows it's still working.
+      let waitedSeconds = 0;
+      const waitTimer = setInterval(() => {
+        waitedSeconds++;
+        const el = document.getElementById('pdfWaitSeconds');
+        if (el) el.textContent = waitedSeconds;
+      }, 1000);
+
+      try {
+        const res = await fetch(`${API_BASE}/combine-to-pdf`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ object_names: objectNames }),
+        });
+        if (!res.ok) {
+          const detail = await res.json().catch(() => ({}));
+          throw new Error(detail.detail || `HTTP ${res.status}`);
+        }
+        const blob = await res.blob();
+
+        if (combinedPdfBlobUrl) URL.revokeObjectURL(combinedPdfBlobUrl);
+        combinedPdfBlobUrl = URL.createObjectURL(blob);
+
+        box.innerHTML = `
+          <div class="pdf-preview-wrap">
+            <div class="pdf-preview-toolbar">
+              <span>${fileNames.length} ไฟล์ • รวมเป็น PDF แล้ว (${waitedSeconds} วินาที) (Preview)</span>
+              <button type="button" class="btn-action" onclick="openCombinedPdfFullscreen()">เปิดเต็มจอ</button>
+              <button type="button" class="btn-action" id="downloadZipBtn" onclick="downloadCombinedZip()">ดาวน์โหลด ZIP Excel</button>
+            </div>
+            <iframe id="combinedPdfFrame" class="pdf-preview-frame" src="${combinedPdfBlobUrl}"></iframe>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `
+          <div class="preview-placeholder">
+            ⚠️ รวมไฟล์เป็น PDF ไม่สำเร็จ (รอไป ${waitedSeconds} วินาที): ${e.message}
+          </div>
+        `;
+      } finally {
+        clearInterval(waitTimer);
+      }
+    }
+
+    function openCombinedPdfFullscreen() {
+      if (combinedPdfBlobUrl) window.open(combinedPdfBlobUrl, '_blank');
+    }
+
+    async function downloadCombinedZip() {
+      if (!lastCombinedObjectNames.length) return;
+
+      const btn = document.getElementById('downloadZipBtn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'กำลังเตรียม ZIP…';
+
+      try {
+        const res = await fetch(`${API_BASE}/combine-to-zip`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ object_names: lastCombinedObjectNames }),
+        });
+        if (!res.ok) {
+          const detail = await res.json().catch(() => ({}));
+          throw new Error(detail.detail || `HTTP ${res.status}`);
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'report_files.zip';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        alert(`ดาวน์โหลด ZIP ไม่สำเร็จ: ${e.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
     }
 
     function exportPDF() {

@@ -8,6 +8,7 @@ from minio.error import S3Error
 from datetime import timedelta
 from typing import Optional
 from contextlib import contextmanager, suppress
+from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 from urllib.parse import quote
 import psycopg2  # type: ignore[import-untyped]
@@ -21,6 +22,8 @@ import mimetypes
 import msal  # type: ignore[import-untyped]
 import requests  # type: ignore[import-untyped]
 import jwt
+import zipfile
+from pypdf import PdfReader, PdfWriter
 
 load_dotenv()
 
@@ -117,6 +120,12 @@ class FileConfirm(BaseModel):
     object_name: str
     size: int
     mime_type: str
+
+class InspectionRecordIn(BaseModel):
+    object_name: str
+    by: str = ""
+    result: str = ""
+    note: str = ""
 
 # ══════════════════════════════════════════════════════
 #  AUTH ENDPOINTS
@@ -313,6 +322,52 @@ def browse_delete_file(object_name: str):
     return {"status": "deleted", "object_name": object_name}
 
 # ══════════════════════════════════════════════════════
+#  INSPECTION RECORDS (QAQC Step > Inspection Report)
+#  เก็บ Record By / Result / Note ต่อไฟล์เวอร์ชัน (object_name) ลง Postgres
+# ══════════════════════════════════════════════════════
+@app.get("/api/inspection-records")
+def list_inspection_records(prefix: str):
+    with db() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT object_name, record_by AS by, result, note "
+                "FROM inspection_records WHERE object_name LIKE %s",
+                (prefix + "%",)
+            )
+            rows = cur.fetchall()
+    return {row["object_name"]: {"by": row["by"], "result": row["result"], "note": row["note"]} for row in rows}
+
+@app.post("/api/inspection-records")
+def upsert_inspection_record(body: InspectionRecordIn):
+    with db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO inspection_records (object_name, record_by, result, note, updated_at)
+                VALUES (%s, %s, %s, %s, NOW())
+                ON CONFLICT (object_name) DO UPDATE
+                SET record_by = EXCLUDED.record_by,
+                    result = EXCLUDED.result,
+                    note = EXCLUDED.note,
+                    updated_at = NOW()
+                """,
+                (body.object_name, body.by, body.result, body.note)
+            )
+    return {"status": "ok", "object_name": body.object_name}
+
+@app.delete("/api/inspection-records")
+def delete_inspection_record(object_name: Optional[str] = None, prefix: Optional[str] = None):
+    if not object_name and not prefix:
+        raise HTTPException(status_code=400, detail="ต้องระบุ object_name หรือ prefix")
+    with db() as conn:
+        with conn.cursor() as cur:
+            if object_name:
+                cur.execute("DELETE FROM inspection_records WHERE object_name = %s", (object_name,))
+            else:
+                cur.execute("DELETE FROM inspection_records WHERE object_name LIKE %s", (prefix.rstrip("/") + "/%",))
+    return {"status": "deleted"}
+
+# ══════════════════════════════════════════════════════
 #  ONLYOFFICE CONFIG  ← ตั้งค่าผ่านไฟล์ .env (ดู .env.example)
 # ══════════════════════════════════════════════════════
 ONLYOFFICE_URL         = os.getenv("ONLYOFFICE_URL", "http://localhost:8080")
@@ -422,6 +477,118 @@ async def onlyoffice_callback(object_name: str, request: Request):
             )
 
     return {"error": 0}
+
+# ══════════════════════════════════════════════════════
+#  COMBINE FILES INTO ONE PDF (preview only — nothing saved to MinIO)
+#  ใช้ OnlyOffice Document Server ที่มีอยู่แล้วแปลงแต่ละไฟล์เป็น PDF
+#  แล้วต่อ (merge) หน้าทั้งหมดเป็น PDF เดียวด้วย pypdf
+# ══════════════════════════════════════════════════════
+ONLYOFFICE_CONVERT_BASE = ONLYOFFICE_DOCSERVER_URL or ONLYOFFICE_URL
+# Converting one file at a time made "combine many files" requests take minutes and
+# hit the reverse-proxy timeout — convert concurrently instead. Capped so a large
+# selection doesn't flood the single OnlyOffice Document Server instance at once.
+COMBINE_PDF_MAX_WORKERS = 5
+
+class CombinePdfRequest(BaseModel):
+    object_names: list[str]
+
+def _convert_object_to_pdf_bytes(object_name: str) -> bytes:
+    ext = object_name.rsplit(".", 1)[-1].lower()
+    filename = object_name.split("/")[-1]
+
+    if ext == "pdf":
+        # Already a PDF (e.g. an Inspection Report folder whose original upload was
+        # a PDF, not an Excel file) — nothing to convert, OnlyOffice's ConvertService
+        # rejects a pdf->pdf request. Just fetch it from MinIO as-is.
+        try:
+            response = mc.get_object(MINIO_BUCKET, object_name)
+            return response.read()
+        except S3Error:
+            raise HTTPException(404, f"ไม่พบไฟล์ '{filename}'")
+        finally:
+            with suppress(Exception):
+                response.close()
+                response.release_conn()
+
+    body = {
+        "async": False,
+        "filetype": ext,
+        "key": hashlib.md5(f"{object_name}:{uuid.uuid4()}".encode(), usedforsecurity=False).hexdigest(),
+        "outputtype": "pdf",
+        "title": filename,
+        "url": f"{ONLYOFFICE_BACKEND_URL}/api/onlyoffice/download?object_name={quote(object_name)}",
+    }
+    if ONLYOFFICE_DOC_TYPES.get(ext) == "cell":
+        # Scale each sheet down to fit on a single page (like Excel's "Fit Sheet on
+        # One Page"), instead of OnlyOffice's default of splitting wide/tall sheets
+        # across multiple PDF pages.
+        body["spreadsheetLayout"] = {"fitToWidth": 1, "fitToHeight": 1}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    if ONLYOFFICE_JWT_SECRET:
+        token = jwt.encode(body, ONLYOFFICE_JWT_SECRET, algorithm="HS256")
+        body["token"] = token
+        headers["Authorization"] = f"Bearer {token}"
+
+    resp = requests.post(f"{ONLYOFFICE_CONVERT_BASE}/ConvertService.ashx", json=body, headers=headers, timeout=90)
+    resp.raise_for_status()
+    result = resp.json()
+    if not result.get("endConvert"):
+        raise HTTPException(502, f"แปลง '{filename}' เป็น PDF ไม่สำเร็จ: {result.get('error', result)}")
+
+    pdf_resp = requests.get(result["fileUrl"], timeout=90)
+    pdf_resp.raise_for_status()
+    return pdf_resp.content
+
+@app.post("/api/combine-to-pdf")
+def combine_to_pdf(payload: CombinePdfRequest):
+    if not payload.object_names:
+        raise HTTPException(400, "No files selected")
+
+    # ThreadPoolExecutor.map preserves input order in its results even though the
+    # underlying conversions complete concurrently/out of order.
+    with ThreadPoolExecutor(max_workers=min(COMBINE_PDF_MAX_WORKERS, len(payload.object_names))) as executor:
+        pdf_bytes_list = list(executor.map(_convert_object_to_pdf_bytes, payload.object_names))
+
+    writer = PdfWriter()
+    for pdf_bytes in pdf_bytes_list:
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        for page in reader.pages:
+            writer.add_page(page)
+
+    out = io.BytesIO()
+    writer.write(out)
+    return Response(content=out.getvalue(), media_type="application/pdf")
+
+@app.post("/api/combine-to-zip")
+def combine_to_zip(payload: CombinePdfRequest):
+    if not payload.object_names:
+        raise HTTPException(400, "No files selected")
+
+    out = io.BytesIO()
+    used_names: set[str] = set()
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
+        for object_name in payload.object_names:
+            filename = object_name.split("/")[-1]
+            if filename in used_names:
+                stem, _, ext = filename.rpartition(".")
+                filename = f"{stem}_{uuid.uuid4().hex[:6]}.{ext}" if ext else f"{filename}_{uuid.uuid4().hex[:6]}"
+            used_names.add(filename)
+
+            try:
+                response = mc.get_object(MINIO_BUCKET, object_name)
+                zf.writestr(filename, response.read())
+            except S3Error:
+                raise HTTPException(404, f"ไม่พบไฟล์ '{filename}'")
+            finally:
+                with suppress(Exception):
+                    response.close()
+                    response.release_conn()
+
+    return Response(
+        content=out.getvalue(),
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=report_files.zip"},
+    )
 
 # ══════════════════════════════════════════════════════
 #  ENSURE PATH IN MINIO
