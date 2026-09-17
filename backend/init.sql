@@ -45,6 +45,18 @@ CREATE TABLE IF NOT EXISTS inspection_records (
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- ── File Records (QAQC Step > Maintenance/Spare Part/Photographer Report) ──
+-- เก็บ "Record by" + Object Type/Manufacturer/Year ต่อไฟล์เวอร์ชัน (object_name)
+-- คนละตารางกับ inspection_records เพราะ subtab1/3/4 ไม่มี result/note เหมือน Inspection Report
+CREATE TABLE IF NOT EXISTS file_records (
+    object_name  TEXT        PRIMARY KEY,
+    record_by    VARCHAR(255) NOT NULL DEFAULT '',
+    object_type  VARCHAR(255) NOT NULL DEFAULT '',
+    manufacturer VARCHAR(255) NOT NULL DEFAULT '',
+    year         VARCHAR(20)  NOT NULL DEFAULT '',
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ── สร้าง admin user ────────────────────────────────
 -- สร้าง user ผ่าน API หลัง service ขึ้นมาแล้ว:
 --   POST http://localhost:8000/api/register

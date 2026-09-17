@@ -127,6 +127,13 @@ class InspectionRecordIn(BaseModel):
     result: str = ""
     note: str = ""
 
+class FileRecordIn(BaseModel):
+    object_name: str
+    by: str = ""
+    object_type: str = ""
+    manufacturer: str = ""
+    year: str = ""
+
 # ══════════════════════════════════════════════════════
 #  AUTH ENDPOINTS
 # ══════════════════════════════════════════════════════
@@ -368,6 +375,59 @@ def delete_inspection_record(object_name: Optional[str] = None, prefix: Optional
     return {"status": "deleted"}
 
 # ══════════════════════════════════════════════════════
+#  FILE RECORDS (QAQC Step > Maintenance/Spare Part/Photographer Report)
+#  เก็บ Record By ต่อไฟล์เวอร์ชัน (object_name) ลง Postgres
+# ══════════════════════════════════════════════════════
+@app.get("/api/file-records")
+def list_file_records(prefix: str):
+    with db() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT object_name, record_by AS by, object_type, manufacturer, year "
+                "FROM file_records WHERE object_name LIKE %s",
+                (prefix.rstrip("/") + "/%",)
+            )
+            rows = cur.fetchall()
+    return {
+        row["object_name"]: {
+            "by": row["by"], "object_type": row["object_type"],
+            "manufacturer": row["manufacturer"], "year": row["year"],
+        }
+        for row in rows
+    }
+
+@app.post("/api/file-records")
+def upsert_file_record(body: FileRecordIn):
+    with db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO file_records (object_name, record_by, object_type, manufacturer, year, updated_at)
+                VALUES (%s, %s, %s, %s, %s, NOW())
+                ON CONFLICT (object_name) DO UPDATE
+                SET record_by = EXCLUDED.record_by,
+                    object_type = EXCLUDED.object_type,
+                    manufacturer = EXCLUDED.manufacturer,
+                    year = EXCLUDED.year,
+                    updated_at = NOW()
+                """,
+                (body.object_name, body.by, body.object_type, body.manufacturer, body.year)
+            )
+    return {"status": "ok", "object_name": body.object_name}
+
+@app.delete("/api/file-records")
+def delete_file_record(object_name: Optional[str] = None, prefix: Optional[str] = None):
+    if not object_name and not prefix:
+        raise HTTPException(status_code=400, detail="ต้องระบุ object_name หรือ prefix")
+    with db() as conn:
+        with conn.cursor() as cur:
+            if object_name:
+                cur.execute("DELETE FROM file_records WHERE object_name = %s", (object_name,))
+            else:
+                cur.execute("DELETE FROM file_records WHERE object_name LIKE %s", (prefix.rstrip("/") + "/%",))
+    return {"status": "deleted"}
+
+# ══════════════════════════════════════════════════════
 #  ONLYOFFICE CONFIG  ← ตั้งค่าผ่านไฟล์ .env (ดู .env.example)
 # ══════════════════════════════════════════════════════
 ONLYOFFICE_URL         = os.getenv("ONLYOFFICE_URL", "http://localhost:8080")
@@ -380,6 +440,7 @@ ONLYOFFICE_DOC_TYPES = {
     "xlsx": "cell", "xls": "cell", "xlsm": "cell", "csv": "cell", "ods": "cell",
     "docx": "word", "doc": "word", "odt": "word", "rtf": "word", "txt": "word",
     "pptx": "slide", "ppt": "slide", "odp": "slide",
+    "pdf": "pdf",
 }
 
 

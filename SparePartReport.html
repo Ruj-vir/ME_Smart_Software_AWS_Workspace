@@ -678,7 +678,13 @@
         return;
       }
       const object_names = Array.from(checked).map(cb => cb.dataset.objectName);
-      window.parent.postMessage({ type: 'files-selected', object_names }, '*');
+      window.parent.postMessage({
+        type: 'files-selected',
+        object_names,
+        object_type: sel[0],
+        manufacturer: sel[1],
+        year: sel[2],
+      }, '*');
     }
 
     if (IS_SELECT) {

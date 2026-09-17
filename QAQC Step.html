@@ -128,22 +128,9 @@
     .sub-pane { display: none; width: 100%; flex-direction: column; gap: 8px; }
     .sub-pane.active { display: flex; }
 
-    #leftFolders { width: 200px; display: flex; flex-direction: column; gap: 12px; padding-right: 10px; }
-    .sticky-index-button { position: sticky; top: 100px; padding: 20px 0; z-index: 1; }
-    .folder-entry { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: background 0.2s; background-color: #ffffff; }
-    .folder-entry:hover { background-color: #eef6ff; }
-    .folder-icon { width: 28px; height: 28px; }
-    .folder-name { font-weight: 300; color: #154360; }
-    #folderContent {
-      flex: 1; background: #ffffff; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
     .file-entry { margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
     .popup-image { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; max-height: 90%; z-index: 999; border: 2px solid #333; display: none; }
     .thumbnail { width: 80px; height: 80px; object-fit: cover; cursor: pointer; margin-right: 10px; }
-    .pdf-viewer { display: none; position: fixed; top: 5%; left: 5%; width: 90%; height: 90%; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.4); z-index: 1000; }
-    .pdf-viewer iframe { width: 100%; height: 100%; border: none; }
-    .close-pdf { position: absolute; top: 5px; right: 10px; background: red; color: white; border: none; font-weight: bold; padding: 5px 10px; cursor: pointer; }
     .floating-btn { position: fixed; bottom: 20px; right: 20px; background: #0078d7; color: white; border: none; border-radius: 50%; font-size: 24px; width: 50px; height: 50px; cursor: pointer; }
 
     .table-wrap { width: 100%; overflow: auto; margin-top: 12px; }
@@ -182,6 +169,11 @@
     table.recorded-files .file-num { color: #6b7280; font-size: 12px; }
     table.recorded-files .file-name { cursor: pointer; text-decoration: underline; color: #0078d7; }
     table.recorded-files .file-date { font-size: 12px; color: #6b7280; white-space: nowrap; }
+    table.recorded-files td input[type="text"] {
+      width: 100%; box-sizing: border-box; padding: 5px 8px; font-size: 12px;
+      border: 1px solid #d7dde3; border-radius: 6px; color: #1f2937;
+    }
+    table.recorded-files td input[type="text"]:focus { outline: none; border-color: #0078d7; }
     table.recorded-files .file-del {
       border: none; background: transparent; color: #c0392b; cursor: pointer;
       font-size: 16px; padding: 4px 8px; border-radius: 6px; line-height: 1;
@@ -253,6 +245,31 @@
     #deleteConfirmModal .modal-btn-delete { background:#c0392b; color:#fff; }
     #deleteConfirmModal .modal-btn-delete:hover { background:#a93226; }
 
+    /* ITP PDF Upload */
+    .itp-pdf-upload-row { display: flex; align-items: center; gap: 10px; padding: 6px 0 14px; }
+    #itpDataModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:10000; align-items:center; justify-content:center; }
+    #itpDataModal.open { display:flex; }
+    #itpDataModal .modal-box { width:460px; max-width:90%; max-height:75vh; background:#fff; border-radius:10px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,.3); }
+    #itpDataModal .modal-header { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; background:#d6eaf8; border-bottom:1px solid #aed6f1; flex-shrink:0; }
+    #itpDataModal .modal-header span { font-weight:bold; color:#154360; font-size:16px; }
+    #itpDataModal .modal-close { background:none; border:none; font-size:20px; cursor:pointer; color:#154360; line-height:1; }
+    #itpDataModal .modal-body { padding: 14px; overflow-y: auto; }
+    #itpDataModal .file-entry:hover { background: #eef6ff; }
+    .itp-data-empty, .itp-data-error { text-align:center; color:#6b7280; padding: 30px 10px; font-size: 13px; }
+    .itp-file-list { display: flex; flex-direction: column; gap: 8px; }
+    .itp-file-item .file-entry { margin-bottom: 0; }
+    .itp-file-item .file-entry:hover { background: #eef6ff; }
+    .itp-file-item.open .file-entry { background: #d6eaf8; border-color: #aed6f1; }
+    .itp-file-breadcrumb { flex: 1; font-size: 13px; color: #6b7280; }
+    .itp-file-breadcrumb strong { color: #154360; }
+    .itp-file-del { border: none; background: transparent; color: #c0392b; cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: 6px; line-height: 1; flex-shrink: 0; }
+    .itp-file-del:hover { background: #fdecea; }
+    .itp-file-oo { border: 1px solid #0078d7; background: transparent; color: #0078d7; cursor: pointer; font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 6px; line-height: 1; flex-shrink: 0; white-space: nowrap; }
+    .itp-file-oo:hover { background: #e8f4fd; }
+    .itp-inline-pdf { display: none; margin-top: 6px; height: 80vh; border: 1px solid #d7dde3; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06); flex-direction: column; }
+    .itp-inline-pdf.open { display: flex; }
+    .itp-pdf-frame { flex: 1; width: 100%; border: none; }
+
   </style>
 </head>
 <body>
@@ -315,14 +332,13 @@
   <div class="sub-tab-dest-info" id="subtabDestInfo"></div>
 
   <div class="tab-content">
-    <div class="tab-pane active" id="tab1">
-      <div id="leftFolders">
-        <div class="sticky-index-button">
-          <button onclick="document.getElementById('indexUpload').click()">INDEX Upload</button>
-          <input type="file" id="indexUpload" accept=".xlsx" style="display:none;" />
-        </div>
+    <div class="tab-pane active" id="tab1" style="flex-direction: column;">
+      <div class="itp-pdf-upload-row">
+        <button onclick="openITPDataBrowse()">Upload From Data</button>
+        <button onclick="document.getElementById('pdfDeviceUpload').click()">Upload From your device PC</button>
+        <input type="file" id="pdfDeviceUpload" accept="application/pdf,.pdf" style="display:none;" />
       </div>
-      <div id="folderContent"></div>
+      <div id="itpFileList" class="itp-file-list"></div>
     </div>
 
     <div class="tab-pane" id="tab2" style="flex-direction: column; gap: 8px;">
@@ -381,11 +397,6 @@
 
   <img id="popupImage" class="popup-image" onclick="this.style.display='none'" />
 
-  <div class="pdf-viewer" id="pdfViewer">
-    <button class="close-pdf" onclick="closePDF()">x</button>
-    <iframe id="pdfFrame"></iframe>
-  </div>
-
   <!-- Bank Form Modal -->
   <div id="bankFormModal">
     <div class="modal-box">
@@ -394,6 +405,17 @@
         <button class="modal-close" onclick="closeBankFormModal()">&#x2715;</button>
       </div>
       <iframe id="bankFormIframe" src=""></iframe>
+    </div>
+  </div>
+
+  <!-- ITP Upload From Data Modal -->
+  <div id="itpDataModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>Upload From Data (ITP)</span>
+        <button class="modal-close" onclick="closeITPDataModal()">&#x2715;</button>
+      </div>
+      <div class="modal-body" id="itpDataFileList"></div>
     </div>
   </div>
 
@@ -460,12 +482,6 @@
       };
     });
 
-    let lastPDF = null;
-    function closePDF() {
-      document.getElementById('pdfViewer').style.display = 'none';
-      document.getElementById('pdfFrame').src = '';
-    }
-
     document.getElementById('uploadExcel').addEventListener('change', async e => {
       const file = e.target.files[0];
       if (!file) return;
@@ -516,149 +532,6 @@
       tbody.appendChild(tr);
     }
 
-    function renderFiles(folderName) {
-      const container = document.createElement('div');
-      const fileInput = document.createElement('input');
-      const uploadBtn = document.createElement('button');
-      const recordBtn = document.createElement('button');
-      const fileList = document.createElement('div');
-      let lastFileBlob = null;
-
-      fileInput.type = 'file';
-      fileInput.accept = '.xlsx';
-      fileInput.style.display = 'none';
-      fileInput.id = `upload_${folderName}`;
-
-      uploadBtn.textContent = 'Upload blank form';
-      uploadBtn.onclick = () => fileInput.click();
-
-      recordBtn.textContent = 'Record';
-      recordBtn.style.marginLeft = '10px';
-      recordBtn.onclick = () => {
-        if (lastFileBlob) {
-          const file = new File([lastFileBlob], `Record_${new Date().toISOString().replace(/[:.]/g,'_')}.xlsx`, {
-            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-          });
-          handleFileUpload(file, fileList);
-        } else {
-          alert('Please upload a blank form first.');
-        }
-      };
-
-      fileInput.addEventListener('change', () => {
-        const file = fileInput.files[0];
-        if (!file) return;
-        lastFileBlob = file.slice();
-        handleFileUpload(file, fileList);
-      });
-
-      container.appendChild(uploadBtn);
-      container.appendChild(recordBtn);
-      container.appendChild(fileInput);
-      container.appendChild(fileList);
-      document.getElementById('folderContent').innerHTML = '';
-      document.getElementById('folderContent').appendChild(container);
-    }
-
-    function handleFileUpload(file, fileList) {
-      const fileURL = URL.createObjectURL(file);
-      const entry = document.createElement('div');
-      entry.className = 'file-entry';
-      entry.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:20px; margin-right:8px;"/><span>${file.name}</span>`;
-
-      const tabs = document.createElement('div');
-      tabs.className = 'file-tabs';
-      const tabNames = ['Picture', 'Result', 'Note'];
-      const tabContents = {};
-      const tabContentWrapper = document.createElement('div');
-      tabContentWrapper.className = 'file-tab-content';
-
-      tabNames.forEach(tab => {
-        const btn = document.createElement('button');
-        btn.textContent = tab;
-        btn.onclick = () => {
-          tabContentWrapper.innerHTML = '';
-          tabContentWrapper.appendChild(tabContents[tab]);
-        };
-        tabs.appendChild(btn);
-
-        const contentDiv = document.createElement('div');
-        if (tab === 'Picture') {
-          const picInput = document.createElement('input');
-          picInput.type = 'file'; picInput.accept = 'image/*'; picInput.multiple = true;
-          picInput.onchange = () => {
-            Array.from(picInput.files).forEach(imgFile => {
-              const img = document.createElement('img');
-              img.src = URL.createObjectURL(imgFile);
-              img.className = 'thumbnail';
-              img.onclick = () => {
-                const popup = document.getElementById('popupImage');
-                popup.src = img.src; popup.style.display = 'block';
-              };
-              contentDiv.appendChild(img);
-            });
-          };
-          contentDiv.appendChild(picInput);
-        }
-        if (tab === 'Result') {
-          const select = document.createElement('select');
-          ['Accepted', 'Pending', 'Unaccepted'].forEach(opt => {
-            const option = document.createElement('option');
-            option.value = option.text = opt;
-            select.appendChild(option);
-          });
-          const saveBtn = document.createElement('button');
-          saveBtn.textContent = 'Save Result';
-          contentDiv.appendChild(select);
-          contentDiv.appendChild(saveBtn);
-        }
-        if (tab === 'Note') {
-          const textarea = document.createElement('textarea');
-          textarea.rows = 4; textarea.cols = 50;
-          const saveBtn = document.createElement('button');
-          saveBtn.textContent = 'Save Note';
-          contentDiv.appendChild(textarea);
-          contentDiv.appendChild(saveBtn);
-        }
-        tabContents[tab] = contentDiv;
-      });
-
-      entry.appendChild(tabs);
-      entry.appendChild(tabContentWrapper);
-
-      entry.ondblclick = () => {
-        const excelOnlineUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileURL)}`;
-        window.open(excelOnlineUrl, '_blank');
-      };
-
-      fileList.prepend(entry);
-    }
-
-    document.getElementById('indexUpload').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function (evt) {
-        const data = new Uint8Array(evt.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        const leftFolders = document.getElementById('leftFolders');
-        leftFolders.innerHTML = '<div class="sticky-index-button">' + document.querySelector('.sticky-index-button').innerHTML + '</div>';
-        for (let i = 6; i < rows.length; i++) {
-          const name = rows[i] && rows[i][1];
-          if (name) {
-            const entry = document.createElement('div');
-            entry.className = 'folder-entry';
-            entry.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/715/715676.png" class="folder-icon"/><div class="folder-name">${name}</div>`;
-            entry.addEventListener('click', () => renderFiles(name));
-            leftFolders.appendChild(entry);
-          }
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    });
-
     // ── CONTEXT จาก URL (company/plant/service/package ที่ส่งมาจาก Package Default.html) ──
     const urlParams = new URLSearchParams(window.location.search);
     const company = urlParams.get("company") || "";
@@ -667,6 +540,186 @@
     const pkg     = urlParams.get("package") || "";
     const CONTEXT_BASE = [company, plant, service, pkg].filter(Boolean).join('/');
     const CONTEXT_PREFIX = CONTEXT_BASE ? CONTEXT_BASE + '/' : '';
+    const ITP_PREFIX = `${CONTEXT_PREFIX}Data/ITP/`;
+
+    // "PTTGC > Ruj_Test > Rotating Equipment > RujAB_test > Data > ITP > <file>.pdf"
+    function itpBreadcrumbHTML(fileName) {
+      const parts = [company, plant, service, pkg, 'Data', 'ITP'].filter(Boolean);
+      return parts.join(' &gt; ') + ' &gt; <strong>' + fileName + '</strong>';
+    }
+
+    async function fetchITPPdfFiles() {
+      const res = await fetch(`/api/browse?prefix=${encodeURIComponent(ITP_PREFIX)}`);
+      if (!res.ok) throw new Error('browse failed');
+      const { files } = await res.json();
+      return (files || []).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+    }
+
+    // Only one PDF is ever expanded inline at a time — opening another one collapses the previous.
+    let openITPWrap = null;
+
+    function closeInlineITPPdf() {
+      if (!openITPWrap) return;
+      const pdfDiv = openITPWrap.querySelector('.itp-inline-pdf');
+      pdfDiv.classList.remove('open');
+      pdfDiv.innerHTML = '';
+      openITPWrap.classList.remove('open');
+      openITPWrap = null;
+    }
+
+    // Embeds the PDF Stamp tool right here (same page, no new tab) — it loads this file from the
+    // backend itself (picking up its "<name> - ITP Checklist Comment.pdf" companion if one already
+    // exists), lets you view/draw/comment/sign, and saves back to that companion via its own
+    // "Save to ITP folder" button.
+    function openInlineITPPdf(wrap, objectName) {
+      if (openITPWrap === wrap) {
+        closeInlineITPPdf();
+        // Only rebuild the list now (not while it was open) — refreshing mid-session would
+        // destroy the live embedded tool the user might still be working in.
+        if (itpListNeedsRefresh) { itpListNeedsRefresh = false; loadITPFileList(); }
+        return;
+      }
+      closeInlineITPPdf();
+      const fileName = objectName.split('/').pop();
+      const pdfDiv = wrap.querySelector('.itp-inline-pdf');
+      pdfDiv.classList.add('open');
+      wrap.classList.add('open');
+      openITPWrap = wrap;
+
+      const params = new URLSearchParams({ company, plant, service, package: pkg, file: fileName, embed: '1' });
+      pdfDiv.innerHTML = `<iframe class="itp-pdf-frame" src="${'PDF Stamp.html?' + params.toString()}"></iframe>`;
+    }
+
+    // The embedded PDF Stamp tool posts this after a successful save. We don't refresh the list
+    // immediately (that would destroy the still-open embedded tool) — just flag it, and the list
+    // rebuilds itself as soon as this row is collapsed.
+    let itpListNeedsRefresh = false;
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'itp-stamp-saved') itpListNeedsRefresh = true;
+    });
+
+    function buildITPFileItem(f) {
+      const wrap = document.createElement('div');
+      wrap.className = 'itp-file-item';
+      wrap.dataset.object = f.object_name;
+
+      const entry = document.createElement('div');
+      entry.className = 'file-entry';
+      entry.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:20px;"/><span class="itp-file-breadcrumb">${itpBreadcrumbHTML(f.name)}</span><button class="itp-file-oo" title="เปิดด้วย OnlyOffice — ดูคมชัดและแก้ไข PDF ได้เต็มรูปแบบ">📝 OnlyOffice</button><button class="itp-file-del" title="Delete">&#x1F5D1;</button>`;
+      entry.onclick = () => openInlineITPPdf(wrap, f.object_name);
+      entry.querySelector('.itp-file-oo').onclick = (e) => {
+        e.stopPropagation();
+        const backParams = new URLSearchParams({ company, plant, service, package: pkg });
+        window.open(
+          `Editor.html?object_name=${encodeURIComponent(f.object_name)}&return_url=${encodeURIComponent('QAQC Step.html?' + backParams)}`,
+          '_blank'
+        );
+      };
+      entry.querySelector('.itp-file-del').onclick = (e) => {
+        e.stopPropagation();
+        openDeleteConfirm(null, null, `ไฟล์ "${f.name}"`, { type: 'itp', objectName: f.object_name });
+      };
+
+      const pdfDiv = document.createElement('div');
+      pdfDiv.className = 'itp-inline-pdf';
+
+      wrap.appendChild(entry);
+      wrap.appendChild(pdfDiv);
+      return wrap;
+    }
+
+    // Persistent list shown under the upload buttons — reloaded from the server so it survives page reloads.
+    async function loadITPFileList() {
+      const list = document.getElementById('itpFileList');
+      openITPWrap = null;
+      list.innerHTML = '<div class="itp-data-empty">Loading...</div>';
+      try {
+        const pdfs = await fetchITPPdfFiles();
+        if (!pdfs.length) {
+          list.innerHTML = '<div class="itp-data-empty">No PDF files found in the ITP folder yet.</div>';
+          return;
+        }
+        list.innerHTML = '';
+        pdfs.forEach(f => list.appendChild(buildITPFileItem(f)));
+      } catch (err) {
+        list.innerHTML = '<div class="itp-data-error">Failed to load files from the ITP folder.</div>';
+      }
+    }
+
+    function openITPObjectInline(objectName) {
+      const wrap = document.querySelector(`#itpFileList .itp-file-item[data-object="${CSS.escape(objectName)}"]`);
+      if (!wrap) return;
+      openInlineITPPdf(wrap, objectName);
+      wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function openITPDataBrowse() {
+      document.getElementById('itpDataModal').classList.add('open');
+      loadITPDataFiles();
+    }
+
+    function closeITPDataModal() {
+      document.getElementById('itpDataModal').classList.remove('open');
+    }
+
+    document.getElementById('itpDataModal').addEventListener('click', function (e) {
+      if (e.target === this) closeITPDataModal();
+    });
+
+    async function loadITPDataFiles() {
+      const list = document.getElementById('itpDataFileList');
+      list.innerHTML = '<div class="itp-data-empty">Loading...</div>';
+      try {
+        const pdfs = await fetchITPPdfFiles();
+        if (!pdfs.length) {
+          list.innerHTML = '<div class="itp-data-empty">No PDF files found in the ITP folder.</div>';
+          return;
+        }
+        list.innerHTML = '';
+        pdfs.forEach(f => {
+          const entry = document.createElement('div');
+          entry.className = 'file-entry';
+          entry.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:20px;"/><span>${f.name}</span>`;
+          entry.onclick = () => selectITPDataFile(f.object_name);
+          list.appendChild(entry);
+        });
+      } catch (err) {
+        list.innerHTML = '<div class="itp-data-error">Failed to load files from the ITP folder.</div>';
+      }
+    }
+
+    function selectITPDataFile(objectName) {
+      closeITPDataModal();
+      openITPObjectInline(objectName);
+    }
+
+    // ITP folder holds at most one PDF — uploading a new one replaces whatever was there before.
+    document.getElementById('pdfDeviceUpload').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const existing = await fetchITPPdfFiles();
+        await Promise.all(existing.map(f =>
+          fetch(`/api/browse/file?object_name=${encodeURIComponent(f.object_name)}`, { method: 'DELETE' })
+        ));
+
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`/api/browse/upload?prefix=${encodeURIComponent(ITP_PREFIX)}`, {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) throw new Error('upload failed');
+        const { object_name } = await res.json();
+        await loadITPFileList();
+        openITPObjectInline(object_name);
+      } catch (err) {
+        alert('Failed to upload the PDF to the ITP folder.');
+      }
+      e.target.value = '';
+    });
+
+    loadITPFileList();
 
     // Breadcrumb: Home > Company > Plant > Service > Package > QAQC Step
     document.getElementById("breadcrumb").innerHTML = `
@@ -699,6 +752,8 @@
 
     let activeSubtab = 'subtab1';
     const selectedObjectNames = { subtab1: null, subtab2: null, subtab3: null, subtab4: null };
+    // Object Type/Manufacturer/Year ที่เลือกไว้ตอนเปิด Bank Form (subtab1/3/4 — subtab2 ส่งแนบมากับ recordFile โดยตรง)
+    const selectedMeta = { subtab1: null, subtab3: null, subtab4: null };
 
     // Inspection Record UI state (subtab2 only) — sync กับตาราง inspection_records ใน Postgres
     // แต่ละแถวในตารางคือไฟล์เวอร์ชันจริงใน folder — inspectionRecords เก็บแค่ Record By/Result/Note ต่อเวอร์ชัน
@@ -706,9 +761,27 @@
     const inspectionFilesCache = { subtab2: [] };
     const activeInspFile = { subtab2: null };
 
-    function updateDestInfo() {
-      document.getElementById('subtabDestInfo').textContent =
-        'บันทึกไปที่: ' + REPORT_CONFIG[activeSubtab].dest;
+    // Maintenance/SparePart/Photographer ล็อกไว้กับไฟล์เดียว (ลบไฟล์เดิมทั้งหมดก่อนถึงจะเปลี่ยนได้ — ดู recordFile)
+    // ถ้ามีไฟล์อยู่แล้ว แสดง breadcrumb ของไฟล์นั้นแทน path ดิบ ถ้ายังไม่มีไฟล์เลยแสดง path ปลายทางตามเดิม
+    async function updateDestInfo() {
+      const dest = REPORT_CONFIG[activeSubtab].dest;
+      const el = document.getElementById('subtabDestInfo');
+      const fallback = () => { el.textContent = 'บันทึกไปที่: ' + dest; };
+      if (activeSubtab === 'subtab2') { fallback(); return; }
+      try {
+        const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
+        if (!r.ok) return fallback();
+        const { files } = await r.json();
+        if (!files.length) return fallback();
+        const main = files[0]; // ปลายทางนี้ล็อกไว้กับไฟล์เดียว ทุกแถวคือเวอร์ชันของไฟล์เดียวกัน
+        const fr = await fetch(`/api/file-records?prefix=${encodeURIComponent(dest)}`);
+        const records = fr.ok ? await fr.json() : {};
+        const rec = records[main.object_name] || {};
+        const crumb = [rec.object_type, rec.manufacturer, rec.year].filter(Boolean).join(' › ');
+        el.textContent = (crumb ? crumb + ' › ' : '') + main.name;
+      } catch {
+        fallback();
+      }
     }
 
     function openBankFormModal(subtabId) {
@@ -746,6 +819,12 @@
           return;
         }
 
+        selectedMeta[activeSubtab] = {
+          object_type: e.data.object_type || '',
+          manufacturer: e.data.manufacturer || '',
+          year: e.data.year || '',
+        };
+
         const label = names.length === 1
           ? names[0].split('/').pop()
           : `${names.length} files selected`;
@@ -782,15 +861,22 @@
           return;
         }
 
+        let fileRecords = {};
+        try {
+          const fr = await fetch(`/api/file-records?prefix=${encodeURIComponent(dest)}`);
+          if (fr.ok) fileRecords = await fr.json();
+        } catch {}
+
         const card = document.createElement('div');
         card.className = 'recorded-files-card';
         const table = document.createElement('table');
         table.className = 'recorded-files';
-        table.innerHTML = '<thead><tr><th style="width:44px">#</th><th>File Name</th><th style="width:160px">Last Edit</th><th style="width:60px"></th></tr></thead>';
+        table.innerHTML = '<thead><tr><th style="width:44px">#</th><th>File Name</th><th style="width:150px">Record by</th><th style="width:160px">Date Record</th><th style="width:60px"></th></tr></thead>';
         const tbody = document.createElement('tbody');
 
         files.forEach((f, idx) => {
           const tr = document.createElement('tr');
+          const rec = fileRecords[f.object_name] || { by: '', object_type: '', manufacturer: '', year: '' };
 
           const numTd = document.createElement('td');
           numTd.className = 'file-num';
@@ -805,6 +891,14 @@
           );
           nameTd.appendChild(name);
 
+          const byTd = document.createElement('td');
+          const byInput = document.createElement('input');
+          byInput.type = 'text';
+          byInput.placeholder = 'ชื่อผู้บันทึก';
+          byInput.value = rec.by || '';
+          byInput.onchange = () => updFileRecordBy(f.object_name, byInput.value, rec);
+          byTd.appendChild(byInput);
+
           const dateTd = document.createElement('td');
           dateTd.className = 'file-date';
           if (f.last_modified) {
@@ -814,7 +908,7 @@
             const yyyy = dt.getFullYear();
             const hh   = String(dt.getHours()).padStart(2,'0');
             const min  = String(dt.getMinutes()).padStart(2,'0');
-            dateTd.textContent = `Last Edit: ${dd}/${mm}/${yyyy} ${hh}:${min}`;
+            dateTd.textContent = `${dd}/${mm}/${yyyy} ${hh}:${min}`;
           }
 
           const delTd = document.createElement('td');
@@ -826,13 +920,27 @@
           delBtn.onclick = () => openDeleteConfirm(subtabId, f.object_name, `ไฟล์ "${f.name}"`);
           delTd.appendChild(delBtn);
 
-          tr.append(numTd, nameTd, dateTd, delTd);
+          tr.append(numTd, nameTd, byTd, dateTd, delTd);
           tbody.appendChild(tr);
         });
 
         table.appendChild(tbody);
         card.appendChild(table);
         list.appendChild(card);
+      } catch {}
+    }
+
+    // บันทึก Record by ทันทีตอนพิมพ์เสร็จ (onchange) — คง object_type/manufacturer/year เดิมของไฟล์นั้นไว้
+    async function updFileRecordBy(objectName, by, rec) {
+      try {
+        await fetch('/api/file-records', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            object_name: objectName, by,
+            object_type: rec.object_type, manufacturer: rec.manufacturer, year: rec.year,
+          }),
+        });
       } catch {}
     }
 
@@ -850,6 +958,17 @@
     async function confirmDeleteFile() {
       if (!pendingDelete) return;
       const { subtabId, type } = pendingDelete;
+      if (type === 'itp') {
+        const { objectName } = pendingDelete;
+        try {
+          await fetch(`/api/browse/file?object_name=${encodeURIComponent(objectName)}`, { method: 'DELETE' });
+          await loadITPFileList();
+        } catch {
+          alert('ลบไม่สำเร็จ');
+        }
+        closeDeleteConfirm();
+        return;
+      }
       if (type === 'folder') {
         const { prefix, key } = pendingDelete;
         try {
@@ -868,9 +987,11 @@
       try {
         await fetch(`/api/browse/file?object_name=${encodeURIComponent(objectName)}`, { method: 'DELETE' });
         await fetch(`/api/inspection-records?object_name=${encodeURIComponent(objectName)}`, { method: 'DELETE' });
+        await fetch(`/api/file-records?object_name=${encodeURIComponent(objectName)}`, { method: 'DELETE' });
         delete inspectionRecords[objectName];
         if (activeInspFile[subtabId] === objectName) activeInspFile[subtabId] = null;
         loadRecordedFiles(subtabId, { forceFresh: true });
+        if (subtabId !== 'subtab2') updateDestInfo();
       } catch {
         alert('ลบไม่สำเร็จ');
       }
@@ -1202,12 +1323,27 @@
       const statusEl = document.getElementById(`selectedBankForm-${subtabId}`);
       if (isInsp && statusEl) statusEl.textContent = `กำลังบันทึก ${selectedObjects.length} ไฟล์...`;
 
+      // Record by กรอกทีหลังแบบ inline ในตาราง (ดู updFileRecordBy) — ตอนบันทึกเก็บแค่ Object Type/Manufacturer/Year
+      const meta = !isInsp ? (selectedMeta[subtabId] || { object_type: '', manufacturer: '', year: '' }) : null;
+
       let existingFiles = [];
       if (!isInsp) {
         try {
           const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
           if (r.ok) ({ files: existingFiles } = await r.json());
         } catch {}
+
+        // ปลายทางนี้ล็อกไว้กับไฟล์ต้นฉบับเดียว — ถ้ามีไฟล์อื่นอยู่แล้ว ห้ามบันทึกไฟล์ต้นฉบับที่ต่างออกไป
+        // จนกว่าจะลบไฟล์เดิมทั้งหมดออกก่อน (บันทึกไฟล์เดิมซ้ำ = เวอร์ชันใหม่ ยังทำได้ปกติ)
+        if (existingFiles.length) {
+          const lockedMatch = existingFiles[0].name.match(GEN_NAME_RE);
+          const lockedName = lockedMatch ? lockedMatch[1] : existingFiles[0].name;
+          const mismatched = selectedObjects.some(sel => sel.split('/').pop() !== lockedName);
+          if (mismatched) {
+            alert(`ปลายทางนี้ถูกบันทึกไว้กับไฟล์ "${lockedName}" แล้ว\nต้องลบไฟล์เดิมทั้งหมดออกก่อน ถึงจะบันทึกไฟล์อื่นแทนได้`);
+            return;
+          }
+        }
       }
       const inspFolderCache = {}; // subtab2: originalName -> ไฟล์ที่มีอยู่แล้วใน folder นั้น
 
@@ -1245,6 +1381,15 @@
           matchPool.push({ name: newName });
           savedNames.push(newName);
           if (isInsp && inspMeta) await saveInspMeta(`${dest}${originalName}/`, inspMeta);
+          if (!isInsp) {
+            try {
+              await fetch('/api/file-records', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ object_name: destObject, by: '', ...meta }),
+              });
+            } catch {}
+          }
         } catch {
           failedNames.push(originalName);
         }
@@ -1261,6 +1406,7 @@
         if (statusEl) statusEl.textContent = '';
       }
       loadRecordedFiles(subtabId, { forceFresh: isInsp });
+      if (!isInsp) updateDestInfo();
     }
   </script>
 </body>
