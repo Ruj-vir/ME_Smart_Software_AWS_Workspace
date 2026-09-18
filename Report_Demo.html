@@ -742,6 +742,15 @@
             <div class="file-sublist" id="files-photographer"></div>
           </div>
         </div>
+
+        <div class="report-type-label" id="dataToggle" onclick="toggleDataList()">
+          <span class="rt-arrow" id="dataArrow">▾</span>
+          <span>Data</span>
+        </div>
+
+        <div class="check-list" id="dataList">
+          <div id="files-data"></div>
+        </div>
       </div>
 
       <!-- RIGHT: Final Report Preview -->
@@ -805,6 +814,11 @@
       photographer: 'PhotographerReport',
     };
 
+    // Raw data files browsed straight from the equipment's Data/ folder
+    // (e.g. PTTGC/Ruj_Test/Rotating Equipment/RujAB_test/Data/), separate from
+    // the QAQC Step ▸ Maintenance Record report types above.
+    const DATA_FOLDER = 'Data/';
+
     // Breadcrumb
     document.getElementById("breadcrumb").innerHTML = `
       <a href="Main.html">Home</a> &gt;
@@ -848,6 +862,69 @@
       const label = document.getElementById('mrToggle');
       list.classList.toggle('open');
       label.classList.toggle('open');
+    }
+
+    let dataListLoaded = false;
+    // Unique index for each Data file's checkbox/id — files are rendered from many
+    // recursive folder fetches, so a per-folder index (0,1,2…) would collide.
+    let dataFileRowCounter = 0;
+
+    async function toggleDataList() {
+      const list  = document.getElementById('dataList');
+      const label = document.getElementById('dataToggle');
+      const open  = list.classList.toggle('open');
+      label.classList.toggle('open', open);
+      if (open && !dataListLoaded) {
+        dataListLoaded = true;
+        const container = document.getElementById('files-data');
+        container.innerHTML = '<div class="file-loading">กำลังโหลด...</div>';
+        await renderDataFolder(container, `${CONTEXT_PREFIX}${DATA_FOLDER}`);
+      }
+    }
+
+    // The Data/ folder can hold many nested subfolders, so browse it recursively:
+    // each folder row lazy-loads its own children (folders + files) on expand.
+    async function renderDataFolder(container, prefix) {
+      try {
+        const res = await fetch(`${API_BASE}/browse?prefix=${encodeURIComponent(prefix)}`);
+        if (!res.ok) throw new Error(res.status);
+        const { folders, files } = await res.json();
+        container.innerHTML = '';
+
+        if ((!folders || folders.length === 0) && (!files || files.length === 0)) {
+          container.innerHTML = '<div class="file-empty">ยังไม่มีไฟล์ในโฟลเดอร์นี้</div>';
+          return;
+        }
+
+        (folders || []).forEach(folder => {
+          const row = document.createElement('div');
+          row.className = 'folder-row';
+          row.innerHTML = '<span class="folder-arrow">▾</span><span>📁</span><span class="folder-name"></span>';
+          row.querySelector('.folder-name').textContent = folder.name;
+
+          const inner = document.createElement('div');
+          inner.className = 'folder-files';
+          let loaded = false;
+
+          row.onclick = async () => {
+            const open = row.classList.toggle('open');
+            inner.classList.toggle('open', open);
+            if (open && !loaded) {
+              loaded = true;
+              inner.innerHTML = '<div class="file-loading">กำลังโหลด...</div>';
+              await renderDataFolder(inner, `${prefix}${folder.name}/`);
+            }
+          };
+
+          container.append(row, inner);
+        });
+
+        (files || []).forEach(f => {
+          container.appendChild(buildFileRow('data', f, dataFileRowCounter++));
+        });
+      } catch {
+        container.innerHTML = '<div class="file-empty">⚠️ โหลดไฟล์ไม่สำเร็จ</div>';
+      }
     }
 
     // Which report-type file lists have already been fetched (lazy-load once per group)
