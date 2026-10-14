@@ -555,6 +555,7 @@ COMBINE_PDF_MAX_WORKERS = 5
 class CombinePdfRequest(BaseModel):
     object_names: list[str]
     maintenance_cover: bool = False
+    report_covers: bool = False
 
 def _convert_object_to_pdf_bytes(object_name: str) -> bytes:
     ext = object_name.rsplit(".", 1)[-1].lower()
@@ -613,14 +614,23 @@ def _combine_pdf_bytes(payload: CombinePdfRequest):
         pdf_bytes_list = list(executor.map(_convert_object_to_pdf_bytes, payload.object_names))
 
     writer = PdfWriter()
-    maintenance_cover_added = False
+    report_cover_files = {
+        "MaintenanceReport": "MaintenanceReportCover.pdf",
+        "InspectionReport": "InspectionReportCover.pdf",
+        "SparePartReport": "SparePartReportCover.pdf",
+        "PhotographerReport": "PhotographerReportCover.pdf",
+    }
+    added_covers = set()
     for object_name, pdf_bytes in zip(payload.object_names, pdf_bytes_list):
-        if (payload.maintenance_cover and not maintenance_cover_added
-                and "/QAQCStep/MaintenanceRecord/MaintenanceReport/" in "/" + object_name):
-            cover = PdfReader(os.path.join(STATIC_DIR, "assets", "pdf", "covers", "MaintenanceReportCover.pdf"))
-            for page in cover.pages:
-                writer.add_page(page)
-            maintenance_cover_added = True
+        for report_type, cover_file in report_cover_files.items():
+            enabled = payload.report_covers or (payload.maintenance_cover and report_type == "MaintenanceReport")
+            if (enabled and report_type not in added_covers
+                    and f"/QAQCStep/MaintenanceRecord/{report_type}/" in "/" + object_name):
+                cover = PdfReader(os.path.join(STATIC_DIR, "assets", "pdf", "covers", cover_file))
+                for page in cover.pages:
+                    writer.add_page(page)
+                added_covers.add(report_type)
+                break
         reader = PdfReader(io.BytesIO(pdf_bytes))
         for page in reader.pages:
             writer.add_page(page)

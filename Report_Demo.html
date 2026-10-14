@@ -1128,7 +1128,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             object_names: objectNames,
-            maintenance_cover: selectedInputs.some(input => input.closest('#files-maintenance')),
+            report_covers: true,
           }),
         });
         const jobUrl = `${API_BASE}/combine-pdf-jobs/${encodeURIComponent(job_id)}`;
