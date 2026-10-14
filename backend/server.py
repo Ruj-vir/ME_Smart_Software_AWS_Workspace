@@ -23,7 +23,9 @@ import msal  # type: ignore[import-untyped]
 import requests  # type: ignore[import-untyped]
 import jwt
 import zipfile
+import json
 from pypdf import PdfReader, PdfWriter
+from pdf_jobs import PdfJobs
 
 load_dotenv()
 
@@ -552,6 +554,7 @@ COMBINE_PDF_MAX_WORKERS = 5
 
 class CombinePdfRequest(BaseModel):
     object_names: list[str]
+    maintenance_cover: bool = False
 
 def _convert_object_to_pdf_bytes(object_name: str) -> bytes:
     ext = object_name.rsplit(".", 1)[-1].lower()
@@ -600,8 +603,7 @@ def _convert_object_to_pdf_bytes(object_name: str) -> bytes:
     pdf_resp.raise_for_status()
     return pdf_resp.content
 
-@app.post("/api/combine-to-pdf")
-def combine_to_pdf(payload: CombinePdfRequest):
+def _combine_pdf_bytes(payload: CombinePdfRequest):
     if not payload.object_names:
         raise HTTPException(400, "No files selected")
 
@@ -611,14 +613,62 @@ def combine_to_pdf(payload: CombinePdfRequest):
         pdf_bytes_list = list(executor.map(_convert_object_to_pdf_bytes, payload.object_names))
 
     writer = PdfWriter()
-    for pdf_bytes in pdf_bytes_list:
+    maintenance_cover_added = False
+    for object_name, pdf_bytes in zip(payload.object_names, pdf_bytes_list):
+        if (payload.maintenance_cover and not maintenance_cover_added
+                and "/QAQCStep/MaintenanceRecord/MaintenanceReport/" in "/" + object_name):
+            cover = PdfReader(os.path.join(STATIC_DIR, "assets", "pdf", "covers", "MaintenanceReportCover.pdf"))
+            for page in cover.pages:
+                writer.add_page(page)
+            maintenance_cover_added = True
         reader = PdfReader(io.BytesIO(pdf_bytes))
         for page in reader.pages:
             writer.add_page(page)
 
     out = io.BytesIO()
     writer.write(out)
-    return Response(content=out.getvalue(), media_type="application/pdf")
+    return out.getvalue()
+
+
+pdf_jobs = PdfJobs()
+
+
+@app.post("/api/combine-to-pdf")
+def combine_to_pdf(payload: CombinePdfRequest):
+    return Response(content=_combine_pdf_bytes(payload), media_type="application/pdf")
+
+
+@app.post("/api/combine-pdf-jobs", status_code=202)
+def create_pdf_job(payload: CombinePdfRequest):
+    if not payload.object_names:
+        raise HTTPException(400, "No files selected")
+    try:
+        job_id = pdf_jobs.submit(lambda: _combine_pdf_bytes(payload))
+    except OverflowError as exc:
+        raise HTTPException(429, str(exc))
+    return {"job_id": job_id}
+
+
+@app.get("/api/combine-pdf-jobs/{job_id}")
+def pdf_job_status(job_id: str):
+    job = pdf_jobs.get(job_id)
+    if job is None:
+        raise HTTPException(404, "PDF job expired or server restarted. Please generate again.")
+    return Response(
+        content=json.dumps({"status": job['status'], "error": job['error']}),
+        media_type="application/json", headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/api/combine-pdf-jobs/{job_id}/result")
+def pdf_job_result(job_id: str):
+    job = pdf_jobs.get(job_id)
+    if job is None:
+        raise HTTPException(404, "PDF job expired or server restarted. Please generate again.")
+    if job['status'] != 'completed':
+        raise HTTPException(409, job['error'] or "PDF is not ready yet")
+    return Response(content=job['data'], media_type="application/pdf",
+                    headers={"Cache-Control": "no-store"})
 
 @app.post("/api/combine-to-zip")
 def combine_to_zip(payload: CombinePdfRequest):

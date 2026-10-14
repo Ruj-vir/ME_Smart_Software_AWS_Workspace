@@ -1074,8 +1074,26 @@
     let combinedPdfBlobUrl = null;
     // object_names selected for the last combined PDF, reused for the "download ZIP" button
     let lastCombinedObjectNames = [];
+    let generatingReport = false;
+
+    async function pdfRequest(url, options = {}) {
+      const { pdf = false, ...fetchOptions } = options;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 45000);
+      try {
+        const res = await fetch(url, { ...fetchOptions, signal: controller.signal, cache: 'no-store' });
+        if (!res.ok) {
+          const detail = await res.json().catch(() => ({}));
+          throw new Error(detail.detail || `HTTP ${res.status}`);
+        }
+        return pdf ? await res.blob() : await res.json();
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
 
     async function generateReport() {
+      if (generatingReport) return;
       const selectedInputs = Array.from(document.querySelectorAll('.file-row input:checked'));
 
       if (selectedInputs.length === 0) {
@@ -1085,7 +1103,7 @@
 
       const objectNames = selectedInputs.map(i => i.dataset.objectName);
       const fileNames   = selectedInputs.map(i => i.nextElementSibling.textContent);
-      lastCombinedObjectNames = objectNames;
+      generatingReport = true;
 
       const box = document.getElementById("previewBox");
       box.innerHTML = `
@@ -1096,8 +1114,7 @@
         </div>
       `;
 
-      // No progress feed from the backend (single blocking request) — count elapsed
-      // time instead of a real countdown, just so the user knows it's still working.
+      // Elapsed time includes queueing and conversion in the background worker.
       let waitedSeconds = 0;
       const waitTimer = setInterval(() => {
         waitedSeconds++;
@@ -1106,16 +1123,25 @@
       }, 1000);
 
       try {
-        const res = await fetch(`${API_BASE}/combine-to-pdf`, {
+        const { job_id } = await pdfRequest(`${API_BASE}/combine-pdf-jobs`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ object_names: objectNames }),
+          body: JSON.stringify({
+            object_names: objectNames,
+            maintenance_cover: selectedInputs.some(input => input.closest('#files-maintenance')),
+          }),
         });
-        if (!res.ok) {
-          const detail = await res.json().catch(() => ({}));
-          throw new Error(detail.detail || `HTTP ${res.status}`);
+        const jobUrl = `${API_BASE}/combine-pdf-jobs/${encodeURIComponent(job_id)}`;
+        const deadline = Date.now() + 30 * 60 * 1000;
+        while (true) {
+          const job = await pdfRequest(jobUrl);
+          if (job.status === 'failed') throw new Error(job.error || 'แปลงไฟล์ไม่สำเร็จ');
+          if (job.status === 'completed') break;
+          if (Date.now() >= deadline) throw new Error('การรวม PDF ใช้เวลาเกิน 30 นาที กรุณาลองใหม่');
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
-        const blob = await res.blob();
+        const blob = await pdfRequest(`${jobUrl}/result`, { pdf: true });
+        lastCombinedObjectNames = objectNames;
 
         if (combinedPdfBlobUrl) URL.revokeObjectURL(combinedPdfBlobUrl);
         combinedPdfBlobUrl = URL.createObjectURL(blob);
@@ -1131,13 +1157,11 @@
           </div>
         `;
       } catch (e) {
-        box.innerHTML = `
-          <div class="preview-placeholder">
-            ⚠️ รวมไฟล์เป็น PDF ไม่สำเร็จ (รอไป ${waitedSeconds} วินาที): ${e.message}
-          </div>
-        `;
+        box.innerHTML = '<div class="preview-placeholder"></div>';
+        box.firstElementChild.textContent = `⚠️ รวมไฟล์เป็น PDF ไม่สำเร็จ (รอไป ${waitedSeconds} วินาที): ${e.message}`;
       } finally {
         clearInterval(waitTimer);
+        generatingReport = false;
       }
     }
 
