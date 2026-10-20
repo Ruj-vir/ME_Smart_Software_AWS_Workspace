@@ -26,6 +26,7 @@ import zipfile
 import json
 from pypdf import PdfReader, PdfWriter
 from pdf_jobs import PdfJobs
+from pdf_layout import fit_pages_to_a4
 
 load_dotenv()
 
@@ -584,10 +585,10 @@ def _convert_object_to_pdf_bytes(object_name: str) -> bytes:
         "url": f"{ONLYOFFICE_BACKEND_URL}/api/onlyoffice/download?object_name={quote(object_name)}",
     }
     if ONLYOFFICE_DOC_TYPES.get(ext) == "cell":
-        # Scale each sheet down to fit on a single page (like Excel's "Fit Sheet on
-        # One Page"), instead of OnlyOffice's default of splitting wide/tall sheets
-        # across multiple PDF pages.
-        body["spreadsheetLayout"] = {"fitToWidth": 1, "fitToHeight": 1}
+        # Honor the saved print area shown in Page Break Preview. Leave scale,
+        # fit settings, paper size and margins to the workbook's saved layout.
+        # Automatic page breaks may still differ between Excel and OnlyOffice.
+        body["spreadsheetLayout"] = {"ignorePrintArea": False}
     headers = {"Accept": "application/json", "Content-Type": "application/json"}
     if ONLYOFFICE_JWT_SECRET:
         token = jwt.encode(body, ONLYOFFICE_JWT_SECRET, algorithm="HS256")
@@ -602,6 +603,9 @@ def _convert_object_to_pdf_bytes(object_name: str) -> bytes:
 
     pdf_resp = requests.get(result["fileUrl"], timeout=90)
     pdf_resp.raise_for_status()
+    if ONLYOFFICE_DOC_TYPES.get(ext) == "cell":
+        # Enlarge each printed page independently; retain saved pagination.
+        return fit_pages_to_a4(pdf_resp.content)
     return pdf_resp.content
 
 def _combine_pdf_bytes(payload: CombinePdfRequest):

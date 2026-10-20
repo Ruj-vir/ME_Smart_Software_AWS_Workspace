@@ -8,3 +8,5 @@ requests
 python-dotenv
 PyJWT
 pypdf
+PyMuPDF>=1.26.4,<2
+Pillow>=10,<13
