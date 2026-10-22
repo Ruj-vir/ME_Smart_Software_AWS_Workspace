@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -295,19 +295,19 @@
         <div class="hn-item">
           <button class="hn-btn" onclick="location.href='InspectionReport.html' + location.search">
             <span class="btn-icon">🔍</span>
-            <span class="btn-text">Inspection Report</span>
+            <span class="btn-text">Inspection Sheet</span>
           </button>
         </div>
         <div class="hn-item">
           <button class="hn-btn" onclick="location.href='SparePartReport.html' + location.search">
             <span class="btn-icon">⚙️</span>
-            <span class="btn-text">Spare Part Report</span>
+            <span class="btn-text">Spare Part</span>
           </button>
         </div>
         <div class="hn-item">
           <button class="hn-btn" onclick="location.href='PhotographerReport.html' + location.search">
             <span class="btn-icon">📷</span>
-            <span class="btn-text">Photographer Report</span>
+            <span class="btn-text">Photographs</span>
           </button>
         </div>
       </div>
@@ -325,9 +325,9 @@
 
   <div class="sub-tab-header" id="maintenanceSubTabs">
     <button class="sub-tab-button active" data-subtab="subtab1">Maintenance Report</button>
-    <button class="sub-tab-button" data-subtab="subtab2">Inspection Report</button>
-    <button class="sub-tab-button" data-subtab="subtab3">Spare Part Report</button>
-    <button class="sub-tab-button" data-subtab="subtab4">Photographer Report</button>
+    <button class="sub-tab-button" data-subtab="subtab2">Inspection Sheet</button>
+    <button class="sub-tab-button" data-subtab="subtab3">Spare Part</button>
+    <button class="sub-tab-button" data-subtab="subtab4">Photographs</button>
   </div>
   <div class="sub-tab-dest-info" id="subtabDestInfo"></div>
 
@@ -738,15 +738,15 @@
       },
       subtab2: {
         src: 'InspectionReport.html',
-        dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/InspectionReport/`
+        dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/Inspection Sheet/`
       },
       subtab3: {
         src: 'SparePartReport.html',
-        dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/SparePartReport/`
+        dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/Spare Part/`
       },
       subtab4: {
         src: 'PhotographerReport.html',
-        dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/PhotographerReport/`
+        dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/Photographs/`
       }
     };
 

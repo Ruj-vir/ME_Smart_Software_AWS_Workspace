@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -652,19 +652,19 @@
         <div class="hn-item">
           <button class="hn-btn" onclick="location.href='InspectionReport.html' + location.search">
             <span class="btn-icon">🔍</span>
-            <span class="btn-text">Inspection Report</span>
+            <span class="btn-text">Inspection Sheet</span>
           </button>
         </div>
         <div class="hn-item">
           <button class="hn-btn" onclick="location.href='SparePartReport.html' + location.search">
             <span class="btn-icon">⚙️</span>
-            <span class="btn-text">Spare Part Report</span>
+            <span class="btn-text">Spare Part</span>
           </button>
         </div>
         <div class="hn-item">
           <button class="hn-btn" onclick="location.href='PhotographerReport.html' + location.search">
             <span class="btn-icon">📷</span>
-            <span class="btn-text">Photographer Report</span>
+            <span class="btn-text">Photographs</span>
           </button>
         </div>
       </div>
@@ -720,7 +720,7 @@
 
           <div class="report-item">
             <div class="check-row type-row" onclick="toggleFileGroup('inspection', event)">
-              <label>Inspection Report</label>
+              <label>Inspection Sheet</label>
               <span class="row-arrow">▾</span>
             </div>
             <div class="file-sublist" id="files-inspection"></div>
@@ -728,7 +728,7 @@
 
           <div class="report-item">
             <div class="check-row type-row" onclick="toggleFileGroup('sparepart', event)">
-              <label>Spare Part Report</label>
+              <label>Spare Part</label>
               <span class="row-arrow">▾</span>
             </div>
             <div class="file-sublist" id="files-sparepart"></div>
@@ -736,7 +736,7 @@
 
           <div class="report-item">
             <div class="check-row type-row" onclick="toggleFileGroup('photographer', event)">
-              <label>Photographer Report</label>
+              <label>Photographs</label>
               <span class="row-arrow">▾</span>
             </div>
             <div class="file-sublist" id="files-photographer"></div>
@@ -809,9 +809,9 @@
 
     const REPORT_TYPE_FOLDER = {
       maintenance:  'MaintenanceReport',
-      inspection:   'InspectionReport',
-      sparepart:    'SparePartReport',
-      photographer: 'PhotographerReport',
+      inspection:   'Inspection Sheet',
+      sparepart:    'Spare Part',
+      photographer: 'Photographs',
     };
 
     // Raw data files browsed straight from the equipment's Data/ folder
@@ -941,7 +941,7 @@
       }
     }
 
-    // Sidecar metadata file written alongside Inspection Report folders (not a real version)
+    // Sidecar metadata file written alongside Inspection Sheet folders (not a real version)
     const INSP_META_FILENAME = '_meta.json';
     const loadedInspectionFolders = new Set();
 
@@ -989,7 +989,7 @@
       return row;
     }
 
-    // Inspection Report is stored as one folder per original filename, each folder
+    // Inspection Sheet is stored as one folder per original filename, each folder
     // holding the recorded versions — so it needs a folder → file (single-select) drilldown
     // instead of the flat file list the other report types use.
     function renderInspectionFolders(list, folders, key) {
