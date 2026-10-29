@@ -26,6 +26,7 @@ import zipfile
 import json
 from pypdf import PdfReader, PdfWriter
 from pdf_jobs import PdfJobs
+from report_covers import cover_section, create_cover_pdf
 from pdf_layout import fit_pages_to_a4
 
 load_dotenv()
@@ -618,26 +619,17 @@ def _combine_pdf_bytes(payload: CombinePdfRequest):
         pdf_bytes_list = list(executor.map(_convert_object_to_pdf_bytes, payload.object_names))
 
     writer = PdfWriter()
-    report_cover_files = {
-        "MaintenanceReport": "MaintenanceReportCover.pdf",
-        "InspectionReport": "InspectionSheetCover.pdf",
-        "Inspection Sheet": "InspectionSheetCover.pdf",
-        "SparePartReport": "SparePartCover.pdf",
-        "Spare Part": "SparePartCover.pdf",
-        "PhotographerReport": "PhotographsCover.pdf",
-        "Photographs": "PhotographsCover.pdf",
-    }
     added_covers = set()
     for object_name, pdf_bytes in zip(payload.object_names, pdf_bytes_list):
-        for report_type, cover_file in report_cover_files.items():
-            enabled = payload.report_covers or (payload.maintenance_cover and report_type == "MaintenanceReport")
-            if (enabled and cover_file not in added_covers
-                    and f"/QAQCStep/MaintenanceRecord/{report_type}/" in "/" + object_name):
-                cover = PdfReader(os.path.join(STATIC_DIR, "assets", "pdf", "covers", cover_file))
+        section = cover_section(object_name)
+        if section:
+            section_key, title = section
+            enabled = payload.report_covers or (payload.maintenance_cover and title == "Maintenance Report")
+            if enabled and section_key not in added_covers:
+                cover = PdfReader(io.BytesIO(create_cover_pdf(title, STATIC_DIR)))
                 for page in cover.pages:
                     writer.add_page(page)
-                added_covers.add(cover_file)
-                break
+                added_covers.add(section_key)
         reader = PdfReader(io.BytesIO(pdf_bytes))
         for page in reader.pages:
             writer.add_page(page)

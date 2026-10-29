@@ -23,10 +23,13 @@ class PdfLayoutTests(unittest.TestCase):
             self.assertIn("Portrait form", result[0].get_text())
             self.assertIn("Landscape form", result[1].get_text())
             self.assertEqual(result[2].get_text(), "")
-            # Both dimensions must fill A4 even when the form has a different
-            # aspect ratio. Allow one point for stroke width / raster rounding.
+            # Leave 8 mm of white space on all four sides of the form.
+            # Allow one point for stroke width / raster rounding.
             border = result[0].get_drawings()[0]["rect"]
-            for actual, expected in zip(border, result[0].rect):
+            margin = 8 * 72 / 25.4
+            expected_rect = pymupdf.Rect(margin, margin, result[0].rect.width - margin,
+                                        result[0].rect.height - margin)
+            for actual, expected in zip(border, expected_rect):
                 self.assertAlmostEqual(actual, expected, delta=1)
 
     def test_rotated_page_keeps_visible_text(self):

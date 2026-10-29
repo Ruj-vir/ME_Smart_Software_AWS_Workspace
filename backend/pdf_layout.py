@@ -4,7 +4,7 @@ from PIL import Image, ImageChops
 
 
 def fit_pages_to_a4(pdf_bytes: bytes) -> bytes:
-    """Trim outer white space and stretch content to all four A4 edges.
+    """Trim outer white space and fit A4 with 8 mm margins on all sides.
 
     Rasterization is used only to locate visible content; output stays vector.
     Blank pages remain blank A4 pages. Page orientation and pagination remain
@@ -33,7 +33,9 @@ def fit_pages_to_a4(pdf_bytes: bytes) -> bytes:
                 bbox[0] / scale, bbox[1] / scale,
                 bbox[2] / scale, bbox[3] / scale,
             ) & page.rect
+            margin = 8 * 72 / 25.4
+            content_rect = pymupdf.Rect(margin, margin, width - margin, height - margin)
             target.show_pdf_page(
-                target.rect, source, page.number, clip=clip, keep_proportion=False
+                content_rect, source, page.number, clip=clip, keep_proportion=False
             )
         return output.tobytes(garbage=3, deflate=True)
