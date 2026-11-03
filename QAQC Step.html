@@ -271,6 +271,11 @@
     .itp-pdf-frame { flex: 1; width: 100%; border: none; }
 
   </style>
+  <style>
+    html:not(.general-form-admin) #hnLabel,
+    html:not(.general-form-admin) #myBox { display: none !important; }
+  </style>
+  <script src="assets/general-form-access.js" defer></script>
 </head>
 <body>
   <header class="header">
@@ -518,6 +523,7 @@
 
   <script>
     function toggleBox() {
+      if (!document.documentElement.classList.contains('general-form-admin')) return;
       const element = document.getElementById('myBox');
       const label = document.getElementById('hnLabel');
       if (element.style.display === 'none') {

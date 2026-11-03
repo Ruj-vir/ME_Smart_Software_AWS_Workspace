@@ -19,6 +19,7 @@ COPY backend/ backend/
 # server.py resolves STATIC_DIR = dirname(__file__)/..)  →  /app
 COPY *.html ./
 COPY *.png  ./
+COPY assets/general-form-access.js ./assets/general-form-access.js
 COPY assets/pdf/covers/PageCover.pdf ./assets/pdf/covers/PageCover.pdf
 
 WORKDIR /app/backend

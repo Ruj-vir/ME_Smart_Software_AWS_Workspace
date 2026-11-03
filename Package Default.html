@@ -203,6 +203,11 @@
       background: linear-gradient(to right, #2e86c1, #2471a3);
     }
   </style>
+  <style>
+    html:not(.general-form-admin) #hnLabel,
+    html:not(.general-form-admin) #myBox { display: none !important; }
+  </style>
+  <script src="assets/general-form-access.js" defer></script>
 </head>
 <body>
 
@@ -272,6 +277,7 @@
   <!-- Script -->
   <script>
     function toggleBox() {
+      if (!document.documentElement.classList.contains('general-form-admin')) return;
       const element = document.getElementById('myBox');
       const label = document.getElementById('hnLabel');
 

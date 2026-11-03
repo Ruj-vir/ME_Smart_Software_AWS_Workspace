@@ -1,11 +1,12 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import RedirectResponse, Response, JSONResponse
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from minio import Minio
 from minio.error import S3Error
-from datetime import timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 from contextlib import contextmanager, suppress
 from concurrent.futures import ThreadPoolExecutor
@@ -41,6 +42,52 @@ app.add_middleware(
 )
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "..")
+SESSION_SECRET = os.getenv("SESSION_SECRET") or secrets.token_urlsafe(48)
+SESSION_COOKIE = "me_smart_session"
+GENERAL_FORM_PAGES = {
+    "MaintenanceReport.html", "InspectionReport.html", "SparePartReport.html",
+    "PhotographerReport.html", "NDTReport.html",
+}
+
+
+def current_user(request: Request):
+    token = request.cookies.get(SESSION_COOKIE)
+    try:
+        claims = jwt.decode(token or "", SESSION_SECRET, algorithms=["HS256"],
+                            options={"require": ["sub", "exp"]})
+        user_id = str(uuid.UUID(claims["sub"]))
+    except (jwt.InvalidTokenError, ValueError, TypeError, AttributeError):
+        raise HTTPException(status_code=401, detail="Please log in")
+    with db() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT username, role, is_active FROM users WHERE id=%s", (user_id,))
+            user = cur.fetchone()
+    if not user or not user["is_active"]:
+        raise HTTPException(status_code=401, detail="Please log in")
+    return user
+
+
+@app.middleware("http")
+async def protect_general_form(request: Request, call_next):
+    path = os.path.normpath(request.url.path).replace("\\", "/")
+    # The static mount must never expose backend configuration or source files.
+    if path.startswith("/ui/"):
+        relative = path[len("/ui/"):]
+        if any(part.startswith(".") for part in relative.split("/")) or relative.startswith("backend/"):
+            return Response(status_code=404)
+    if path.startswith("/ui/") and path.rsplit("/", 1)[-1].lower() in {p.lower() for p in GENERAL_FORM_PAGES}:
+        try:
+            user = await run_in_threadpool(current_user, request)
+        except HTTPException:
+            return RedirectResponse("/ui/Login.html", status_code=303, headers={"Cache-Control": "no-store"})
+        if user["role"] != "admin":
+            return Response("General Form is available to administrators only.", status_code=403,
+                            headers={"Cache-Control": "no-store"})
+        response = await call_next(request)
+        response.headers["Cache-Control"] = "no-store"
+        return response
+    return await call_next(request)
+
 app.mount("/ui", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 
 # ══════════════════════════════════════════════════════
@@ -156,7 +203,7 @@ def health_check():
 
 
 @app.post("/api/login")
-def login(body: LoginRequest):
+def login(body: LoginRequest, request: Request, response: Response):
     with db() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute("SELECT * FROM users WHERE username=%s", (body.username,))
@@ -165,10 +212,32 @@ def login(body: LoginRequest):
         raise HTTPException(status_code=401, detail="Invalid username or password")
     if not user["is_active"]:
         raise HTTPException(status_code=403, detail="Account is disabled")
+    token = jwt.encode({"sub": str(user["id"]),
+                        "exp": datetime.now(timezone.utc) + timedelta(hours=8)},
+                       SESSION_SECRET, algorithm="HS256")
+    response.set_cookie(SESSION_COOKIE, token, httponly=True, samesite="lax",
+                        secure=request.url.scheme == "https", max_age=8 * 60 * 60)
+    response.headers["Cache-Control"] = "no-store"
     return {"status": "ok", "username": user["username"], "role": user["role"]}
 
+
+@app.get("/api/me")
+def me(request: Request):
+    user = current_user(request)
+    return JSONResponse({"username": user["username"], "role": user["role"]},
+                        headers={"Cache-Control": "no-store"})
+
+
+@app.post("/api/logout")
+def logout(response: Response):
+    response.delete_cookie(SESSION_COOKIE)
+    return {"status": "ok"}
+
 @app.post("/api/register")
-def register(body: RegisterRequest):
+def register(body: RegisterRequest, request: Request):
+    if body.role != "user":
+        if current_user(request)["role"] != "admin":
+            raise HTTPException(status_code=403, detail="Only administrators can assign roles")
     try:
         with db() as conn:
             with conn.cursor() as cur:
