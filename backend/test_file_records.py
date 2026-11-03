@@ -76,6 +76,21 @@ class FileRecordTests(unittest.TestCase):
         date_sql = next(sql for sql in statements if 'recorded_at' in sql)
         self.assertNotIn('DEFAULT', date_sql)
 
+    def test_migration_bootstraps_missing_table_before_alter(self):
+        table_exists = False
+
+        def execute(sql):
+            nonlocal table_exists
+            if 'CREATE TABLE IF NOT EXISTS file_records' in sql:
+                table_exists = True
+            elif 'ALTER TABLE file_records' in sql and not table_exists:
+                raise RuntimeError('relation "file_records" does not exist')
+
+        self.cur.execute.side_effect = execute
+        self.ns['migrate_file_record_dates']()
+        self.assertTrue(table_exists)
+        self.ns['migrate_file_record_dates']()
+
 
 if __name__ == '__main__':
     unittest.main()

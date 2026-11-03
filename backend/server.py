@@ -387,6 +387,18 @@ def delete_inspection_record(object_name: Optional[str] = None, prefix: Optional
 def migrate_file_record_dates():
     with db() as conn:
         with conn.cursor() as cur:
+            # Existing database volumes do not rerun init.sql on deployment.
+            # Bootstrap the base table before applying incremental migrations.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS file_records (
+                    object_name TEXT PRIMARY KEY,
+                    record_by VARCHAR(255) NOT NULL DEFAULT '',
+                    object_type VARCHAR(255) NOT NULL DEFAULT '',
+                    manufacturer VARCHAR(255) NOT NULL DEFAULT '',
+                    year VARCHAR(20) NOT NULL DEFAULT '',
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
             cur.execute("ALTER TABLE file_records ADD COLUMN IF NOT EXISTS modify_by VARCHAR(255) NOT NULL DEFAULT ''")
             cur.execute("ALTER TABLE file_records ADD COLUMN IF NOT EXISTS recorded_at TIMESTAMPTZ")
 
