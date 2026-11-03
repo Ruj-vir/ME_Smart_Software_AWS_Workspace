@@ -1103,18 +1103,39 @@
     let generatingReport = false;
 
     async function pdfRequest(url, options = {}) {
-      const { pdf = false, ...fetchOptions } = options;
+      const { pdf = false, timeoutMs = pdf ? 300000 : 45000, ...fetchOptions } = options;
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 45000);
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
       try {
         const res = await fetch(url, { ...fetchOptions, signal: controller.signal, cache: 'no-store' });
         if (!res.ok) {
           const detail = await res.json().catch(() => ({}));
-          throw new Error(detail.detail || `HTTP ${res.status}`);
+          const error = new Error(detail.detail || `HTTP ${res.status}`);
+          error.retryable = [502, 503, 504].includes(res.status);
+          throw error;
         }
         return pdf ? await res.blob() : await res.json();
+      } catch (error) {
+        if (controller.signal.aborted) {
+          const timeoutError = new Error(`เซิร์ฟเวอร์ไม่ตอบกลับภายใน ${timeoutMs / 1000} วินาที`);
+          timeoutError.retryable = true;
+          throw timeoutError;
+        }
+        throw error;
       } finally {
         clearTimeout(timeout);
+      }
+    }
+
+    // Retry only reads of an existing job; retrying POST could create duplicate jobs.
+    async function readPdfJob(url, options = {}) {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          return await pdfRequest(url, options);
+        } catch (error) {
+          if (attempt >= 2 || !(error.retryable || error instanceof TypeError)) throw error;
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
       }
     }
 
@@ -1150,6 +1171,7 @@
 
       try {
         const { job_id } = await pdfRequest(`${API_BASE}/combine-pdf-jobs`, {
+          timeoutMs: 120000,
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1160,13 +1182,13 @@
         const jobUrl = `${API_BASE}/combine-pdf-jobs/${encodeURIComponent(job_id)}`;
         const deadline = Date.now() + 30 * 60 * 1000;
         while (true) {
-          const job = await pdfRequest(jobUrl);
+          const job = await readPdfJob(jobUrl);
           if (job.status === 'failed') throw new Error(job.error || 'แปลงไฟล์ไม่สำเร็จ');
           if (job.status === 'completed') break;
           if (Date.now() >= deadline) throw new Error('การรวม PDF ใช้เวลาเกิน 30 นาที กรุณาลองใหม่');
           await new Promise(resolve => setTimeout(resolve, 2000));
         }
-        const blob = await pdfRequest(`${jobUrl}/result`, { pdf: true });
+        const blob = await readPdfJob(`${jobUrl}/result`, { pdf: true });
         lastCombinedObjectNames = objectNames;
 
         if (combinedPdfBlobUrl) URL.revokeObjectURL(combinedPdfBlobUrl);

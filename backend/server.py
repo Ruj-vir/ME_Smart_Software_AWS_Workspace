@@ -618,8 +618,14 @@ async def onlyoffice_callback(object_name: str, request: Request):
             raise HTTPException(403, "Invalid JWT token")
 
     status = body.get("status")
+    # Network/storage operations must not block the event loop: PDF job polling
+    # and OnlyOffice source downloads need to remain responsive during a save.
+    await run_in_threadpool(_save_onlyoffice_callback, object_name, status, body.get("url"))
+    return {"error": 0}
+
+
+def _save_onlyoffice_callback(object_name: str, status: int, download_url: str | None):
     if status in (2, 6):  # 2 = MustSave, 6 = MustForceSave
-        download_url = body.get("url")
         if download_url:
             if ONLYOFFICE_DOCSERVER_URL:
                 import re
@@ -632,8 +638,6 @@ async def onlyoffice_callback(object_name: str, request: Request):
                 io.BytesIO(data), length=len(data),
                 content_type=mimetypes.guess_type(object_name)[0] or "application/octet-stream",
             )
-
-    return {"error": 0}
 
 # ══════════════════════════════════════════════════════
 #  COMBINE FILES INTO ONE PDF (preview only — nothing saved to MinIO)
