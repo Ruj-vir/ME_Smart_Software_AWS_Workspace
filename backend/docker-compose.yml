@@ -58,12 +58,16 @@ services:
     restart: unless-stopped
 
   nginx:
+    # Requires nginx >= 1.27.3 for upstream DNS re-resolution.
     image: docker.io/library/nginx:alpine
     container_name: me-smart-nginx
     ports:
       - "8080:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/nginx.conf:/etc/nginx/templates/default.conf.template:ro
+    environment:
+      NGINX_ENTRYPOINT_LOCAL_RESOLVERS: "1"
+      NGINX_ENVSUBST_FILTER: "^NGINX_LOCAL_RESOLVERS$"
     depends_on:
       - backend
       - onlyoffice
