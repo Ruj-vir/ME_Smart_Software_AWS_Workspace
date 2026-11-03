@@ -134,6 +134,7 @@ class InspectionRecordIn(BaseModel):
 class FileRecordIn(BaseModel):
     object_name: str
     by: str = ""
+    modify_by: str = ""
     object_type: str = ""
     manufacturer: str = ""
     year: str = ""
@@ -382,12 +383,20 @@ def delete_inspection_record(object_name: Optional[str] = None, prefix: Optional
 #  FILE RECORDS (QAQC Step > Maintenance/Spare Part/Photographer Report)
 #  เก็บ Record By ต่อไฟล์เวอร์ชัน (object_name) ลง Postgres
 # ══════════════════════════════════════════════════════
+@app.on_event("startup")
+def migrate_file_record_dates():
+    with db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("ALTER TABLE file_records ADD COLUMN IF NOT EXISTS modify_by VARCHAR(255) NOT NULL DEFAULT ''")
+            cur.execute("ALTER TABLE file_records ADD COLUMN IF NOT EXISTS recorded_at TIMESTAMPTZ")
+
+
 @app.get("/api/file-records")
 def list_file_records(prefix: str):
     with db() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                "SELECT object_name, record_by AS by, object_type, manufacturer, year "
+                "SELECT object_name, record_by AS by, modify_by, recorded_at, object_type, manufacturer, year "
                 "FROM file_records WHERE object_name LIKE %s",
                 (prefix.rstrip("/") + "/%",)
             )
@@ -396,6 +405,7 @@ def list_file_records(prefix: str):
         row["object_name"]: {
             "by": row["by"], "object_type": row["object_type"],
             "manufacturer": row["manufacturer"], "year": row["year"],
+            "modify_by": row["modify_by"], "recorded_at": row["recorded_at"],
         }
         for row in rows
     }
@@ -406,16 +416,17 @@ def upsert_file_record(body: FileRecordIn):
         with conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO file_records (object_name, record_by, object_type, manufacturer, year, updated_at)
-                VALUES (%s, %s, %s, %s, %s, NOW())
+                INSERT INTO file_records (object_name, record_by, modify_by, object_type, manufacturer, year, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, NOW())
                 ON CONFLICT (object_name) DO UPDATE
                 SET record_by = EXCLUDED.record_by,
+                    modify_by = EXCLUDED.modify_by,
                     object_type = EXCLUDED.object_type,
                     manufacturer = EXCLUDED.manufacturer,
                     year = EXCLUDED.year,
                     updated_at = NOW()
                 """,
-                (body.object_name, body.by, body.object_type, body.manufacturer, body.year)
+                (body.object_name, body.by, body.modify_by, body.object_type, body.manufacturer, body.year)
             )
     return {"status": "ok", "object_name": body.object_name}
 
@@ -785,6 +796,23 @@ def copy_file(body: CopyFile):
         mc.copy_object(MINIO_BUCKET, body.dst_object, CopySource(MINIO_BUCKET, body.src_object))
     except S3Error as e:
         raise HTTPException(500, f"Copy failed: {e}")
+    # Capture creation once for the three report tables. Later metadata saves
+    # and document edits must never change recorded_at.
+    report_folder = body.dst_object.rsplit('/', 1)[0] + '/'
+    is_maintenance_report = any(report_folder.endswith('QAQCStep/MaintenanceRecord/' + folder + '/')
+                               for folder in ('MaintenanceReport', 'Spare Part', 'Photographs'))
+    is_ndt_report = any(report_folder.endswith('QAQCStep/NDT Report/' + folder + '/')
+                        for folder in ('Penetrant Testing Report', 'Ultrasonic Testing Report',
+                                       'Magnetic Particle Testing Report', 'Hardness Testing Report',
+                                       'Ultrasonic Thickness Measurement Report', 'Other'))
+    if is_maintenance_report or is_ndt_report:
+        with db() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO file_records (object_name, recorded_at) VALUES (%s, NOW()) "
+                    "ON CONFLICT (object_name) DO NOTHING",
+                    (body.dst_object,),
+                )
     return {"status": "copied", "src": body.src_object, "dst": body.dst_object}
 
 @app.post("/api/ensure-path")

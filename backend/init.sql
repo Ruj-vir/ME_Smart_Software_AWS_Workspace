@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS inspection_records (
 CREATE TABLE IF NOT EXISTS file_records (
     object_name  TEXT        PRIMARY KEY,
     record_by    VARCHAR(255) NOT NULL DEFAULT '',
+    modify_by    VARCHAR(255) NOT NULL DEFAULT '',
+    recorded_at  TIMESTAMPTZ,
     object_type  VARCHAR(255) NOT NULL DEFAULT '',
     manufacturer VARCHAR(255) NOT NULL DEFAULT '',
     year         VARCHAR(20)  NOT NULL DEFAULT '',

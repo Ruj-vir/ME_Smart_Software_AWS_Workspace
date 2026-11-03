@@ -155,7 +155,7 @@
     /* Recorded files table */
     .recorded-files-card {
       margin-top: 8px; background: #fff; border: 1px solid #d7dde3; border-radius: 10px;
-      overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+      overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,.04);
     }
     table.recorded-files { width: 100%; border-collapse: collapse; font-size: 13px; }
     table.recorded-files thead th {
@@ -247,14 +247,14 @@
 
     /* ITP PDF Upload */
     .itp-pdf-upload-row { display: flex; align-items: center; gap: 10px; padding: 6px 0 14px; }
-    #itpDataModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:10000; align-items:center; justify-content:center; }
-    #itpDataModal.open { display:flex; }
-    #itpDataModal .modal-box { width:460px; max-width:90%; max-height:75vh; background:#fff; border-radius:10px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,.3); }
-    #itpDataModal .modal-header { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; background:#d6eaf8; border-bottom:1px solid #aed6f1; flex-shrink:0; }
-    #itpDataModal .modal-header span { font-weight:bold; color:#154360; font-size:16px; }
-    #itpDataModal .modal-close { background:none; border:none; font-size:20px; cursor:pointer; color:#154360; line-height:1; }
-    #itpDataModal .modal-body { padding: 14px; overflow-y: auto; }
-    #itpDataModal .file-entry:hover { background: #eef6ff; }
+    #itpDataModal, #qaqcDataModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:10000; align-items:center; justify-content:center; }
+    #itpDataModal.open, #qaqcDataModal.open { display:flex; }
+    #itpDataModal .modal-box, #qaqcDataModal .modal-box { width:460px; max-width:90%; max-height:75vh; background:#fff; border-radius:10px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,.3); }
+    #itpDataModal .modal-header, #qaqcDataModal .modal-header { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; background:#d6eaf8; border-bottom:1px solid #aed6f1; flex-shrink:0; }
+    #itpDataModal .modal-header span, #qaqcDataModal .modal-header span { font-weight:bold; color:#154360; font-size:16px; }
+    #itpDataModal .modal-close, #qaqcDataModal .modal-close { background:none; border:none; font-size:20px; cursor:pointer; color:#154360; line-height:1; }
+    #itpDataModal .modal-body, #qaqcDataModal .modal-body { padding: 14px; overflow-y: auto; }
+    #itpDataModal .file-entry:hover, #qaqcDataModal .file-entry:hover { background: #eef6ff; }
     .itp-data-empty, .itp-data-error { text-align:center; color:#6b7280; padding: 30px 10px; font-size: 13px; }
     .itp-file-list { display: flex; flex-direction: column; gap: 8px; }
     .itp-file-item .file-entry { margin-bottom: 0; }
@@ -310,6 +310,12 @@
             <span class="btn-text">Photographs</span>
           </button>
         </div>
+        <div class="hn-item">
+          <button class="hn-btn" onclick="location.href='NDTReport.html' + location.search">
+            <span class="btn-icon">&#128225;</span>
+            <span class="btn-text">NDT Report</span>
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -319,8 +325,9 @@
   <div class="tab-header">
     <button class="tab-button active" data-tab="tab1">ITP Check list</button>
     <button class="tab-button" data-tab="tab2">Maintenance Record</button>
-    <button class="tab-button" data-tab="tab3">QAQC control</button>
-    <button class="tab-button" data-tab="tab4">Special request</button>
+    <button class="tab-button" data-tab="tab3">NDT Report</button>
+    <button class="tab-button" data-tab="tab4">QAQC control</button>
+    <button class="tab-button" data-tab="tab5">Special request</button>
   </div>
 
   <div class="sub-tab-header" id="maintenanceSubTabs">
@@ -328,6 +335,14 @@
     <button class="sub-tab-button" data-subtab="subtab2">Inspection Sheet</button>
     <button class="sub-tab-button" data-subtab="subtab3">Spare Part</button>
     <button class="sub-tab-button" data-subtab="subtab4">Photographs</button>
+  </div>
+  <div class="sub-tab-header" id="ndtReportSubTabs" style="flex-wrap:wrap;">
+    <button class="sub-tab-button active" data-subtab="ndtSubtab1">Penetrant Testing Report</button>
+    <button class="sub-tab-button" data-subtab="ndtSubtab2">Ultrasonic Testing Report</button>
+    <button class="sub-tab-button" data-subtab="ndtSubtab3">Magnetic Particle Testing Report</button>
+    <button class="sub-tab-button" data-subtab="ndtSubtab4">Hardness Testing Report</button>
+    <button class="sub-tab-button" data-subtab="ndtSubtab5">Ultrasonic Thickness Measurement Report</button>
+    <button class="sub-tab-button" data-subtab="ndtSubtab6">Other</button>
   </div>
   <div class="sub-tab-dest-info" id="subtabDestInfo"></div>
 
@@ -346,7 +361,7 @@
         <div class="upload-row">
           <button onclick="openBankFormModal('subtab1')">Upload Bank form</button>
           <span id="selectedBankForm-subtab1" style="font-size:13px; color:#154360; font-weight:600;"></span>
-          <button id="recordBtn-subtab1" onclick="recordFile('subtab1')" style="display:none;">Record</button>
+          <button type="button" class="insp-btn-addrow" id="recordBtn-subtab1" onclick="recordFile('subtab1')" style="display:none; margin-left:auto;">Record</button>
         </div>
         <div id="recordedFilesList-subtab1" style="margin-top:8px;"></div>
         <div class="table-wrap" id="controlTableWrap-subtab1"></div>
@@ -379,12 +394,66 @@
       </div>
     </div>
 
-    <div class="tab-pane" id="tab3">
-      <input type="file" id="uploadExcel" accept=".xlsx" />
-      <div id="excelTable"></div>
+    <div class="tab-pane" id="tab3" style="flex-direction:column; gap:8px;">
+      <div class="sub-pane active" id="ndtSubtab1">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('ndtSubtab1')">Upload Bank form</button>
+          <span id="selectedBankForm-ndtSubtab1" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab1" onclick="recordFile('ndtSubtab1')" style="display:none; margin-left:auto;">Record</button>
+        </div>
+        <div id="recordedFilesList-ndtSubtab1" style="margin-top:8px;"></div>
+      </div>
+      <div class="sub-pane" id="ndtSubtab2">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('ndtSubtab2')">Upload Bank form</button>
+          <span id="selectedBankForm-ndtSubtab2" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab2" onclick="recordFile('ndtSubtab2')" style="display:none; margin-left:auto;">Record</button>
+        </div>
+        <div id="recordedFilesList-ndtSubtab2" style="margin-top:8px;"></div>
+      </div>
+      <div class="sub-pane" id="ndtSubtab3">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('ndtSubtab3')">Upload Bank form</button>
+          <span id="selectedBankForm-ndtSubtab3" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab3" onclick="recordFile('ndtSubtab3')" style="display:none; margin-left:auto;">Record</button>
+        </div>
+        <div id="recordedFilesList-ndtSubtab3" style="margin-top:8px;"></div>
+      </div>
+      <div class="sub-pane" id="ndtSubtab4">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('ndtSubtab4')">Upload Bank form</button>
+          <span id="selectedBankForm-ndtSubtab4" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab4" onclick="recordFile('ndtSubtab4')" style="display:none; margin-left:auto;">Record</button>
+        </div>
+        <div id="recordedFilesList-ndtSubtab4" style="margin-top:8px;"></div>
+      </div>
+      <div class="sub-pane" id="ndtSubtab5">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('ndtSubtab5')">Upload Bank form</button>
+          <span id="selectedBankForm-ndtSubtab5" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab5" onclick="recordFile('ndtSubtab5')" style="display:none; margin-left:auto;">Record</button>
+        </div>
+        <div id="recordedFilesList-ndtSubtab5" style="margin-top:8px;"></div>
+      </div>
+      <div class="sub-pane" id="ndtSubtab6">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('ndtSubtab6')">Upload Bank form</button>
+          <span id="selectedBankForm-ndtSubtab6" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab6" onclick="recordFile('ndtSubtab6')" style="display:none; margin-left:auto;">Record</button>
+        </div>
+        <div id="recordedFilesList-ndtSubtab6" style="margin-top:8px;"></div>
+      </div>
     </div>
 
-    <div class="tab-pane" id="tab4">
+    <div class="tab-pane" id="tab4" style="flex-direction: column;">
+      <div class="itp-pdf-upload-row">
+        <button onclick="document.getElementById('qaqcPdfDeviceUpload').click()">Upload From your device PC</button>
+        <input type="file" id="qaqcPdfDeviceUpload" accept="application/pdf,.pdf" style="display:none;" />
+      </div>
+      <div id="qaqcFileList" class="itp-file-list"></div>
+    </div>
+
+    <div class="tab-pane" id="tab5">
       <button onclick="addRow()">Add row</button>
       <table id="specialRequest">
         <thead>
@@ -416,6 +485,16 @@
         <button class="modal-close" onclick="closeITPDataModal()">&#x2715;</button>
       </div>
       <div class="modal-body" id="itpDataFileList"></div>
+    </div>
+  </div>
+
+  <div id="qaqcDataModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>Upload From Data (QAQC control)</span>
+        <button class="modal-close" onclick="closeQAQCDataModal()">&#x2715;</button>
+      </div>
+      <div class="modal-body" id="qaqcDataFileList"></div>
     </div>
   </div>
 
@@ -458,8 +537,12 @@
         document.getElementById(btn.dataset.tab).classList.add('active');
         const subHeader = document.getElementById('maintenanceSubTabs');
         const destInfo = document.getElementById('subtabDestInfo');
-        if (btn.dataset.tab === 'tab2') {
-          subHeader.classList.add('visible');
+        const isMaintenance = btn.dataset.tab === 'tab2';
+        const isNdt = btn.dataset.tab === 'tab3';
+        document.getElementById('ndtReportSubTabs').classList.toggle('visible', isNdt);
+        subHeader.classList.toggle('visible', isMaintenance);
+        if (isMaintenance || isNdt) {
+          activeSubtab = isNdt ? activeNdtSubtab : activeMaintenanceSubtab;
           destInfo.classList.add('visible');
           loadRecordedFiles(activeSubtab);
           updateDestInfo();
@@ -467,47 +550,23 @@
           subHeader.classList.remove('visible');
           destInfo.classList.remove('visible');
         }
+        saveViewState();
       };
     });
 
     document.querySelectorAll('.sub-tab-button').forEach(btn => {
       btn.onclick = () => {
-        document.querySelectorAll('.sub-tab-button').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.sub-pane').forEach(p => p.classList.remove('active'));
+        btn.parentElement.querySelectorAll('.sub-tab-button').forEach(b => b.classList.remove('active'));
+        document.getElementById(btn.dataset.subtab).parentElement.querySelectorAll('.sub-pane').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
         activeSubtab = btn.dataset.subtab;
+        if (activeSubtab.startsWith('ndt')) activeNdtSubtab = activeSubtab;
+        else activeMaintenanceSubtab = activeSubtab;
         document.getElementById(activeSubtab).classList.add('active');
         loadRecordedFiles(activeSubtab);
         updateDestInfo();
+        saveViewState();
       };
-    });
-
-    document.getElementById('uploadExcel').addEventListener('change', async e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: 'array' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-      const table = document.createElement('table');
-      table.innerHTML = '<thead><tr>' + json[0].map(h => `<th>${h || ''}</th>`).join('') + '<th>Status</th></tr>';
-      const tbody = document.createElement('tbody');
-      json.slice(1).forEach(row => {
-        const tr = document.createElement('tr');
-        row.forEach(cell => tr.innerHTML += `<td>${cell == null ? '' : cell}</td>`);
-        const select = document.createElement('select');
-        ['Pending', 'Complete', 'Rework'].forEach(v => {
-          const o = document.createElement('option'); o.value = o.text = v; select.appendChild(o);
-        });
-        const td = document.createElement('td');
-        td.appendChild(select);
-        tr.appendChild(td);
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-      const container = document.getElementById('excelTable');
-      container.innerHTML = '';
-      container.appendChild(table);
     });
 
     function addRow() {
@@ -541,6 +600,50 @@
     const CONTEXT_BASE = [company, plant, service, pkg].filter(Boolean).join('/');
     const CONTEXT_PREFIX = CONTEXT_BASE ? CONTEXT_BASE + '/' : '';
     const ITP_PREFIX = `${CONTEXT_PREFIX}Data/ITP/`;
+
+    // Keep navigation on this browser, separately for each project/package.
+    const VIEW_STATE_KEY = 'qaqc-step:view:v1:' + JSON.stringify([company, plant, service, pkg]);
+    function readViewState() {
+      try {
+        const state = JSON.parse(localStorage.getItem(VIEW_STATE_KEY));
+        return state && typeof state === 'object' ? state : {};
+      } catch { return {}; }
+    }
+    function saveViewState() {
+      try {
+        localStorage.setItem(VIEW_STATE_KEY, JSON.stringify({
+          tab: document.querySelector('.tab-button.active')?.dataset.tab || 'tab1',
+          subtab: activeSubtab,
+          maintenanceSubtab: activeMaintenanceSubtab,
+          ndtSubtab: activeNdtSubtab,
+          version: 2,
+          inspectionFile: activeInspFile.subtab2,
+        }));
+      } catch { /* Navigation still works when browser storage is unavailable. */ }
+    }
+    function restoreViewState() {
+      const state = readViewState();
+      if (!state.version) {
+        if (state.tab === 'tab4') state.tab = 'tab5';
+        else if (state.tab === 'tab3') state.tab = 'tab4';
+      }
+      const restoreGroup = (headerId, saved) => {
+        const header = document.getElementById(headerId);
+        const button = Array.from(header.querySelectorAll('.sub-tab-button')).find(b => b.dataset.subtab === saved);
+        if (!button) return;
+        header.querySelectorAll('.sub-tab-button').forEach(b => b.classList.toggle('active', b === button));
+        const pane = document.getElementById(saved);
+        pane.parentElement.querySelectorAll('.sub-pane').forEach(p => p.classList.toggle('active', p === pane));
+        if (headerId === 'ndtReportSubTabs') activeNdtSubtab = saved;
+        else activeMaintenanceSubtab = saved;
+      };
+      restoreGroup('maintenanceSubTabs', state.maintenanceSubtab || state.subtab);
+      restoreGroup('ndtReportSubTabs', state.ndtSubtab);
+      if (typeof state.inspectionFile === 'string') activeInspFile.subtab2 = state.inspectionFile;
+      const tabButton = Array.from(document.querySelectorAll('.tab-button'))
+        .find(button => button.dataset.tab === state.tab);
+      if (tabButton) tabButton.click();
+    }
 
     // "PTTGC > Ruj_Test > Rotating Equipment > RujAB_test > Data > ITP > <file>.pdf"
     function itpBreadcrumbHTML(fileName) {
@@ -721,6 +824,186 @@
 
     loadITPFileList();
 
+    const QAQC_PREFIX = `${CONTEXT_PREFIX}QAQCStep/QAQC control/`;
+    // "PTTGC > Ruj_Test > Rotating Equipment > RujAB_test > Data > QAQC > <file>.pdf"
+    function qaqcBreadcrumbHTML(fileName) {
+      const parts = [company, plant, service, pkg, 'QAQCStep', 'QAQC control'].filter(Boolean);
+      return parts.join(' &gt; ') + ' &gt; <strong>' + fileName + '</strong>';
+    }
+
+    async function fetchQAQCPdfFiles() {
+      const res = await fetch(`/api/browse?prefix=${encodeURIComponent(QAQC_PREFIX)}`);
+      if (!res.ok) throw new Error('browse failed');
+      const { files } = await res.json();
+      return (files || []).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+    }
+
+    // Only one PDF is ever expanded inline at a time — opening another one collapses the previous.
+    let openQAQCWrap = null;
+
+    function closeInlineQAQCPdf() {
+      if (!openQAQCWrap) return;
+      const pdfDiv = openQAQCWrap.querySelector('.itp-inline-pdf');
+      pdfDiv.classList.remove('open');
+      pdfDiv.innerHTML = '';
+      openQAQCWrap.classList.remove('open');
+      openQAQCWrap = null;
+    }
+
+    // Embeds the PDF Stamp tool right here (same page, no new tab) — it loads this file from the
+    // backend itself (picking up its "<name> - QAQC Checklist Comment.pdf" companion if one already
+    // exists), lets you view/draw/comment/sign, and saves back to that companion via its own
+    // "Save to QAQC control folder" button.
+    function openInlineQAQCPdf(wrap, objectName) {
+      if (openQAQCWrap === wrap) {
+        closeInlineQAQCPdf();
+        // Only rebuild the list now (not while it was open) — refreshing mid-session would
+        // destroy the live embedded tool the user might still be working in.
+        if (qaqcListNeedsRefresh) { qaqcListNeedsRefresh = false; loadQAQCFileList(); }
+        return;
+      }
+      closeInlineQAQCPdf();
+      const fileName = objectName.split('/').pop();
+      const pdfDiv = wrap.querySelector('.itp-inline-pdf');
+      pdfDiv.classList.add('open');
+      wrap.classList.add('open');
+      openQAQCWrap = wrap;
+
+      const params = new URLSearchParams({ company, plant, service, package: pkg, file: fileName, embed: '1', section: 'qaqc-control' });
+      pdfDiv.innerHTML = `<iframe class="itp-pdf-frame" src="${'PDF Stamp.html?' + params.toString()}"></iframe>`;
+    }
+
+    // The embedded PDF Stamp tool posts this after a successful save. We don't refresh the list
+    // immediately (that would destroy the still-open embedded tool) — just flag it, and the list
+    // rebuilds itself as soon as this row is collapsed.
+    let qaqcListNeedsRefresh = false;
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'qaqc-stamp-saved') qaqcListNeedsRefresh = true;
+    });
+
+    function buildQAQCFileItem(f) {
+      const wrap = document.createElement('div');
+      wrap.className = 'itp-file-item';
+      wrap.dataset.object = f.object_name;
+
+      const entry = document.createElement('div');
+      entry.className = 'file-entry';
+      entry.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:20px;"/><span class="itp-file-breadcrumb">${qaqcBreadcrumbHTML(f.name)}</span><button class="itp-file-oo" title="เปิดด้วย OnlyOffice — ดูคมชัดและแก้ไข PDF ได้เต็มรูปแบบ">📝 OnlyOffice</button><button class="itp-file-del" title="Delete">&#x1F5D1;</button>`;
+      entry.onclick = () => openInlineQAQCPdf(wrap, f.object_name);
+      entry.querySelector('.itp-file-oo').onclick = (e) => {
+        e.stopPropagation();
+        const backParams = new URLSearchParams({ company, plant, service, package: pkg });
+        window.open(
+          `Editor.html?object_name=${encodeURIComponent(f.object_name)}&return_url=${encodeURIComponent('QAQC Step.html?' + backParams)}`,
+          '_blank'
+        );
+      };
+      entry.querySelector('.itp-file-del').onclick = (e) => {
+        e.stopPropagation();
+        openDeleteConfirm(null, null, `ไฟล์ "${f.name}"`, { type: 'qaqc', objectName: f.object_name });
+      };
+
+      const pdfDiv = document.createElement('div');
+      pdfDiv.className = 'itp-inline-pdf';
+
+      wrap.appendChild(entry);
+      wrap.appendChild(pdfDiv);
+      return wrap;
+    }
+
+    // Persistent list shown under the upload buttons — reloaded from the server so it survives page reloads.
+    async function loadQAQCFileList() {
+      const list = document.getElementById('qaqcFileList');
+      openQAQCWrap = null;
+      list.innerHTML = '<div class="itp-data-empty">Loading...</div>';
+      try {
+        const pdfs = await fetchQAQCPdfFiles();
+        if (!pdfs.length) {
+          list.innerHTML = '<div class="itp-data-empty">No PDF files found in the QAQC control folder yet.</div>';
+          return;
+        }
+        list.innerHTML = '';
+        pdfs.forEach(f => list.appendChild(buildQAQCFileItem(f)));
+      } catch (err) {
+        list.innerHTML = '<div class="itp-data-error">Failed to load files from the QAQC control folder.</div>';
+      }
+    }
+
+    function openQAQCObjectInline(objectName) {
+      const wrap = document.querySelector(`#qaqcFileList .itp-file-item[data-object="${CSS.escape(objectName)}"]`);
+      if (!wrap) return;
+      openInlineQAQCPdf(wrap, objectName);
+      wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function openQAQCDataBrowse() {
+      document.getElementById('qaqcDataModal').classList.add('open');
+      loadQAQCDataFiles();
+    }
+
+    function closeQAQCDataModal() {
+      document.getElementById('qaqcDataModal').classList.remove('open');
+    }
+
+    document.getElementById('qaqcDataModal').addEventListener('click', function (e) {
+      if (e.target === this) closeQAQCDataModal();
+    });
+
+    async function loadQAQCDataFiles() {
+      const list = document.getElementById('qaqcDataFileList');
+      list.innerHTML = '<div class="itp-data-empty">Loading...</div>';
+      try {
+        const pdfs = await fetchQAQCPdfFiles();
+        if (!pdfs.length) {
+          list.innerHTML = '<div class="itp-data-empty">No PDF files found in the QAQC control folder.</div>';
+          return;
+        }
+        list.innerHTML = '';
+        pdfs.forEach(f => {
+          const entry = document.createElement('div');
+          entry.className = 'file-entry';
+          entry.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:20px;"/><span>${f.name}</span>`;
+          entry.onclick = () => selectQAQCDataFile(f.object_name);
+          list.appendChild(entry);
+        });
+      } catch (err) {
+        list.innerHTML = '<div class="itp-data-error">Failed to load files from the QAQC control folder.</div>';
+      }
+    }
+
+    function selectQAQCDataFile(objectName) {
+      closeQAQCDataModal();
+      openQAQCObjectInline(objectName);
+    }
+
+    // QAQC control folder holds at most one PDF — uploading a new one replaces whatever was there before.
+    document.getElementById('qaqcPdfDeviceUpload').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const existing = await fetchQAQCPdfFiles();
+        await Promise.all(existing.map(f =>
+          fetch(`/api/browse/file?object_name=${encodeURIComponent(f.object_name)}`, { method: 'DELETE' })
+        ));
+
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`/api/browse/upload?prefix=${encodeURIComponent(QAQC_PREFIX)}`, {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) throw new Error('upload failed');
+        const { object_name } = await res.json();
+        await loadQAQCFileList();
+        openQAQCObjectInline(object_name);
+      } catch (err) {
+        alert('Failed to upload the PDF to the QAQC control folder.');
+      }
+      e.target.value = '';
+    });
+
+    loadQAQCFileList();
+
     // Breadcrumb: Home > Company > Plant > Service > Package > QAQC Step
     document.getElementById("breadcrumb").innerHTML = `
       <a href="Main.html">Home</a> &gt;
@@ -732,8 +1015,16 @@
     `;
 
     const REPORT_CONFIG = {
+      ndtSubtab1: { src: 'NDTReport.html', report: 'Penetrant Testing Report', source: 'General_Form/NDT_Report/Penetrant Testing Report/', dest: `${CONTEXT_PREFIX}QAQCStep/NDT Report/Penetrant Testing Report/` },
+      ndtSubtab2: { src: 'NDTReport.html', report: 'Ultrasonic Testing Report', source: 'General_Form/NDT_Report/Ultrasonic Testing Report/', dest: `${CONTEXT_PREFIX}QAQCStep/NDT Report/Ultrasonic Testing Report/` },
+      ndtSubtab3: { src: 'NDTReport.html', report: 'Magnetic Particle Testing Report', source: 'General_Form/NDT_Report/Magnetic Particle Testing Report/', dest: `${CONTEXT_PREFIX}QAQCStep/NDT Report/Magnetic Particle Testing Report/` },
+      ndtSubtab4: { src: 'NDTReport.html', report: 'Hardness Testing Report', source: 'General_Form/NDT_Report/Hardness Testing Report/', dest: `${CONTEXT_PREFIX}QAQCStep/NDT Report/Hardness Testing Report/` },
+      ndtSubtab5: { src: 'NDTReport.html', report: 'Ultrasonic Thickness Measurement Report', source: 'General_Form/NDT_Report/Ultrasonic Thickness Measurement Report/', dest: `${CONTEXT_PREFIX}QAQCStep/NDT Report/Ultrasonic Thickness Measurement Report/` },
+      ndtSubtab6: { src: 'NDTReport.html', report: 'Other', source: 'General_Form/NDT_Report/Other/', dest: `${CONTEXT_PREFIX}QAQCStep/NDT Report/Other/` },
+
       subtab1: {
         src: 'MaintenanceReport.html',
+        source: 'General_Form/Maintenance_Report/',
         dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/MaintenanceReport/`
       },
       subtab2: {
@@ -742,15 +1033,19 @@
       },
       subtab3: {
         src: 'SparePartReport.html',
+        source: 'General_Form/Spare_Part_Report/',
         dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/Spare Part/`
       },
       subtab4: {
         src: 'PhotographerReport.html',
+        source: 'General_Form/Photographer_Report/',
         dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/Photographs/`
       }
     };
 
     let activeSubtab = 'subtab1';
+    let activeMaintenanceSubtab = 'subtab1';
+    let activeNdtSubtab = 'ndtSubtab1';
     const selectedObjectNames = { subtab1: null, subtab2: null, subtab3: null, subtab4: null };
     // Object Type/Manufacturer/Year ที่เลือกไว้ตอนเปิด Bank Form (subtab1/3/4 — subtab2 ส่งแนบมากับ recordFile โดยตรง)
     const selectedMeta = { subtab1: null, subtab3: null, subtab4: null };
@@ -762,25 +1057,59 @@
     const activeInspFile = { subtab2: null };
 
     // Maintenance/SparePart/Photographer ล็อกไว้กับไฟล์เดียว (ลบไฟล์เดิมทั้งหมดก่อนถึงจะเปลี่ยนได้ — ดู recordFile)
-    // ถ้ามีไฟล์อยู่แล้ว แสดง breadcrumb ของไฟล์นั้นแทน path ดิบ ถ้ายังไม่มีไฟล์เลยแสดง path ปลายทางตามเดิม
+    // แสดงโฟลเดอร์ต้นทางและชื่อไฟล์ต้นฉบับ; ค้นใน Bank Form เมื่อไฟล์เก่าไม่มี metadata
+    async function findReportSources(prefix, fileName, depth = 0) {
+      const response = await fetch(`/api/browse?prefix=${encodeURIComponent(prefix)}`);
+      if (!response.ok) throw new Error('Cannot load source folders');
+      const { files = [], folders = [] } = await response.json();
+      const matches = files.filter(file => file.name === fileName).map(file => file.object_name);
+      if (depth < 3) {
+        const children = await Promise.all(folders.map(folder =>
+          findReportSources(prefix + folder.name + '/', fileName, depth + 1)
+        ));
+        matches.push(...children.flat());
+      }
+      return matches;
+    }
+
+    let destInfoRequest = 0;
     async function updateDestInfo() {
-      const dest = REPORT_CONFIG[activeSubtab].dest;
+      const request = ++destInfoRequest;
+      const subtab = activeSubtab;
+      const { dest, source } = REPORT_CONFIG[subtab];
       const el = document.getElementById('subtabDestInfo');
-      const fallback = () => { el.textContent = 'บันทึกไปที่: ' + dest; };
+      const show = text => {
+        if (request === destInfoRequest && activeSubtab === subtab) el.textContent = text;
+      };
+      const fallback = () => show('บันทึกไปที่: ' + dest);
       if (activeSubtab === 'subtab2') { fallback(); return; }
+      show('กำลังโหลดโฟลเดอร์ต้นทาง...');
       try {
         const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
-        if (!r.ok) return fallback();
+        if (!r.ok) throw new Error('Cannot load recorded files');
         const { files } = await r.json();
-        if (!files.length) return fallback();
+        if (!files.length) { show('ยังไม่มีไฟล์ที่บันทึก'); return; }
         const main = files[0]; // ปลายทางนี้ล็อกไว้กับไฟล์เดียว ทุกแถวคือเวอร์ชันของไฟล์เดียวกัน
-        const fr = await fetch(`/api/file-records?prefix=${encodeURIComponent(dest)}`);
-        const records = fr.ok ? await fr.json() : {};
+        const originalName = main.name.replace(/^\d{8}_\d+_/, '');
+        let records = {};
+        try {
+          const fr = await fetch(`/api/file-records?prefix=${encodeURIComponent(dest)}`);
+          if (fr.ok) records = await fr.json();
+        } catch {}
         const rec = records[main.object_name] || {};
-        const crumb = [rec.object_type, rec.manufacturer, rec.year].filter(Boolean).join(' › ');
-        el.textContent = (crumb ? crumb + ' › ' : '') + main.name;
+        const parts = [rec.object_type, rec.manufacturer, rec.year];
+        if (parts.every(Boolean)) {
+          show([...parts, originalName].join(' › '));
+          return;
+        }
+        const matches = await findReportSources(source, originalName);
+        if (matches.length === 1) {
+          show(matches[0].slice(source.length).split('/').filter(Boolean).join(' › '));
+        } else {
+          show((matches.length ? 'พบชื่อไฟล์ในหลายโฟลเดอร์ต้นทาง' : 'ไม่พบโฟลเดอร์ต้นทาง') + ' › ' + originalName);
+        }
       } catch {
-        fallback();
+        show('ไม่สามารถโหลดโฟลเดอร์ต้นทางได้');
       }
     }
 
@@ -788,7 +1117,10 @@
       activeSubtab = subtabId;
       const modal = document.getElementById('bankFormModal');
       const iframe = document.getElementById('bankFormIframe');
-      iframe.src = REPORT_CONFIG[subtabId].src + '?mode=select';
+      const config = REPORT_CONFIG[subtabId];
+      const params = new URLSearchParams({ mode: 'select' });
+      if (config.report) params.set('report', config.report);
+      iframe.src = config.src + '?' + params.toString();
       modal.classList.add('open');
     }
 
@@ -804,6 +1136,10 @@
 
     window.addEventListener('message', function(e) {
       if (e.data && e.data.type === 'files-selected') {
+        if (e.source !== document.getElementById('bankFormIframe').contentWindow) return;
+        const config = REPORT_CONFIG[activeSubtab];
+        if (config.report && (e.data.ndt_report !== config.report ||
+            !(e.data.object_names || []).every(name => name.startsWith(config.source)))) return;
         closeBankFormModal();
         const names = e.data.object_names || [];
         selectedObjectNames[activeSubtab] = names;
@@ -871,16 +1207,12 @@
         card.className = 'recorded-files-card';
         const table = document.createElement('table');
         table.className = 'recorded-files';
-        table.innerHTML = '<thead><tr><th style="width:44px">#</th><th>File Name</th><th style="width:150px">Record by</th><th style="width:160px">Date Record</th><th style="width:60px"></th></tr></thead>';
+        table.innerHTML = '<thead><tr><th>File Name</th><th style="width:160px">Date Record</th><th style="width:150px">Record by</th><th style="width:160px">Date Modified</th><th style="width:150px">Modified by</th><th style="width:100px">Save &amp; Delete</th></tr></thead>';
         const tbody = document.createElement('tbody');
 
-        files.forEach((f, idx) => {
+        files.forEach(f => {
           const tr = document.createElement('tr');
           const rec = fileRecords[f.object_name] || { by: '', object_type: '', manufacturer: '', year: '' };
-
-          const numTd = document.createElement('td');
-          numTd.className = 'file-num';
-          numTd.textContent = idx + 1;
 
           const nameTd = document.createElement('td');
           const name = document.createElement('span');
@@ -896,8 +1228,18 @@
           byInput.type = 'text';
           byInput.placeholder = 'ชื่อผู้บันทึก';
           byInput.value = rec.by || '';
-          byInput.onchange = () => updFileRecordBy(f.object_name, byInput.value, rec);
           byTd.appendChild(byInput);
+
+          const modifyTd = document.createElement('td');
+          const modifyInput = document.createElement('input');
+          modifyInput.type = 'text';
+          modifyInput.placeholder = 'ชื่อผู้แก้ไข';
+          modifyInput.value = rec.modify_by || '';
+          modifyTd.appendChild(modifyInput);
+          const recordedTd = document.createElement('td');
+          recordedTd.className = 'file-date';
+          recordedTd.textContent = rec.recorded_at ? formatInspDate(rec.recorded_at) : '—';
+          if (!rec.recorded_at) recordedTd.title = 'ไม่มีข้อมูลเวลาสร้างไฟล์เดิม';
 
           const dateTd = document.createElement('td');
           dateTd.className = 'file-date';
@@ -918,9 +1260,30 @@
           delBtn.title = 'ลบไฟล์';
           delBtn.textContent = '✕';
           delBtn.onclick = () => openDeleteConfirm(subtabId, f.object_name, `ไฟล์ "${f.name}"`);
-          delTd.appendChild(delBtn);
+          const saveBtn = document.createElement('button');
+          saveBtn.type = 'button';
+          saveBtn.className = 'insp-row-save';
+          saveBtn.textContent = '💾 Save';
+          saveBtn.title = 'บันทึก Record by / Modified by';
+          saveBtn.onclick = async () => {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'กำลังบันทึก...';
+            try {
+              await saveFileRecord(f.object_name, byInput.value, modifyInput.value, rec);
+              saveBtn.textContent = '✓ Saved';
+            } catch {
+              saveBtn.textContent = '💾 Save';
+              alert('บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง');
+            } finally {
+              saveBtn.disabled = false;
+            }
+          };
+          [byInput, modifyInput].forEach(input => input.addEventListener('input', () => {
+            saveBtn.textContent = '💾 Save';
+          }));
+          delTd.append(saveBtn, delBtn);
 
-          tr.append(numTd, nameTd, byTd, dateTd, delTd);
+          tr.append(nameTd, recordedTd, byTd, dateTd, modifyTd, delTd);
           tbody.appendChild(tr);
         });
 
@@ -930,18 +1293,19 @@
       } catch {}
     }
 
-    // บันทึก Record by ทันทีตอนพิมพ์เสร็จ (onchange) — คง object_type/manufacturer/year เดิมของไฟล์นั้นไว้
-    async function updFileRecordBy(objectName, by, rec) {
-      try {
-        await fetch('/api/file-records', {
+    // Save names without changing the creation timestamp.
+    async function saveFileRecord(objectName, by, modifyBy, rec) {
+        const response = await fetch('/api/file-records', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            object_name: objectName, by,
+            object_name: objectName, by, modify_by: modifyBy,
             object_type: rec.object_type, manufacturer: rec.manufacturer, year: rec.year,
           }),
         });
-      } catch {}
+        if (!response.ok) throw new Error('Save failed');
+        rec.by = by;
+        rec.modify_by = modifyBy;
     }
 
     // ── DELETE CONFIRM MODAL (handles both whole-file delete and inspection-row delete) ──
@@ -958,11 +1322,12 @@
     async function confirmDeleteFile() {
       if (!pendingDelete) return;
       const { subtabId, type } = pendingDelete;
-      if (type === 'itp') {
+      if (type === 'itp' || type === 'qaqc') {
         const { objectName } = pendingDelete;
         try {
           await fetch(`/api/browse/file?object_name=${encodeURIComponent(objectName)}`, { method: 'DELETE' });
-          await loadITPFileList();
+          if (type === 'qaqc') await loadQAQCFileList();
+          else await loadITPFileList();
         } catch {
           alert('ลบไม่สำเร็จ');
         }
@@ -1147,6 +1512,7 @@
         el.addEventListener('click', (e) => {
           if (e.target.closest('.insp-act')) return;
           activeInspFile[subtabId] = f.name;
+          saveViewState();
           renderInspectionTabs(subtabId);
           renderInspectionMain(subtabId);
         });
@@ -1335,7 +1701,7 @@
 
         // ปลายทางนี้ล็อกไว้กับไฟล์ต้นฉบับเดียว — ถ้ามีไฟล์อื่นอยู่แล้ว ห้ามบันทึกไฟล์ต้นฉบับที่ต่างออกไป
         // จนกว่าจะลบไฟล์เดิมทั้งหมดออกก่อน (บันทึกไฟล์เดิมซ้ำ = เวอร์ชันใหม่ ยังทำได้ปกติ)
-        if (existingFiles.length) {
+        if (existingFiles.length && !REPORT_CONFIG[subtabId].report) {
           const lockedMatch = existingFiles[0].name.match(GEN_NAME_RE);
           const lockedName = lockedMatch ? lockedMatch[1] : existingFiles[0].name;
           const mismatched = selectedObjects.some(sel => sel.split('/').pop() !== lockedName);
@@ -1408,6 +1774,7 @@
       loadRecordedFiles(subtabId, { forceFresh: isInsp });
       if (!isInsp) updateDestInfo();
     }
+    restoreViewState();
   </script>
 </body>
 </html>

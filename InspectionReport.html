@@ -164,7 +164,10 @@
     }
     .status-msg.error { color: #c0392b; }
 
-    .select-actions { display: none; align-items: center; gap: 10px; }
+    .select-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; width: 100%; }
+    .folder-header { flex-wrap: wrap; gap: 8px; }
+    .delete-all-btn { background: #b42318; }
+    button:disabled { opacity: 0.5; cursor: default; }
     .select-all-label { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; cursor: pointer; }
     .file-select-checkbox { cursor: pointer; margin-right: 8px; flex-shrink: 0; }
     .upload-blank-btn {
@@ -229,7 +232,9 @@
             <input type="checkbox" id="selectAllFiles" onchange="toggleSelectAll(this.checked)">
             Select all
           </label>
-          <button class="upload-blank-btn" onclick="submitSelectedFiles()">Upload blank form</button>
+          <button class="upload-blank-btn" onclick="moveSelectedFiles()">Move to</button>
+          <button class="upload-blank-btn delete-all-btn" onclick="deleteAllFiles()">Delete all</button>
+          <button id="uploadBlankButton" class="upload-blank-btn" style="display:none" onclick="submitSelectedFiles()">Upload blank form</button>
         </div>
       </div>
       <div class="folder-body" id="col-3"></div>
@@ -420,23 +425,22 @@
         div.remove();
       });
 
-      let checkbox = null;
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'file-select-checkbox';
+      checkbox.dataset.objectName = file.object_name;
+      checkbox.setAttribute('aria-label', 'Select ' + file.name);
+      checkbox.addEventListener('click', e => e.stopPropagation());
+      checkbox.addEventListener('change', updateSelectAllState);
+      div.append(checkbox, label);
       if (!IS_SELECT) {
         menu.append(editEl, delEl);
-        div.append(label, menuBtn, menu);
-      } else {
-        checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'file-select-checkbox';
-        checkbox.dataset.objectName = file.object_name;
-        checkbox.addEventListener('click', e => e.stopPropagation());
-        checkbox.addEventListener('change', updateSelectAllState);
-        div.append(checkbox, label);
+        div.append(menuBtn, menu);
       }
 
       div.addEventListener('click', e => {
         if (e.target.closest('.item-menu-btn') || e.target.closest('.item-menu')) return;
-        if (checkbox) {
+        if (IS_SELECT) {
           checkbox.checked = !checkbox.checked;
           updateSelectAllState();
           return;
@@ -547,6 +551,7 @@
           if (!r.ok) throw new Error(await r.text());
           file.name = newName;
           file.object_name = newObject;
+          divEl.querySelector('.file-select-checkbox').dataset.objectName = newObject;
         } catch (err) {
           span.textContent = oldName;
           span.title = oldName;
@@ -663,12 +668,18 @@
     // ── MULTI-SELECT (Bank Form picker) ───────────────────
     function toggleSelectAll(checked) {
       document.querySelectorAll('#col-3 .file-select-checkbox').forEach(cb => cb.checked = checked);
+      updateSelectAllState();
     }
 
     function updateSelectAllState() {
       const boxes = document.querySelectorAll('#col-3 .file-select-checkbox');
       const selectAll = document.getElementById('selectAllFiles');
-      if (selectAll) selectAll.checked = boxes.length > 0 && Array.from(boxes).every(cb => cb.checked);
+      if (selectAll) {
+        const count = Array.from(boxes).filter(cb => cb.checked).length;
+        selectAll.checked = boxes.length > 0 && count === boxes.length;
+        selectAll.indeterminate = count > 0 && count < boxes.length;
+        selectAll.disabled = boxes.length === 0;
+      }
     }
 
     function submitSelectedFiles() {
@@ -692,6 +703,99 @@
       document.querySelectorAll('.sort-btn').forEach(b => b.style.display = 'none');
       document.getElementById('selectActions').style.display = 'flex';
     }
+
+    let bulkBusy = false;
+    async function reportRequest(url, options) {
+      const res = await fetch(API_BASE + url, options);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+    async function runBulk(objects, action) {
+      bulkBusy = true;
+      document.querySelector('.content').inert = true;
+      let done = 0;
+      const errors = [];
+      try {
+        for (const object of objects) {
+          try { await action(object); done++; }
+          catch (err) { errors.push(object.split('/').pop() + ': ' + err.message); }
+        }
+        await loadFiles();
+        alert(`Completed ${done}/${objects.length}` + (errors.length ? '\nFailed:\n' + errors.join('\n') : ''));
+      } finally { bulkBusy = false; document.querySelector('.content').inert = false; }
+    }
+    async function deleteAllFiles() {
+      if (bulkBusy) return;
+      const objects = Array.from(document.querySelectorAll('#col-3 .file-select-checkbox'), cb => cb.dataset.objectName);
+      if (!objects.length) return alert('No files in this folder.');
+      if (!confirm(`Delete ALL ${objects.length} files in this folder permanently? This cannot be undone.\n\u0e44\u0e1f\u0e25\u0e4c\u0e08\u0e30\u0e16\u0e39\u0e01\u0e25\u0e1a\u0e16\u0e32\u0e27\u0e23 \u0e44\u0e21\u0e48\u0e2a\u0e32\u0e21\u0e32\u0e23\u0e16\u0e01\u0e39\u0e49\u0e04\u0e37\u0e19\u0e44\u0e14\u0e49`)) return;
+      await runBulk(objects, object => reportRequest('/browse/file?object_name=' + encodeURIComponent(object), { method: 'DELETE' }));
+    }
+    async function moveSelectedFiles() {
+      if (bulkBusy) return;
+      const objects = Array.from(document.querySelectorAll('#col-3 .file-select-checkbox:checked'), cb => cb.dataset.objectName);
+      if (!objects.length) return alert('Please select files to move.');
+      const source = prefixFor(3);
+      const dialog = document.createElement('dialog');
+      dialog.style.cssText = 'margin:auto;padding:24px;border:0;border-radius:8px;width:480px;max-width:90vw';
+      dialog.innerHTML = '<h3>Move to</h3><p>Choose a folder within this report page.</p><div class="destinations"></div><p role="status"></p><button class="upload-blank-btn" disabled>Move</button> <button class="sort-btn">Cancel</button>';
+      const status = dialog.querySelector('p[role]');
+      const move = dialog.querySelector('.upload-blank-btn');
+      const selects = ['Object Type', 'Manufacturer', 'Year'].map(name => {
+        const label = document.createElement('label');
+        label.textContent = name;
+        label.style.cssText = 'display:block;margin:12px 0';
+        const select = document.createElement('select');
+        select.style.cssText = 'display:block;width:100%;padding:8px';
+        label.append(select); dialog.querySelector('.destinations').append(label); return select;
+      });
+      let revision = 0;
+      const destination = () => BASE_PATH + selects.map(s => s.value).join('/') + '/';
+      async function populate(level) {
+        const version = ++revision;
+        move.disabled = true;
+        for (let i = level; i < 3; i++) { selects[i].replaceChildren(new Option('Choose folder', '')); selects[i].disabled = true; }
+        if (selects.slice(0, level).some(s => !s.value)) return;
+        status.textContent = 'Loading...';
+        try {
+          const prefix = BASE_PATH + selects.slice(0, level).map(s => s.value + '/').join('');
+          const { folders } = await reportRequest('/list-paths?prefix=' + encodeURIComponent(prefix));
+          if (version !== revision || !dialog.open) return;
+          folders.filter(n => n && !n.includes('/') && !['.', '..'].includes(n)).forEach(n => selects[level].add(new Option(n, n)));
+          selects[level].disabled = false;
+          status.textContent = folders.length ? '' : 'No folders available.';
+        } catch (err) { if (version === revision) status.textContent = err.message; }
+      }
+      selects.forEach((select, index) => select.onchange = () => {
+        if (index < 2) populate(index + 1);
+        else { move.disabled = !select.value || destination() === source; status.textContent = destination() === source ? 'Choose a different folder.' : ''; }
+      });
+      dialog.querySelector('.sort-btn').onclick = () => dialog.close();
+      dialog.onclose = () => dialog.remove();
+      move.onclick = async () => {
+        const target = destination();
+        if (selects.some(s => !s.value) || target === source || !target.startsWith(BASE_PATH)) return;
+        move.disabled = true;
+        selects.forEach(s => s.disabled = true);
+        try {
+          const { files } = await reportRequest('/browse?prefix=' + encodeURIComponent(target));
+          const names = new Set(files.map(f => f.name));
+          const conflicts = objects.map(o => o.split('/').pop()).filter(n => names.has(n));
+          if (conflicts.length) throw new Error('Destination already contains: ' + conflicts.join(', '));
+          if (!dialog.open) return;
+          dialog.close();
+          await runBulk(objects, object => reportRequest('/rename-file', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ old_object: object, new_object: target + object.split('/').pop() })
+          }));
+        } catch (err) { status.textContent = err.message; move.disabled = false; selects.forEach(s => s.disabled = false); }
+      };
+      document.body.append(dialog); dialog.showModal(); populate(0);
+    }
+
+    new MutationObserver(updateSelectAllState).observe(document.getElementById('col-3'), { childList: true });
+    updateSelectAllState();
+    document.getElementById('uploadBlankButton').style.display = IS_SELECT ? '' : 'none';
     loadFolders(0);
   </script>
 

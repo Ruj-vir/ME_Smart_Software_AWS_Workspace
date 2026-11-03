@@ -642,8 +642,12 @@ const ctxPlant   = _qp.get('plant')   || '';
 const ctxService = _qp.get('service') || '';
 const ctxPkg     = _qp.get('package') || '';
 const CTX_PREFIX = [ctxCompany, ctxPlant, ctxService, ctxPkg].filter(Boolean).join('/');
-const ITP_PREFIX = CTX_PREFIX ? `${CTX_PREFIX}/Data/ITP/` : '';
-const COMMENT_SUFFIX = ' - ITP Checklist Comment.pdf';
+const isQAQCControl = _qp.get('section') === 'qaqc-control';
+const folderLabel = isQAQCControl ? 'QAQC control' : 'ITP';
+const ITP_PREFIX = CTX_PREFIX
+  ? `${CTX_PREFIX}/${isQAQCControl ? 'QAQCStep/QAQC control' : 'Data/ITP'}/` : '';
+const COMMENT_SUFFIX = isQAQCControl ? ' - QAQC Control Comment.pdf' : ' - ITP Checklist Comment.pdf';
+document.getElementById('btnSaveServer').textContent = `☁️ Save to ${folderLabel} folder`;
 const sourceFileName = _qp.get('file') || '';
 const isEmbedded = _qp.get('embed') === '1';
 if (isEmbedded) document.body.classList.add('embedded');
@@ -1618,7 +1622,7 @@ async function stampAll() {
     S.modBytes = await buildPDF(ready);
     document.getElementById('btnDownload').disabled = false;
     document.getElementById('btnSaveServer').disabled = !saveTargetObject;
-    setStatus(`✅ Stamp สำเร็จ ${ready.length} ลายเซ็น – กด Save to ITP folder หรือ ดาวน์โหลด`);
+    setStatus(`✅ Stamp สำเร็จ ${ready.length} ลายเซ็น – กด Save to ${folderLabel} folder หรือ ดาวน์โหลด`);
   } catch (err) {
     setStatus('❌ ' + err.message);
     console.error(err);
@@ -1722,7 +1726,7 @@ async function saveToServer() {
     setStatus('✅ บันทึกขึ้นระบบสำเร็จ: ' + saveTargetName);
     // Let the QAQC Step page (when embedded there) know to refresh its file list.
     if (window.parent !== window) {
-      window.parent.postMessage({ type: 'itp-stamp-saved', targetObject: saveTargetObject }, '*');
+      window.parent.postMessage({ type: isQAQCControl ? 'qaqc-stamp-saved' : 'itp-stamp-saved', targetObject: saveTargetObject }, '*');
     }
   } catch (err) {
     setStatus('❌ บันทึกไม่สำเร็จ: ' + err.message);
