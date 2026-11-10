@@ -1,0 +1,1881 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>GCME | PDF Stamp / Comment</title>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f0f8ff 0%, #eaf2f8 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      background: linear-gradient(to right, #d6eaf8, #aed6f1);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.13);
+      position: sticky;
+      top: 0;
+      z-index: 500;
+    }
+    .logo-wrap { display: flex; flex-direction: column; }
+    .logo { height: 40px; }
+    .company-name { font-size: 11px; font-style: italic; color: #2c3e50; }
+    .center-title { font-size: 18px; font-weight: bold; color: #154360; text-align: center; flex: 1; }
+    .back-link { color: #154360; font-weight: bold; font-size: 13px; text-decoration: none; white-space: nowrap; }
+    .back-link:hover { text-decoration: underline; }
+
+    /* ===== UPLOAD ===== */
+    .upload-zone { max-width: 1440px; margin: 14px auto 0; padding: 0 14px; }
+    .upload-box {
+      border: 2.5px dashed #0078d7;
+      border-radius: 14px;
+      background: white;
+      padding: 22px;
+      text-align: center;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .upload-box:hover, .upload-box:active { background: #e8f4fd; }
+    .upload-box.has-file { border-color: #27ae60; border-style: solid; }
+    .upload-title { font-size: 16px; font-weight: bold; color: #0078d7; margin-top: 8px; }
+    .upload-sub { color: #999; font-size: 12px; margin-top: 3px; }
+    #uploadedFileName { color: #27ae60; font-weight: bold; margin-top: 6px; font-size: 13px; }
+
+    /* ===== MAIN LAYOUT ===== */
+    .main-layout {
+      display: flex;
+      flex-direction: column;   /* mobile: stack */
+      gap: 12px;
+      max-width: 1440px;
+      margin: 12px auto 50px;
+      padding: 0 14px;
+    }
+    @media (min-width: 920px) {
+      .main-layout { flex-direction: row; align-items: flex-start; }
+    }
+
+    /* ===== PDF PANEL ===== */
+    .pdf-panel {
+      flex: 1;
+      min-width: 0;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.10);
+      overflow: hidden;
+    }
+    .pdf-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #f0f8ff;
+      border-bottom: 1px solid #d6eaf8;
+    }
+    .pdf-nav { display: flex; align-items: center; gap: 6px; }
+    .btn-nav {
+      background: #0078d7;
+      color: white;
+      border: none;
+      padding: 7px 13px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 13px;
+      touch-action: manipulation;
+    }
+    .btn-nav:disabled { background: #b0c4d8; cursor: default; }
+    .page-info { font-weight: bold; color: #154360; font-size: 14px; min-width: 80px; text-align: center; }
+    .zoom-group { display: flex; align-items: center; gap: 5px; }
+    .btn-zoom {
+      background: white;
+      border: 1.5px solid #0078d7;
+      color: #0078d7;
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      font-size: 18px;
+      cursor: pointer;
+      font-weight: bold;
+      display: flex; align-items: center; justify-content: center;
+      touch-action: manipulation;
+    }
+    .zoom-label { font-size: 13px; font-weight: bold; color: #154360; min-width: 44px; text-align: center; }
+    .btn-fit {
+      background: #e8f4fd;
+      border: 1.5px solid #0078d7;
+      color: #0078d7;
+      padding: 5px 10px;
+      border-radius: 7px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      touch-action: manipulation;
+    }
+
+    /* ===== CANVAS AREA ===== */
+    .canvas-scroll {
+      overflow: auto;
+      background: #444;
+      -webkit-overflow-scrolling: touch;
+      max-height: 60vh;
+    }
+    @media (min-width: 920px) {
+      .canvas-scroll { max-height: calc(100vh - 180px); }
+    }
+    .canvas-inner {
+      position: relative;
+      display: inline-block;
+      line-height: 0;
+    }
+    #pdfCanvas { display: block; touch-action: pan-x pan-y; }
+    #pdfCanvas.placing { cursor: crosshair !important; touch-action: none; }
+    #ghostMarker {
+      position: absolute;
+      border: 2px dashed #f39c12;
+      background: rgba(243,156,18,0.18);
+      pointer-events: none;
+      z-index: 50;
+      box-shadow: 0 0 0 1px rgba(243,156,18,0.4);
+    }
+
+    /* Crosshair overlay */
+    #crosshair {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      display: none;
+      z-index: 10;
+    }
+    #crosshair.show { display: block; }
+    #chLine-h, #chLine-v {
+      position: absolute;
+      background: rgba(231,76,60,0.55);
+      pointer-events: none;
+    }
+    #chLine-h { height: 1px; left: 0; right: 0; }
+    #chLine-v { width: 1px; top: 0; bottom: 0; }
+    #chCoord {
+      position: absolute;
+      background: rgba(44,62,80,0.82);
+      color: white;
+      font-size: 11px;
+      padding: 3px 7px;
+      border-radius: 5px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* ===== STAMP MARKERS ===== */
+    .stamp-marker {
+      position: absolute;
+      border: 2px dashed rgba(231,76,60,0.8);
+      background: rgba(231,76,60,0.07);
+      cursor: grab;
+      touch-action: none;
+      z-index: 20;
+    }
+    .stamp-marker.selected {
+      border-color: #0078d7;
+      background: rgba(0,120,215,0.08);
+      box-shadow: 0 0 0 2px #0078d785;
+    }
+    .stamp-marker.has-sig {
+      border-color: rgba(39,174,96,0.75);
+      background: rgba(39,174,96,0.07);
+    }
+    .stamp-marker.has-sig.selected {
+      border-color: #0078d7;
+    }
+    .m-label {
+      position: absolute;
+      top: -20px; left: -1px;
+      background: #e74c3c;
+      color: white;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px 4px 4px 0;
+      white-space: nowrap;
+      font-weight: bold;
+      pointer-events: none;
+      line-height: 1.4;
+    }
+    .stamp-marker.has-sig .m-label { background: #27ae60; }
+    .stamp-marker.selected .m-label { background: #0078d7; }
+    .stamp-marker img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+    .m-resize {
+      position: absolute;
+      right: -5px; bottom: -5px;
+      width: 12px; height: 12px;
+      background: #0078d7;
+      border-radius: 50%;
+      cursor: se-resize;
+      touch-action: none;
+    }
+    /* Draw marker */
+    .stamp-marker.draw-marker {
+      border-color: rgba(52,152,219,0.85);
+      background: rgba(52,152,219,0.06);
+    }
+    /* Drawing Modal */
+    #drawModal {
+      position: fixed; inset: 0; z-index: 2000;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #drawOverlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.55);
+    }
+    #drawBox {
+      position: relative; background: white;
+      border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,0.28);
+      padding: 16px; width: min(96vw, 500px);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    #drawHeader {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 8px;
+    }
+    #drawTitle { font-weight: bold; color: #154360; font-size: 15px; }
+    #drawTools { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    #drawTools label { font-size: 12px; color: #555; }
+    #penColor { width: 32px; height: 28px; border: none; cursor: pointer; padding: 0; }
+    #penSize  { width: 70px; cursor: pointer; }
+    #penSizeLabel { font-size: 12px; color: #154360; font-weight: bold; min-width: 18px; }
+    #drawCanvas {
+      border: 2px solid #d6eaf8; border-radius: 10px;
+      cursor: crosshair; background: white;
+      touch-action: none; display: block; width: 100%;
+    }
+    #drawFooter { display: flex; gap: 8px; }
+    /* Date / Note markers */
+    .stamp-marker.date-marker {
+      border-color: rgba(39,174,96,0.85);
+      background: rgba(39,174,96,0.09);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: #155724; font-weight: bold;
+      padding: 2px 4px; overflow: hidden; text-align: center; line-height: 1.2;
+    }
+    .stamp-marker.note-marker {
+      border-color: rgba(142,68,173,0.85);
+      background: rgba(142,68,173,0.07);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: #4a235a;
+      padding: 2px 4px; overflow: hidden; text-align: center; line-height: 1.2;
+    }
+    /* Extra stamp type rows in signer card */
+    .xstamp-row {
+      display: flex; align-items: center; gap: 5px; margin-top: 6px;
+    }
+    .xstamp-label { width: 46px; flex-shrink: 0; font-size: 11px; color: #555; }
+    .xstamp-input {
+      flex: 1; border: 1px solid #b3d4f5; border-radius: 6px;
+      padding: 4px 6px; font-size: 12px; font-family: inherit; min-width: 0;
+    }
+    .xstamp-input:focus { outline: none; border-color: #0078d7; }
+    /* Arrow key hint */
+    #arrowHint {
+      position: fixed;
+      bottom: 14px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(21,67,96,0.85);
+      color: white;
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: none;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    #arrowHint.show { display: block; }
+
+    /* ===== SIGNER PANEL ===== */
+    .signer-panel {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    @media (min-width: 920px) {
+      .signer-panel { width: 360px; flex-shrink: 0; }
+    }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.09);
+      padding: 14px;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #154360;
+      border-bottom: 2px solid #d6eaf8;
+      padding-bottom: 7px;
+      margin-bottom: 11px;
+    }
+
+    /* Mode banner */
+    .mode-banner {
+      background: #fff8e1;
+      border: 1.5px solid #f39c12;
+      border-radius: 10px;
+      padding: 10px 13px;
+      font-size: 13px;
+      color: #7d5a00;
+      display: none;
+      line-height: 1.6;
+    }
+    .mode-banner.show { display: block; }
+
+    /* Add button */
+    #addBtn {
+      width: 100%;
+      padding: 9px;
+      background: #0078d7;
+      color: white;
+      border: none;
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      touch-action: manipulation;
+    }
+    #addBtn:hover { background: #005fa3; }
+    #addBtn:active { background: #004a80; }
+
+    /* Signer list */
+    #signerList {
+      overflow-y: auto;
+      max-height: 42vh;
+    }
+    @media (min-width: 920px) {
+      #signerList { max-height: calc(100vh - 420px); }
+    }
+    #signerList::-webkit-scrollbar { width: 5px; }
+    #signerList::-webkit-scrollbar-thumb { background: #b3d4f5; border-radius: 3px; }
+
+    /* Signer Row */
+    .s-row {
+      border: 1.5px solid #dce9f5;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: #f8fbfe;
+      transition: border-color .2s, background .2s;
+    }
+    .s-row.placing { border-color: #e74c3c; background: #fff8f7; }
+    .s-row.ready   { border-color: #27ae60; background: #f4fff8; }
+    .s-row.selected { border-color: #0078d7; background: #f0f7ff; }
+
+    .s-top {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 8px;
+    }
+    .s-num {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: #0078d7;
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: bold;
+      flex-shrink: 0;
+    }
+    .s-name {
+      flex: 1;
+      border: 1px solid #b3d4f5;
+      border-radius: 7px;
+      padding: 6px 9px;
+      font-size: 13px;
+      color: #154360;
+      font-family: inherit;
+    }
+    .s-name:focus { outline: none; border-color: #0078d7; }
+    .btn-del {
+      background: none;
+      border: none;
+      color: #c0392b;
+      font-size: 21px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 3px;
+      touch-action: manipulation;
+    }
+
+    .s-mid {
+      display: grid;
+      grid-template-columns: 86px 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+    .sig-thumb {
+      width: 86px; height: 48px;
+      border: 1.5px dashed #b3d4f5;
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: #bbb;
+      text-align: center; line-height: 1.4;
+      cursor: pointer;
+      background: white;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+    .sig-thumb:hover, .sig-thumb:active { border-color: #0078d7; }
+    .sig-thumb img { width: 100%; height: 100%; object-fit: contain; }
+
+    .s-actions { display: flex; flex-direction: column; gap: 5px; }
+    .btn-s {
+      border: none;
+      border-radius: 7px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      touch-action: manipulation;
+    }
+    .btn-pos  { background: #f39c12; color: white; }
+    .btn-pos.active { background: #e74c3c; }
+    .btn-stamp-one { background: #0078d7; color: white; }
+    .btn-stamp-one:disabled { background: #b0c4d8; cursor: default; }
+    .pos-info { font-size: 11px; color: #aaa; }
+    .pos-info.ok { color: #27ae60; font-weight: bold; }
+
+    .s-bot {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      flex-wrap: wrap;
+    }
+    .s-bot label { color: #888; }
+    .sz-in {
+      width: 50px;
+      border: 1px solid #b3d4f5;
+      border-radius: 5px;
+      padding: 3px 5px;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    /* Action card */
+    .act-row { display: flex; gap: 8px; margin-bottom: 7px; }
+    .btn-big {
+      flex: 1;
+      padding: 10px 6px;
+      border: none;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      touch-action: manipulation;
+    }
+    .btn-big:disabled { opacity: 0.42; cursor: default; }
+    .btn-stamp-all { background: #0078d7; color: white; }
+    .btn-download  { background: #27ae60; color: white; }
+    .btn-save-server { background: #8e44ad; color: white; }
+    .btn-reset     { background: #e67e22; color: white; flex: unset; padding: 8px 14px; font-size: 12px; }
+    #statusMsg { font-size: 13px; min-height: 18px; color: #555; margin-top: 6px; }
+
+    input[type="file"] { display: none; }
+
+    /* Embedded inline inside another page (QAQC Step) — no header/back-link needed there */
+    body.embedded .header { display: none; }
+    body.embedded .main-layout { margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo-wrap">
+    <img src="../GCME_Logo.png" alt="GCME" class="logo" onerror="this.style.display='none'">
+    <div class="company-name">GC Maintenance and Engineering Co.,LTD.</div>
+  </div>
+  <div class="center-title">PDF Stamp / Comment</div>
+  <div style="width:160px; text-align:right;">
+    <a class="back-link" id="backLink" href="QAQC Step.html">&larr; Back</a>
+  </div>
+</header>
+
+<!-- UPLOAD -->
+<div class="upload-zone" id="uploadZone">
+  <div class="upload-box" id="uploadBox" onclick="document.getElementById('pdfInput').click()">
+    <svg width="40" height="40" fill="#0078d7" viewBox="0 0 24 24">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8z"/>
+    </svg>
+    <div class="upload-title">แตะ / คลิก เพื่ออัพโหลด PDF</div>
+    <div class="upload-sub">รองรับ PDF ทุกขนาด · ทุกรูปแบบ</div>
+    <div id="uploadedFileName"></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-layout" id="mainLayout" style="display:none;">
+
+  <!-- LEFT: PDF Viewer -->
+  <div class="pdf-panel">
+    <div class="pdf-toolbar">
+      <div class="pdf-nav">
+        <button class="btn-nav" id="btnPrev" onclick="changePage(-1)">◄</button>
+        <span class="page-info" id="pageInfo">1 / 1</span>
+        <button class="btn-nav" id="btnNext" onclick="changePage(1)">►</button>
+      </div>
+      <div class="zoom-group">
+        <button class="btn-zoom" onclick="changeZoom(-0.25)">−</button>
+        <span class="zoom-label" id="zoomLabel">150%</span>
+        <button class="btn-zoom" onclick="changeZoom(+0.25)">+</button>
+        <button class="btn-fit" onclick="fitWidth()">Fit</button>
+      </div>
+    </div>
+    <div class="canvas-scroll" id="canvasScroll">
+      <div class="canvas-inner" id="canvasInner">
+        <canvas id="pdfCanvas"></canvas>
+        <!-- crosshair overlay -->
+        <div id="crosshair">
+          <div id="chLine-h"></div>
+          <div id="chLine-v"></div>
+          <div id="chCoord"></div>
+        </div>
+        <!-- stamp markers injected here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Signer Panel -->
+  <div class="signer-panel">
+
+    <div class="mode-banner" id="modeBanner">
+      📍 แตะ / คลิกบน PDF<br>
+      เพื่อวางลายเซ็น <strong id="modeName"></strong><br>
+      <small style="opacity:.7;">กด ESC หรือแตะปุ่มอีกครั้งเพื่อยกเลิก</small>
+    </div>
+
+    <div class="card">
+      <div class="card-title">รายการผู้เซ็นเอกสาร</div>
+      <button id="addBtn" onclick="addSigner()">+ เพิ่มผู้เซ็นเอกสาร</button>
+      <div id="signerList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">การดำเนินการ</div>
+      <div class="act-row">
+        <button class="btn-big btn-stamp-all" onclick="stampAll()">🖊 Stamp ทั้งหมด</button>
+      </div>
+      <div class="act-row">
+        <button class="btn-big btn-save-server" id="btnSaveServer" onclick="saveToServer()" disabled>☁️ Save to ITP folder</button>
+      </div>
+      <div class="act-row">
+        <button class="btn-big btn-download" id="btnDownload" onclick="downloadPDF()" disabled>⬇ ดาวน์โหลดเครื่อง</button>
+        <button class="btn-big btn-reset" onclick="resetStamps()">↺ รีเซ็ต Stamp</button>
+      </div>
+      <div id="statusMsg"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Arrow key hint -->
+<div id="arrowHint">⌨️ ใช้ ← ↑ → ↓ ปรับตำแหน่ง | Shift+Arrow = เลื่อน 10pt</div>
+
+<!-- Hidden inputs -->
+<input type="file" id="pdfInput" accept=".pdf">
+<input type="file" id="sigInput" accept=".png,.jpg,.jpeg">
+
+<!-- Drawing Modal -->
+<div id="drawModal" style="display:none;">
+  <div id="drawOverlay" onclick="cancelDraw()"></div>
+  <div id="drawBox">
+    <div id="drawHeader">
+      <span id="drawTitle">✏️ ขีดเขียน</span>
+      <div id="drawTools">
+        <label>สี</label>
+        <input type="color" id="penColor" value="#000000">
+        <label>ขนาด</label>
+        <input type="range" id="penSize" min="1" max="18" value="3"
+          oninput="document.getElementById('penSizeLabel').textContent=this.value">
+        <span id="penSizeLabel">3</span>
+        <button class="btn-zoom" onclick="toggleEraser()" id="eraserBtn" title="Eraser">⬜</button>
+      </div>
+    </div>
+    <canvas id="drawCanvas"></canvas>
+    <div id="drawFooter">
+      <button class="btn-big btn-reset" style="flex:unset;padding:8px 14px;" onclick="clearDraw()">🗑 ล้าง</button>
+      <button class="btn-big" style="background:#95a5a6;color:white;" onclick="cancelDraw()">ยกเลิก</button>
+      <button class="btn-big btn-stamp-all" onclick="confirmDraw()">✓ บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+// ─── Backend context: which ITP file are we stamping, and where do we save the result? ───
+const _qp = new URLSearchParams(window.location.search);
+const ctxCompany = _qp.get('company') || '';
+const ctxPlant   = _qp.get('plant')   || '';
+const ctxService = _qp.get('service') || '';
+const ctxPkg     = _qp.get('package') || '';
+const CTX_PREFIX = [ctxCompany, ctxPlant, ctxService, ctxPkg].filter(Boolean).join('/');
+const isQAQCControl = _qp.get('section') === 'qaqc-control';
+const folderLabel = isQAQCControl ? 'QAQC control' : 'ITP';
+const ITP_PREFIX = CTX_PREFIX
+  ? `${CTX_PREFIX}/${isQAQCControl ? 'QAQCStep/QAQC control' : 'Data/ITP'}/` : '';
+const COMMENT_SUFFIX = isQAQCControl ? ' - QAQC Control Comment.pdf' : ' - ITP Checklist Comment.pdf';
+document.getElementById('btnSaveServer').textContent = `☁️ Save to ${folderLabel} folder`;
+const sourceFileName = _qp.get('file') || '';
+const isEmbedded = _qp.get('embed') === '1';
+if (isEmbedded) document.body.classList.add('embedded');
+
+let saveTargetName = '';   // filename we save the result as
+let saveTargetObject = ''; // full object_name (ITP_PREFIX + saveTargetName)
+
+(function () {
+  const back = new URLSearchParams({ company: ctxCompany, plant: ctxPlant, service: ctxService, package: ctxPkg });
+  document.getElementById('backLink').href = 'QAQC Step.html?' + back.toString();
+})();
+
+// ─── Date / text helpers ───
+function todayStr() {
+  const d = new Date();
+  return String(d.getDate()).padStart(2,'0') + '/'
+       + String(d.getMonth()+1).padStart(2,'0') + '/'
+       + (d.getFullYear() + 543);
+}
+// Never render note/date text smaller than this (PDF points) — below it stops being
+// comfortably readable on a printed page, so the box grows taller instead of shrinking further.
+const MIN_TEXT_PT = 9;
+
+// Renders `text` into a PNG sized wPt × (at least) hPt, wrapping and auto-sizing the font to
+// stay legible. Returns { dataUrl, h } — h is the actual rendered height in PDF points, which
+// may exceed hPt if the text needed more room than the box had at the legibility floor; the
+// caller should grow the placed box to this height rather than assuming it stayed hPt.
+async function textToDataUrl(text, wPt, hPt) {
+  const sc = 3;
+  const LH = 1.18; // line-height multiplier
+  const meas = document.createElement('canvas').getContext('2d');
+
+  const padX = Math.round(wPt * sc * 0.05);
+  const padY = Math.round(hPt * sc * 0.08);
+  const maxW = Math.round(wPt * sc) - padX * 2;
+
+  // Greedy word-wrap `text` into lines that each fit maxW at the given font size (px).
+  function wrapLines(fontPx) {
+    meas.font = `${fontPx}px 'Segoe UI', sans-serif`;
+    const words = text.split(/\s+/).filter(Boolean);
+    if (!words.length) return [''];
+    const lines = [];
+    let line = words[0];
+    for (let i = 1; i < words.length; i++) {
+      const test = line + ' ' + words[i];
+      if (meas.measureText(test).width <= maxW) {
+        line = test;
+      } else {
+        lines.push(line);
+        line = words[i];
+      }
+    }
+    lines.push(line);
+    return lines;
+  }
+
+  // Wrap onto more lines first, and pick the largest font (up to the height-implied max) whose
+  // wrapped lines fit the box — but never go below the legibility floor.
+  const minFontPx = Math.round(MIN_TEXT_PT * sc);
+  const maxFontPx = Math.max(minFontPx, Math.round(hPt * sc * 0.62));
+  const availPx   = Math.round(hPt * sc) - padY * 2;
+  let fontPx = minFontPx, lines = wrapLines(minFontPx);
+  for (let f = maxFontPx; f >= minFontPx; f--) {
+    const candidate = wrapLines(f);
+    const fitsHeight = candidate.length * (f * LH) <= availPx;
+    const fitsWidth  = candidate.every(l => meas.measureText(l).width <= maxW);
+    if (fitsHeight && fitsWidth) {
+      fontPx = f;
+      lines = candidate;
+      break;
+    }
+  }
+
+  // Even at the floor size, if the wrapped text still needs more vertical room than the box
+  // has, grow the box taller (the caller re-centers it) instead of shrinking past the floor.
+  const neededPx = Math.max(Math.round(hPt * sc), lines.length * (fontPx * LH) + padY * 2);
+
+  const c = document.createElement('canvas');
+  c.width  = Math.round(wPt * sc);
+  c.height = neededPx;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#1a1a1a';
+  ctx.textBaseline = 'middle';
+  ctx.font = `${fontPx}px 'Segoe UI', sans-serif`;
+  const lineHeight = fontPx * LH;
+  let y = (c.height - lines.length * lineHeight) / 2 + lineHeight / 2;
+  for (const line of lines) {
+    ctx.fillText(line, padX, y);
+    y += lineHeight;
+  }
+  return { dataUrl: c.toDataURL('image/png'), h: neededPx / sc };
+}
+
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+const S = {
+  pdfJsDoc: null,
+  pdfBytes: null,
+  modBytes: null,
+  curPage: 1,
+  totalPages: 0,
+  scale: 1.5,
+  viewport: null,       // current page's pdf.js viewport — carries /Rotate for coordinate mapping
+  cssPxW: 0,
+  cssPxH: 0,
+  signers: [],
+  selectIdx: -1,       // signer being positioned
+  selectType: 'sig',   // 'sig' | 'date' | 'note'
+  selectedMk: -1,      // marker selected for keyboard nudge
+  selectedMkType: 'sig',
+  idCtr: 0,
+};
+const DPR = () => window.devicePixelRatio || 1;
+const DEFAULT_W = 110;
+const DEFAULT_H = 48;
+
+// ─────────────────────────────────────────────
+//  PDF LOAD
+// ─────────────────────────────────────────────
+async function loadPdfFromBytes(bytes, displayName) {
+  document.getElementById('uploadedFileName').textContent = '📄 ' + displayName;
+  document.getElementById('uploadBox').classList.add('has-file');
+
+  S.pdfBytes = bytes;
+  S.modBytes = null;
+
+  S.pdfJsDoc = await pdfjsLib.getDocument({ data: S.pdfBytes.slice() }).promise;
+  S.totalPages = S.pdfJsDoc.numPages;
+  S.curPage = 1;
+
+  document.getElementById('mainLayout').style.display = 'flex';
+  document.getElementById('uploadZone').style.marginBottom = '10px';
+
+  await renderPage(S.curPage);
+  updateNav();
+  renderSignerList();
+  setStatus('');
+  document.getElementById('btnDownload').disabled = true;
+  document.getElementById('btnSaveServer').disabled = !saveTargetObject;
+}
+
+document.getElementById('pdfInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+  const ab = await file.arrayBuffer();
+  await loadPdfFromBytes(new Uint8Array(ab), file.name);
+});
+
+// If we were opened from QAQC Step with a specific ITP file, load it straight from the backend —
+// and if that file's "<name> - ITP Checklist Comment.pdf" companion already exists, load that
+// instead so earlier stamps are still there to keep working on.
+async function autoLoadFromServer() {
+  if (!sourceFileName || !ITP_PREFIX) return;
+
+  const isCommentFile = sourceFileName.endsWith(COMMENT_SUFFIX);
+  const baseName = isCommentFile
+    ? sourceFileName.slice(0, -COMMENT_SUFFIX.length)
+    : sourceFileName.replace(/\.pdf$/i, '');
+  saveTargetName = `${baseName}${COMMENT_SUFFIX}`;
+  saveTargetObject = ITP_PREFIX + saveTargetName;
+
+  let sourceObjectName = ITP_PREFIX + sourceFileName;
+  if (!isCommentFile) {
+    try {
+      const res = await fetch(`/api/browse?prefix=${encodeURIComponent(ITP_PREFIX)}`);
+      if (res.ok) {
+        const { files } = await res.json();
+        if ((files || []).some(f => f.name === saveTargetName)) {
+          sourceObjectName = saveTargetObject;
+        }
+      }
+    } catch {}
+  }
+
+  setStatus('⏳ กำลังโหลดไฟล์จากระบบ...');
+  try {
+    const r = await fetch(`/api/browse/file-content?object_name=${encodeURIComponent(sourceObjectName)}`);
+    if (!r.ok) throw new Error('load failed');
+    const ab = await r.arrayBuffer();
+    await loadPdfFromBytes(new Uint8Array(ab), sourceObjectName.split('/').pop());
+    document.getElementById('uploadZone').style.display = 'none';
+    setStatus('');
+  } catch (err) {
+    setStatus('❌ โหลดไฟล์จากระบบไม่สำเร็จ — กรุณาอัพโหลดไฟล์เอง');
+  }
+}
+autoLoadFromServer();
+
+// ─────────────────────────────────────────────
+//  RENDER PAGE  (DPR-aware for sharp text)
+// ─────────────────────────────────────────────
+async function renderPage(num) {
+  const page = await S.pdfJsDoc.getPage(num);
+
+  const dpr = DPR();
+  const viewport = page.getViewport({ scale: S.scale });
+  S.viewport = viewport; // carries the page's /Rotate — needed for correct CSS↔PDF coordinate mapping
+
+  // CSS dimensions (what the user "sees")
+  S.cssPxW = viewport.width;
+  S.cssPxH = viewport.height;
+
+  const canvas = document.getElementById('pdfCanvas');
+  const ctx    = canvas.getContext('2d');
+
+  // Render at physical pixels for crispness
+  canvas.width  = Math.round(viewport.width  * dpr);
+  canvas.height = Math.round(viewport.height * dpr);
+  canvas.style.width  = Math.round(viewport.width)  + 'px';
+  canvas.style.height = Math.round(viewport.height) + 'px';
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  await page.render({ canvasContext: ctx, viewport }).promise;
+
+  renderMarkers();
+}
+
+function changePage(d) {
+  const np = S.curPage + d;
+  if (np < 1 || np > S.totalPages) return;
+  S.curPage = np;
+  renderPage(S.curPage);
+  updateNav();
+}
+
+async function fitWidth() {
+  const scroll = document.getElementById('canvasScroll');
+  const avail  = scroll.clientWidth - 4;
+  // get raw page width at scale 1
+  const page = await S.pdfJsDoc.getPage(S.curPage);
+  const vp1  = page.getViewport({ scale: 1 });
+  S.scale = parseFloat((avail / vp1.width).toFixed(2));
+  document.getElementById('zoomLabel').textContent = Math.round(S.scale * 100) + '%';
+  renderPage(S.curPage);
+}
+
+function changeZoom(d) {
+  S.scale = Math.max(0.4, Math.min(4.0, parseFloat((S.scale + d).toFixed(2))));
+  document.getElementById('zoomLabel').textContent = Math.round(S.scale * 100) + '%';
+  renderPage(S.curPage);
+}
+
+function updateNav() {
+  document.getElementById('pageInfo').textContent = `${S.curPage} / ${S.totalPages}`;
+  document.getElementById('btnPrev').disabled = S.curPage <= 1;
+  document.getElementById('btnNext').disabled = S.curPage >= S.totalPages;
+}
+
+// ─────────────────────────────────────────────
+//  COORDINATE CONVERSION  (CSS pixels ↔ PDF pts)
+// ─────────────────────────────────────────────
+// Get click/touch position in CSS pixels relative to canvas
+function getEventPos(e) {
+  const canvas = document.getElementById('pdfCanvas');
+  const rect   = canvas.getBoundingClientRect();
+  const src    = e.touches ? e.touches[0] : e;
+  // rect.width = canvas CSS width — same as S.cssPxW
+  return {
+    cx: src.clientX - rect.left,
+    cy: src.clientY - rect.top,
+  };
+}
+
+// CSS pixel → PDF user unit (pt), returns {x, y} in PDF coord system.
+// Goes through the page's own viewport transform (pdf.js) so a rotated page (/Rotate 90/180/270 —
+// the usual case for a landscape ITP scanned/exported as a rotated portrait page) still maps the
+// click to the correct spot in the PDF's raw (unrotated) coordinate space, which is what pdf-lib's
+// drawImage expects. The old version assumed rotate=0 and just flipped Y — that's what made stamps
+// land rotated/offset on landscape documents.
+function cssToPdf(cx, cy) {
+  const [x, y] = S.viewport.convertToPdfPoint(cx, cy);
+  return { x, y };
+}
+
+// Raw-PDF-space axis-aligned rect (x,y = bottom-left corner, w/h) → CSS-space rect for on-screen
+// display. Uses both opposite corners (not just scale × dims) because a 90°/270° rotation swaps
+// which screen axis (width vs height) each PDF axis maps to.
+function pdfRectToCss(x, y, w, h) {
+  const [ax, ay] = S.viewport.convertToViewportPoint(x, y);
+  const [bx, by] = S.viewport.convertToViewportPoint(x + w, y + h);
+  return {
+    left: Math.min(ax, bx), top: Math.min(ay, by),
+    width: Math.abs(bx - ax), height: Math.abs(by - ay),
+  };
+}
+
+// CSS-space rect (left/top/width/height, screen pixels) → raw-PDF-space rect {x,y,w,h}. Inverse of
+// pdfRectToCss — used after a drag/resize/nudge to store the marker's true PDF-space position.
+function cssRectToPdf(left, top, width, height) {
+  const [ax, ay] = S.viewport.convertToPdfPoint(left, top);
+  const [bx, by] = S.viewport.convertToPdfPoint(left + width, top + height);
+  return {
+    x: Math.min(ax, bx), y: Math.min(ay, by),
+    w: Math.abs(bx - ax), h: Math.abs(by - ay),
+  };
+}
+
+// ─────────────────────────────────────────────
+//  CANVAS INTERACTIONS (click + touch)
+// ─────────────────────────────────────────────
+const canvas = document.getElementById('pdfCanvas');
+
+canvas.addEventListener('click',      onCanvasClick);
+canvas.addEventListener('mousemove',  onCanvasMouseMove);
+canvas.addEventListener('mouseleave', onCanvasMouseLeave);
+
+// drag-to-place: ghost marker follows finger, stamp placed on lift
+let _placeActive = false;
+canvas.addEventListener('touchstart', (e) => {
+  if (S.selectIdx < 0) return;
+  _placeActive = true;
+  const rect = canvas.getBoundingClientRect();
+  updateGhostMarker(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+}, { passive: true });
+canvas.addEventListener('touchmove', (e) => {
+  if (!_placeActive || S.selectIdx < 0) return;
+  const rect = canvas.getBoundingClientRect();
+  updateGhostMarker(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+}, { passive: true });
+canvas.addEventListener('touchend', (e) => {
+  if (!_placeActive || S.selectIdx < 0) return;
+  _placeActive = false;
+  removeGhostMarker();
+  const t = e.changedTouches[0];
+  const rect = canvas.getBoundingClientRect();
+  placeStamp({ cx: t.clientX - rect.left, cy: t.clientY - rect.top });
+}, { passive: true });
+canvas.addEventListener('touchcancel', () => { _placeActive = false; removeGhostMarker(); });
+
+function updateGhostMarker(cx, cy) {
+  const sg = S.signers[S.selectIdx];
+  if (!sg) return;
+  const type = S.selectType;
+  const wPt = type === 'date' ? sg.dateW : type === 'note' ? sg.noteW : type === 'draw' ? sg.drawW : sg.sigW;
+  const hPt = type === 'date' ? sg.dateH : type === 'note' ? sg.noteH : type === 'draw' ? sg.drawH : sg.sigH;
+  // A 90°/270° page rotation swaps which screen axis each PDF-space dimension lands on.
+  const rot = ((S.viewport.rotation % 360) + 360) % 360;
+  const swapped = rot === 90 || rot === 270;
+  const w = (swapped ? hPt : wPt) * S.scale;
+  const h = (swapped ? wPt : hPt) * S.scale;
+
+  let g = document.getElementById('ghostMarker');
+  if (!g) {
+    g = document.createElement('div');
+    g.id = 'ghostMarker';
+    document.getElementById('canvasInner').appendChild(g);
+  }
+  g.style.left   = (cx - w / 2) + 'px';
+  g.style.top    = (cy - h / 2) + 'px';
+  g.style.width  = w + 'px';
+  g.style.height = h + 'px';
+
+  if (type === 'date' || type === 'note') {
+    const text = type === 'date' ? sg.dateText : sg.noteText;
+    const fontSize = Math.round(hPt * 0.62 * S.scale); // actual rendered font size in CSS px
+    g.textContent   = text || '(ว่าง)';
+    g.style.display    = 'flex';
+    g.style.alignItems = 'center';
+    g.style.paddingLeft = '4px';
+    g.style.overflow   = 'hidden';
+    g.style.whiteSpace = 'nowrap';
+    g.style.fontSize   = fontSize + 'px';
+    g.style.fontFamily = "'Segoe UI', sans-serif";
+    g.style.fontWeight = type === 'date' ? 'bold' : 'normal';
+    g.style.color      = '#333';
+  } else {
+    g.textContent      = '';
+    g.style.display    = '';
+    g.style.fontSize   = '';
+  }
+}
+function removeGhostMarker() {
+  const g = document.getElementById('ghostMarker');
+  if (g) g.remove();
+}
+
+function onCanvasClick(e) {
+  if (S.selectIdx < 0) return;
+  placeStamp(getEventPos(e));
+}
+
+function placeStamp({ cx, cy }) {
+  if (S.selectIdx < 0) return;
+  const { x, y } = cssToPdf(cx, cy);
+  const sg   = S.signers[S.selectIdx];
+  const type = S.selectType;
+  let w, h, posDict;
+  if (type === 'sig')  { w = sg.sigW;  h = sg.sigH;  posDict = sg.positions; }
+  if (type === 'date') { w = sg.dateW; h = sg.dateH; posDict = sg.datePositions; }
+  if (type === 'note') { w = sg.noteW; h = sg.noteH; posDict = sg.notePositions; }
+  if (type === 'draw') { w = sg.drawW; h = sg.drawH; posDict = sg.drawPositions; }
+  posDict[S.curPage] = { x: x - w / 2, y: y - h / 2, w, h };
+  S.selectedMk     = S.selectIdx;
+  S.selectedMkType = type;
+  exitSelect();
+  renderSignerList();
+  renderMarkers();
+  showArrowHint();
+}
+
+// ─── Crosshair guide ───
+function onCanvasMouseMove(e) {
+  const ch = document.getElementById('crosshair');
+  if (S.selectIdx < 0) { ch.classList.remove('show'); return; }
+  ch.classList.add('show');
+  const { cx, cy } = getEventPos(e);
+  document.getElementById('chLine-h').style.top  = cy + 'px';
+  document.getElementById('chLine-v').style.left = cx + 'px';
+  const { x, y } = cssToPdf(cx, cy);
+  const coord = document.getElementById('chCoord');
+  coord.textContent = `x:${x.toFixed(1)}  y:${y.toFixed(1)} pt`;
+  coord.style.left = (cx + 14) + 'px';
+  coord.style.top  = (cy - 20) + 'px';
+}
+function onCanvasMouseLeave() {
+  document.getElementById('crosshair').classList.remove('show');
+}
+
+// ─────────────────────────────────────────────
+//  MARKERS (visual stamp boxes on canvas)
+// ─────────────────────────────────────────────
+function renderMarkers() {
+  document.querySelectorAll('.stamp-marker').forEach(el => el.remove());
+  const inner = document.getElementById('canvasInner');
+  S.signers.forEach((sg, idx) => {
+    const sigPos  = sg.positions[S.curPage];
+    const datePos = sg.datePositions[S.curPage];
+    const notePos = sg.notePositions[S.curPage];
+    const drawPos = sg.drawPositions[S.curPage];
+    if (sigPos)  inner.appendChild(createMarker(idx, 'sig',  sigPos,  sg.sigDataUrl, null));
+    if (datePos) inner.appendChild(createMarker(idx, 'date', datePos, null, sg.dateText));
+    if (notePos && sg.noteText)
+                 inner.appendChild(createMarker(idx, 'note', notePos, null, sg.noteText));
+    if (drawPos && sg.drawDataUrl)
+                 inner.appendChild(createMarker(idx, 'draw', drawPos, sg.drawDataUrl, null));
+  });
+}
+
+function createMarker(idx, type, pos, imgUrl, text) {
+  const sg    = S.signers[idx];
+  const { left, top, width: w, height: h } = pdfRectToCss(pos.x, pos.y, pos.w, pos.h);
+  const isSel = S.selectedMk === idx && S.selectedMkType === type;
+
+  const mk = document.createElement('div');
+  mk.className = 'stamp-marker'
+    + (type === 'date' ? ' date-marker' : type === 'note' ? ' note-marker' : type === 'draw' ? ' draw-marker' : '')
+    + ((type === 'sig' && sg.sigDataUrl) || (type === 'draw' && sg.drawDataUrl) ? ' has-sig' : '')
+    + (isSel ? ' selected' : '');
+  mk.style.cssText = `left:${left}px;top:${top}px;width:${w}px;height:${h}px;`;
+  mk.dataset.idx  = idx;
+  mk.dataset.type = type;
+
+  const lbl = document.createElement('div');
+  lbl.className = 'm-label';
+  lbl.textContent = (sg.name || `ผู้เซ็น ${idx+1}`)
+    + (type === 'date' ? ' [วันที่]' : type === 'note' ? ' [Note]' : type === 'draw' ? ' [วาด]' : '');
+  mk.appendChild(lbl);
+
+  if ((type === 'sig' || type === 'draw') && imgUrl) {
+    const img = document.createElement('img');
+    img.src = imgUrl;
+    mk.appendChild(img);
+  } else if (text) {
+    const sp = document.createElement('span');
+    sp.className = 'mk-text';
+    sp.textContent = text;
+    const fs = Math.round(h * 0.62); // h is already CSS px (from pdfRectToCss)
+    sp.style.cssText = `pointer-events:none;user-select:none;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:${fs}px;`;
+    mk.appendChild(sp);
+  }
+
+  const rh = document.createElement('div');
+  rh.className = 'm-resize';
+  mk.appendChild(rh);
+
+  mk.addEventListener('click', (e) => {
+    e.stopPropagation();
+    S.selectedMk = idx; S.selectedMkType = type;
+    renderMarkers(); renderSignerList(); showArrowHint();
+  });
+  mk.addEventListener('touchstart', (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('.stamp-marker').forEach(m => m.classList.remove('selected'));
+    mk.classList.add('selected');
+    S.selectedMk = idx; S.selectedMkType = type;
+    renderSignerList(); showArrowHint();
+  }, { passive: true });
+
+  setupDrag(mk, rh, idx, type);
+  return mk;
+}
+
+// ─────────────────────────────────────────────
+//  DRAG / RESIZE (mouse + touch)
+// ─────────────────────────────────────────────
+function setupDrag(el, handle, idx, type) {
+  let dragging = false, resizing = false;
+  let startX, startY, startL, startT, startW, startH;
+
+  function startDrag(ex, ey) {
+    dragging = true;
+    startX = ex; startY = ey;
+    startL = parseFloat(el.style.left);
+    startT = parseFloat(el.style.top);
+  }
+  function startResize(ex, ey) {
+    resizing = true;
+    startX = ex; startY = ey;
+    startW = parseFloat(el.style.width);
+    startH = parseFloat(el.style.height);
+    startL = parseFloat(el.style.left);
+    startT = parseFloat(el.style.top);
+  }
+  function move(ex, ey) {
+    if (dragging) {
+      const nl = startL + (ex - startX);
+      const nt = startT + (ey - startY);
+      el.style.left = nl + 'px';
+      el.style.top  = nt + 'px';
+      syncPosFromMarker(idx, type, nl, nt,
+        parseFloat(el.style.width), parseFloat(el.style.height));
+    } else if (resizing) {
+      const nw = Math.max(30, startW + (ex - startX));
+      const nh = Math.max(16, startH + (ey - startY));
+      el.style.width  = nw + 'px';
+      el.style.height = nh + 'px';
+      syncPosFromMarker(idx, type, startL, startT, nw, nh);
+      // Keep this signer's default size (used when placing a fresh stamp elsewhere) in sync with
+      // the true PDF-space size we just computed — not a naive nw/scale, which breaks on a rotated page.
+      const sg  = S.signers[idx];
+      const pos = (type === 'date' ? sg.datePositions
+                 : type === 'note' ? sg.notePositions
+                 : type === 'draw' ? sg.drawPositions : sg.positions)[S.curPage];
+      if (type === 'sig')  { sg.sigW  = pos.w; sg.sigH  = pos.h; }
+      if (type === 'date') { sg.dateW = pos.w; sg.dateH = pos.h; }
+      if (type === 'note') { sg.noteW = pos.w; sg.noteH = pos.h; }
+      if (type === 'draw') { sg.drawW = pos.w; sg.drawH = pos.h; }
+      // sync font-size of text markers to match actual render
+      if (type === 'date' || type === 'note') {
+        const sp = el.querySelector('.mk-text');
+        if (sp) sp.style.fontSize = Math.round(nh * 0.62) + 'px';
+      }
+      renderSignerList();
+    }
+  }
+  function end() { dragging = false; resizing = false; }
+
+  // Mouse
+  el.addEventListener('mousedown', (e) => {
+    if (e.target === handle) return;
+    document.querySelectorAll('.stamp-marker').forEach(m => m.classList.remove('selected'));
+    el.classList.add('selected');
+    S.selectedMk = idx; S.selectedMkType = type;
+    showArrowHint(); renderSignerList();
+    startDrag(e.clientX, e.clientY);
+    e.preventDefault();
+  });
+  handle.addEventListener('mousedown', (e) => {
+    startResize(e.clientX, e.clientY);
+    e.preventDefault(); e.stopPropagation();
+  });
+  document.addEventListener('mousemove', (e) => move(e.clientX, e.clientY));
+  document.addEventListener('mouseup', end);
+
+  // Touch — selection handled by marker's own touchstart listener
+  el.addEventListener('touchstart', (e) => {
+    if (e.target === handle) return;
+    startDrag(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  handle.addEventListener('touchstart', (e) => {
+    startResize(e.touches[0].clientX, e.touches[0].clientY);
+    e.stopPropagation();
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (!dragging && !resizing) return;
+    move(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  document.addEventListener('touchend', end);
+}
+
+function syncPosFromMarker(idx, type, left, top, pw, ph) {
+  const sg = S.signers[idx];
+  const posDict = type === 'date' ? sg.datePositions
+                : type === 'note' ? sg.notePositions
+                : type === 'draw' ? sg.drawPositions : sg.positions;
+  if (!posDict[S.curPage]) return;
+  Object.assign(posDict[S.curPage], cssRectToPdf(left, top, pw, ph));
+}
+
+// ─────────────────────────────────────────────
+//  ARROW KEY NUDGE for selected marker
+// ─────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    exitSelect(); hideArrowHint();
+    S.selectedMk = -1; S.selectedMkType = 'sig';
+    renderMarkers(); return;
+  }
+  if (S.selectedMk >= 0 && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) {
+    const step = e.shiftKey ? 10 : 1;
+    const sg = S.signers[S.selectedMk];
+    const posDict = S.selectedMkType === 'date' ? sg.datePositions
+                  : S.selectedMkType === 'note' ? sg.notePositions
+                  : S.selectedMkType === 'draw' ? sg.drawPositions : sg.positions;
+    const pos = posDict[S.curPage];
+    if (!pos) return;
+    // Nudge in CSS space (screen-relative), then convert back — a plain pos.x/y +=/-=
+    // only means "left"/"up" on screen when the page isn't rotated.
+    let { left, top, width, height } = pdfRectToCss(pos.x, pos.y, pos.w, pos.h);
+    if (e.key === 'ArrowLeft')  left -= step;
+    if (e.key === 'ArrowRight') left += step;
+    if (e.key === 'ArrowUp')    top  -= step;
+    if (e.key === 'ArrowDown')  top  += step;
+    Object.assign(pos, cssRectToPdf(left, top, width, height));
+    e.preventDefault();
+    renderMarkers();
+  }
+});
+
+// ─────────────────────────────────────────────
+//  SIGNER MANAGEMENT
+// ─────────────────────────────────────────────
+function addSigner() {
+  S.signers.push({
+    id: ++S.idCtr,
+    name: '',
+    sigDataUrl: null,
+    sigW: DEFAULT_W, sigH: DEFAULT_H,
+    positions: {},
+    dateText: todayStr(),
+    dateW: 90, dateH: 18,
+    datePositions: {},
+    noteText: '',
+    noteW: 130, noteH: 18,
+    notePositions: {},
+    drawDataUrl: null,
+    drawW: DEFAULT_W, drawH: DEFAULT_H,
+    drawPositions: {},
+  });
+  renderSignerList();
+}
+
+function removeSigner(idx) {
+  S.signers.splice(idx, 1);
+  if (S.selectIdx === idx)  exitSelect();
+  else if (S.selectIdx > idx) S.selectIdx--;
+  if (S.selectedMk === idx)  { S.selectedMk = -1; S.selectedMkType = 'sig'; hideArrowHint(); }
+  else if (S.selectedMk > idx) S.selectedMk--;
+  renderSignerList();
+  renderMarkers();
+}
+
+function setSelect(idx, type = 'sig') {
+  if (S.selectIdx === idx && S.selectType === type) { exitSelect(); return; }
+  S.selectIdx  = idx;
+  S.selectType = type;
+  S.selectedMk = -1; S.selectedMkType = 'sig';
+  hideArrowHint();
+  canvas.classList.add('placing');
+  document.getElementById('modeBanner').classList.add('show');
+  const typeName = type === 'date' ? 'วันที่' : type === 'note' ? 'Note' : 'ลายเซ็น';
+  document.getElementById('modeName').textContent =
+    (S.signers[idx].name || `ผู้เซ็น ${idx + 1}`) + ` (${typeName})`;
+  renderSignerList();
+}
+
+function exitSelect() {
+  S.selectIdx  = -1;
+  S.selectType = 'sig';
+  canvas.classList.remove('placing');
+  document.getElementById('modeBanner').classList.remove('show');
+  document.getElementById('crosshair').classList.remove('show');
+  renderSignerList();
+}
+
+function renderSignerList() {
+  const list = document.getElementById('signerList');
+  list.innerHTML = '';
+
+  S.signers.forEach((sg, idx) => {
+    const placingSig  = S.selectIdx === idx && S.selectType === 'sig';
+    const placingDate = S.selectIdx === idx && S.selectType === 'date';
+    const placingNote = S.selectIdx === idx && S.selectType === 'note';
+    const placingDraw = S.selectIdx === idx && S.selectType === 'draw';
+    const selected    = S.selectedMk === idx;
+
+    const sigPages  = Object.keys(sg.positions);
+    const datePages = Object.keys(sg.datePositions);
+    const notePages = Object.keys(sg.notePositions);
+    const drawPages = Object.keys(sg.drawPositions);
+    const hasSig     = !!sg.sigDataUrl;
+    const hasSigPos  = sigPages.length > 0;
+    const hasDatePos = datePages.length > 0;
+    const hasNotePos = notePages.length > 0 && !!sg.noteText;
+    const hasDrawPos = drawPages.length > 0 && !!sg.drawDataUrl;
+    const ready = hasSigPos || hasDatePos || hasNotePos || hasDrawPos;
+
+    const row = document.createElement('div');
+    row.className = 's-row'
+      + (placingSig || placingDate || placingNote || placingDraw ? ' placing' : '')
+      + (ready    ? ' ready'    : '')
+      + (selected ? ' selected' : '');
+
+    row.innerHTML = `
+      <div class="s-top">
+        <div class="s-num">${idx + 1}</div>
+        <input class="s-name" type="text" placeholder="ชื่อ / ตำแหน่ง"
+          value="${escHtml(sg.name)}"
+          oninput="onNameInput(${idx}, this.value)">
+        <button class="btn-del" onclick="removeSigner(${idx})">×</button>
+      </div>
+      <div class="s-mid">
+        <div class="sig-thumb" onclick="pickSig(${idx})" title="อัพโหลดลายเซ็น">
+          ${hasSig ? `<img src="${sg.sigDataUrl}" alt="sig">` : `<span>แตะอัพโหลด<br>ลายเซ็น PNG</span>`}
+        </div>
+        <div class="s-actions">
+          <button class="btn-s btn-pos${placingSig ? ' active' : ''}" onclick="setSelect(${idx},'sig')">
+            ${placingSig ? '🔴 กำลังเลือก...' : '📍 ตำแหน่งลายเซ็น'}
+          </button>
+          <button class="btn-s btn-stamp-one" onclick="stampOne(${idx})"
+            ${!hasSigPos && !hasDatePos && !hasNotePos && !hasDrawPos ? 'disabled' : ''}>🖊 Stamp นี้</button>
+          <div class="pos-info${hasSigPos ? ' ok' : ''}">
+            ${hasSigPos ? `📍 หน้า ${sigPages.join(', ')}` : '❌ ยังไม่กำหนดตำแหน่ง'}
+          </div>
+        </div>
+      </div>
+      <!-- Date stamp row -->
+      <div class="xstamp-row">
+        <span class="xstamp-label">📅 วันที่</span>
+        <input class="xstamp-input" type="text" value="${escHtml(sg.dateText)}"
+          oninput="onDateInput(${idx}, this.value)">
+        <button class="btn-s btn-pos${placingDate ? ' active' : ''}"
+          onclick="setSelect(${idx},'date')" style="flex-shrink:0;padding:5px 8px;">
+          ${placingDate ? '🔴' : '📍'}
+        </button>
+        <span class="pos-info${hasDatePos ? ' ok' : ''}" style="flex-shrink:0;font-size:11px;">
+          ${hasDatePos ? `✓${datePages.join(',')}` : '❌'}
+        </span>
+      </div>
+      <div class="xstamp-row" style="padding-left:46px;">
+        <label style="font-size:11px;color:#777;">กว้าง</label>
+        <input class="sz-in" type="number" value="${Math.round(sg.dateW)}"
+          min="20" max="400" onchange="onDateSizeChange(${idx},'w',this.value)">
+        <label style="font-size:11px;color:#777;">สูง</label>
+        <input class="sz-in" type="number" value="${Math.round(sg.dateH)}"
+          min="8" max="80" onchange="onDateSizeChange(${idx},'h',this.value)">
+        <span style="color:#bbb;font-size:11px;">pt</span>
+        <span style="font-size:10px;color:#aaa;margin-left:2px;">
+          · font ≈ ${Math.round(sg.dateH * 0.62)}pt
+        </span>
+      </div>
+      <!-- Note stamp row -->
+      <div class="xstamp-row">
+        <span class="xstamp-label">📝 Note</span>
+        <input class="xstamp-input" type="text" placeholder="ข้อความ..."
+          value="${escHtml(sg.noteText)}"
+          oninput="onNoteInput(${idx}, this.value)">
+        <button class="btn-s btn-pos${placingNote ? ' active' : ''}"
+          onclick="setSelect(${idx},'note')" style="flex-shrink:0;padding:5px 8px;">
+          ${placingNote ? '🔴' : '📍'}
+        </button>
+        <span class="pos-info${hasNotePos ? ' ok' : ''}" style="flex-shrink:0;font-size:11px;">
+          ${hasNotePos ? `✓${notePages.join(',')}` : '–'}
+        </span>
+      </div>
+      <!-- Draw stamp row -->
+      <div class="xstamp-row">
+        <span class="xstamp-label">✏️ วาด</span>
+        <div class="sig-thumb" onclick="pickDraw(${idx})" style="flex-shrink:0;cursor:pointer;">
+          ${sg.drawDataUrl
+            ? `<img src="${sg.drawDataUrl}" alt="draw">`
+            : '<span style="font-size:10px;text-align:center;line-height:1.3;">แตะเพื่อวาด</span>'}
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;">
+          <button class="btn-s btn-pos${placingDraw ? ' active' : ''}"
+            onclick="setSelect(${idx},'draw')" ${!sg.drawDataUrl ? 'disabled' : ''}>
+            ${placingDraw ? '🔴 กำลังเลือก...' : '📍 ตำแหน่งภาพวาด'}
+          </button>
+          <div class="pos-info${hasDrawPos ? ' ok' : ''}">
+            ${hasDrawPos ? `📍 หน้า ${drawPages.join(', ')}` : '–'}
+          </div>
+        </div>
+      </div>
+      <div class="s-bot">
+        <label>กว้าง</label>
+        <input class="sz-in" type="number" value="${Math.round(sg.sigW)}"
+          min="20" max="500" onchange="onSizeChange(${idx},'w',this.value)">
+        <label>สูง</label>
+        <input class="sz-in" type="number" value="${Math.round(sg.sigH)}"
+          min="10" max="300" onchange="onSizeChange(${idx},'h',this.value)">
+        <span style="color:#bbb;">pt (ลายเซ็น)</span>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function onNameInput(idx, val) {
+  S.signers[idx].name = val;
+  if (S.selectIdx === idx)
+    document.getElementById('modeName').textContent = val || `ผู้เซ็น ${idx + 1}`;
+  renderMarkers();
+}
+function onDateInput(idx, val) {
+  S.signers[idx].dateText = val;
+  renderMarkers();
+}
+function onDateSizeChange(idx, dim, val) {
+  const v  = Math.max(5, parseFloat(val) || 5);
+  const sg = S.signers[idx];
+  if (dim === 'w') sg.dateW = v;
+  if (dim === 'h') sg.dateH = v;
+  Object.values(sg.datePositions).forEach(p => { p[dim === 'w' ? 'w' : 'h'] = v; });
+  renderMarkers();
+  renderSignerList();
+}
+function onNoteInput(idx, val) {
+  S.signers[idx].noteText = val;
+  renderMarkers();
+}
+
+function onSizeChange(idx, dim, val) {
+  const v = Math.max(5, parseFloat(val) || 5);
+  S.signers[idx]['sig' + dim.toUpperCase()] = v;
+  Object.values(S.signers[idx].positions).forEach(p => { p[dim] = v; });
+  renderMarkers();
+}
+
+// ─────────────────────────────────────────────
+//  SIGNATURE UPLOAD
+// ─────────────────────────────────────────────
+let _pickIdx = -1;
+function pickSig(idx) { _pickIdx = idx; document.getElementById('sigInput').click(); }
+document.getElementById('sigInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file || _pickIdx < 0) return;
+  e.target.value = '';
+  const idx = _pickIdx;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      // Browsers auto-rotate a JPEG per its EXIF orientation tag when painting an <img> (a
+      // phone photo taken in portrait is often stored as raw landscape pixels + an EXIF flag
+      // saying "rotate 90 for display"), but pdf-lib's embedJpg/embedPng ignore EXIF entirely
+      // and embed the raw pixel data as-is. That's why a signature photo looks fine in this
+      // tool's preview but comes out sideways in the saved PDF. Re-drawing onto a canvas here
+      // bakes in the same correction the browser already applied, so what gets embedded
+      // matches what the user actually sees. (Also normalizes everything to PNG.)
+      const c = document.createElement('canvas');
+      c.width  = img.naturalWidth;
+      c.height = img.naturalHeight;
+      c.getContext('2d').drawImage(img, 0, 0);
+      S.signers[idx].sigDataUrl = c.toDataURL('image/png');
+      renderSignerList();
+      renderMarkers();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// ─────────────────────────────────────────────
+//  STAMPING  (pdf-lib — draws directly onto the original PDF's own pages,
+//  so nothing gets rasterized; only these small stamp images are new content)
+// ─────────────────────────────────────────────
+// pdf-lib draws image content "upright" in the page's own RAW (unrotated) coordinate space — it
+// has no idea about the page's /Rotate value. A PDF viewer then rotates the whole page CLOCKWISE
+// by /Rotate degrees for display, so an unrotated stamp ends up visibly rotated by that same
+// amount. pos.x/y/w/h (from cssToPdf/pdfRectToCss) already correctly locate WHERE the box belongs
+// in raw space — this additionally pre-rotates the image itself counter-clockwise by the page's
+// rotation (pdf-lib's `rotate` option is counter-clockwise-positive) so the two cancel out and the
+// stamp actually appears upright, in place, once the viewer applies /Rotate. Without this, the
+// position is right but the image content itself still comes out rotated.
+function rotatedImageOpts(page, pos) {
+  const angle = ((page.getRotation().angle % 360) + 360) % 360;
+  switch (angle) {
+    case 90:  return { x: pos.x + pos.w, y: pos.y,         width: pos.h, height: pos.w, rotate: PDFLib.degrees(90) };
+    case 180: return { x: pos.x + pos.w, y: pos.y + pos.h, width: pos.w, height: pos.h, rotate: PDFLib.degrees(180) };
+    case 270: return { x: pos.x,         y: pos.y + pos.h, width: pos.h, height: pos.w, rotate: PDFLib.degrees(270) };
+    default:  return { x: pos.x,         y: pos.y,         width: pos.w, height: pos.h };
+  }
+}
+
+// Renders `text` for a placed box `pos` (raw PDF-space x/y/w/h) on `page` and returns both the
+// PNG and the ready-to-use pdf-lib drawImage options for it — handling two things a page's own
+// /Rotate complicates:
+//  1. On a 90°/270° page, pos.w/pos.h are in RAW space, which is swapped relative to how the box
+//     actually looks on screen (rotatedImageOpts swaps them back for the final placement). The
+//     text canvas has to be built at that same VISUAL aspect ratio, or it wgets stretched/
+//     squashed once rotatedImageOpts un-swaps it — that mismatch is what was distorting the text.
+//  2. textToDataUrl may render taller than the box to keep text at least MIN_TEXT_PT — growing
+//     that has to happen along the box's VISUAL height, which on a swapped page is raw pos.w
+//     (and shifts x), not raw pos.h/y. Either way the box stays centered on where it was placed.
+async function renderTextStamp(page, pos, text) {
+  const angle    = ((page.getRotation().angle % 360) + 360) % 360;
+  const swapped  = angle === 90 || angle === 270;
+  const visW     = swapped ? pos.h : pos.w;
+  const visH     = swapped ? pos.w : pos.h;
+  const { dataUrl, h: grownVisH } = await textToDataUrl(text, visW, visH);
+  const grownPos = swapped
+    ? { ...pos, x: pos.x + (pos.w - grownVisH) / 2, w: grownVisH }
+    : { ...pos, y: pos.y + (pos.h - grownVisH) / 2, h: grownVisH };
+  return { dataUrl, drawOpts: rotatedImageOpts(page, grownPos) };
+}
+
+async function buildPDF(targets) {
+  const { PDFDocument } = PDFLib;
+  const doc   = await PDFDocument.load(S.pdfBytes);
+  const pages = doc.getPages();
+
+  for (const sg of targets) {
+    // 1. Signature image
+    if (sg.sigDataUrl) {
+      const isPng = sg.sigDataUrl.includes('image/png');
+      const imgB  = b64ToBytes(sg.sigDataUrl.split(',')[1]);
+      for (const [pgStr, pos] of Object.entries(sg.positions)) {
+        const pi = parseInt(pgStr) - 1;
+        if (pi < 0 || pi >= pages.length) continue;
+        const emb = isPng ? await doc.embedPng(imgB) : await doc.embedJpg(imgB);
+        pages[pi].drawImage(emb, rotatedImageOpts(pages[pi], pos));
+      }
+    }
+    // 2. Date stamp — rendered per placement, from that placement's own pos.w/pos.h (not the
+    // signer's shared default dateW/dateH), so the canvas can never end up a different aspect
+    // ratio than the box it's about to be stretched into (that mismatch was stretching/
+    // squishing the text — the actual cause of the distorted-looking stamps).
+    if (sg.dateText && Object.keys(sg.datePositions).length) {
+      for (const [pgStr, pos] of Object.entries(sg.datePositions)) {
+        const pi = parseInt(pgStr) - 1;
+        if (pi < 0 || pi >= pages.length) continue;
+        const { dataUrl, drawOpts } = await renderTextStamp(pages[pi], pos, sg.dateText);
+        const emb = await doc.embedPng(b64ToBytes(dataUrl.split(',')[1]));
+        pages[pi].drawImage(emb, drawOpts);
+      }
+    }
+    // 3. Note stamp (optional) — same per-placement rendering as the date stamp above.
+    if (sg.noteText && Object.keys(sg.notePositions).length) {
+      for (const [pgStr, pos] of Object.entries(sg.notePositions)) {
+        const pi = parseInt(pgStr) - 1;
+        if (pi < 0 || pi >= pages.length) continue;
+        const { dataUrl, drawOpts } = await renderTextStamp(pages[pi], pos, sg.noteText);
+        const emb = await doc.embedPng(b64ToBytes(dataUrl.split(',')[1]));
+        pages[pi].drawImage(emb, drawOpts);
+      }
+    }
+    // 4. Draw stamp (optional)
+    if (sg.drawDataUrl && Object.keys(sg.drawPositions).length) {
+      const drawImgB = b64ToBytes(sg.drawDataUrl.split(',')[1]);
+      for (const [pgStr, pos] of Object.entries(sg.drawPositions)) {
+        const pi = parseInt(pgStr) - 1;
+        if (pi < 0 || pi >= pages.length) continue;
+        const emb = await doc.embedPng(drawImgB);
+        pages[pi].drawImage(emb, rotatedImageOpts(pages[pi], pos));
+      }
+    }
+  }
+  return doc.save();
+}
+
+async function stampAll() {
+  const ready = S.signers.filter(sg =>
+    Object.keys(sg.positions).length > 0 ||
+    Object.keys(sg.datePositions).length > 0 ||
+    (sg.noteText && Object.keys(sg.notePositions).length > 0) ||
+    (sg.drawDataUrl && Object.keys(sg.drawPositions).length > 0));
+  if (!ready.length) { setStatus('⚠️ ยังไม่มี stamp ที่กำหนดตำแหน่งไว้'); return; }
+  setStatus('⏳ กำลัง Stamp...');
+  try {
+    S.modBytes = await buildPDF(ready);
+    document.getElementById('btnDownload').disabled = false;
+    document.getElementById('btnSaveServer').disabled = !saveTargetObject;
+    setStatus(`✅ Stamp สำเร็จ ${ready.length} ลายเซ็น – กด Save to ${folderLabel} folder หรือ ดาวน์โหลด`);
+  } catch (err) {
+    setStatus('❌ ' + err.message);
+    console.error(err);
+  }
+}
+
+async function stampOne(idx) {
+  const sg = S.signers[idx];
+  setStatus('⏳ กำลัง Stamp...');
+  try {
+    const base = S.modBytes ? S.modBytes : S.pdfBytes;
+    const { PDFDocument } = PDFLib;
+    const doc   = await PDFDocument.load(base);
+    const pages = doc.getPages();
+    // Sig
+    if (sg.sigDataUrl) {
+      const isPng = sg.sigDataUrl.includes('image/png');
+      const imgB  = b64ToBytes(sg.sigDataUrl.split(',')[1]);
+      for (const [pgStr, pos] of Object.entries(sg.positions)) {
+        const pi = parseInt(pgStr) - 1;
+        if (pi < 0 || pi >= pages.length) continue;
+        const emb = isPng ? await doc.embedPng(imgB) : await doc.embedJpg(imgB);
+        pages[pi].drawImage(emb, rotatedImageOpts(pages[pi], pos));
+      }
+    }
+    // Date — rendered per placement, from pos.w/pos.h directly (see buildPDF for why).
+    if (sg.dateText && Object.keys(sg.datePositions).length) {
+      for (const [pgStr, pos] of Object.entries(sg.datePositions)) {
+        const pi = parseInt(pgStr) - 1;
+        if (pi < 0 || pi >= pages.length) continue;
+        const { dataUrl, drawOpts } = await renderTextStamp(pages[pi], pos, sg.dateText);
+        const emb = await doc.embedPng(b64ToBytes(dataUrl.split(',')[1]));
+        pages[pi].drawImage(emb, drawOpts);
+      }
+    }
+    // Note (optional) — same per-placement rendering.
+    if (sg.noteText && Object.keys(sg.notePositions).length) {
+      for (const [pgStr, pos] of Object.entries(sg.notePositions)) {
+        const pi = parseInt(pgStr) - 1;
+        if (pi < 0 || pi >= pages.length) continue;
+        const { dataUrl, drawOpts } = await renderTextStamp(pages[pi], pos, sg.noteText);
+        const emb = await doc.embedPng(b64ToBytes(dataUrl.split(',')[1]));
+        pages[pi].drawImage(emb, drawOpts);
+      }
+    }
+    // Draw (optional)
+    if (sg.drawDataUrl && Object.keys(sg.drawPositions).length) {
+      const drawImgB = b64ToBytes(sg.drawDataUrl.split(',')[1]);
+      for (const [pgStr, pos] of Object.entries(sg.drawPositions)) {
+        const pi = parseInt(pgStr) - 1;
+        if (pi < 0 || pi >= pages.length) continue;
+        const emb = await doc.embedPng(drawImgB);
+        pages[pi].drawImage(emb, rotatedImageOpts(pages[pi], pos));
+      }
+    }
+    S.modBytes = await doc.save();
+    document.getElementById('btnDownload').disabled = false;
+    document.getElementById('btnSaveServer').disabled = !saveTargetObject;
+    setStatus(`✅ Stamp: ${sg.name || `ผู้เซ็น ${idx + 1}`}`);
+  } catch (err) {
+    setStatus('❌ ' + err.message);
+    console.error(err);
+  }
+}
+
+function resetStamps() {
+  S.modBytes = null;
+  document.getElementById('btnDownload').disabled = true;
+  document.getElementById('btnSaveServer').disabled = !saveTargetObject;
+  setStatus('↺ รีเซ็ตแล้ว – ตำแหน่งยังคงอยู่');
+}
+
+function downloadPDF() {
+  if (!S.modBytes) return;
+  const blob = new Blob([S.modBytes], { type: 'application/pdf' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = saveTargetName || 'stamped_document.pdf';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Save the stamped (or, if not stamped yet, original) bytes back to the ITP folder as this
+// file's "<name> - ITP Checklist Comment.pdf" companion — never touches the original file.
+async function saveToServer() {
+  if (!saveTargetObject) return;
+  const bytes = S.modBytes || S.pdfBytes;
+  if (!bytes) return;
+  setStatus('⏳ กำลังบันทึกขึ้นระบบ...');
+  try {
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const file = new File([blob], saveTargetName, { type: 'application/pdf' });
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`/api/browse/upload?prefix=${encodeURIComponent(ITP_PREFIX)}`, {
+      method: 'POST',
+      body: formData
+    });
+    if (!res.ok) throw new Error('upload failed');
+    setStatus('✅ บันทึกขึ้นระบบสำเร็จ: ' + saveTargetName);
+    // Let the QAQC Step page (when embedded there) know to refresh its file list.
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: isQAQCControl ? 'qaqc-stamp-saved' : 'itp-stamp-saved', targetObject: saveTargetObject }, '*');
+    }
+  } catch (err) {
+    setStatus('❌ บันทึกไม่สำเร็จ: ' + err.message);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────────
+function b64ToBytes(b64) {
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+    .replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function setStatus(msg) { document.getElementById('statusMsg').textContent = msg; }
+
+let _arrowTimer;
+function showArrowHint() {
+  const h = document.getElementById('arrowHint');
+  h.classList.add('show');
+  clearTimeout(_arrowTimer);
+  _arrowTimer = setTimeout(() => h.classList.remove('show'), 4000);
+}
+function hideArrowHint() {
+  clearTimeout(_arrowTimer);
+  document.getElementById('arrowHint').classList.remove('show');
+}
+
+// ─────────────────────────────────────────────
+//  DRAWING MODAL
+// ─────────────────────────────────────────────
+let _drawIdx = -1;
+let _drawCtx = null;
+let _drawing = false;
+let _drawLast = { x: 0, y: 0 };
+let _eraserOn = false;
+
+function pickDraw(idx) {
+  _drawIdx = idx;
+  const modal = document.getElementById('drawModal');
+  modal.style.display = 'flex';
+  // size canvas to fit the box
+  setTimeout(() => {
+    const dc  = document.getElementById('drawCanvas');
+    const box = document.getElementById('drawBox');
+    const w   = box.clientWidth - 32;
+    const h   = Math.round(w * 0.45);
+    // Render at supersampled resolution so the stamp stays sharp once stretched onto the PDF page
+    const dpr = Math.max(window.devicePixelRatio || 1, 2);
+    dc.width  = Math.round(w * dpr);
+    dc.height = Math.round(h * dpr);
+    dc.style.width  = w + 'px';
+    dc.style.height = h + 'px';
+    _drawCtx = dc.getContext('2d');
+    _drawCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    _drawCtx.fillStyle = '#ffffff';
+    _drawCtx.fillRect(0, 0, w, h);
+    const sg = S.signers[idx];
+    if (sg.drawDataUrl) {
+      const img = new Image();
+      img.onload = () => _drawCtx.drawImage(img, 0, 0, w, h);
+      img.src = sg.drawDataUrl;
+    }
+    _eraserOn = false;
+    document.getElementById('eraserBtn').style.background = '';
+  }, 30);
+}
+
+function toggleEraser() {
+  _eraserOn = !_eraserOn;
+  document.getElementById('eraserBtn').style.background = _eraserOn ? '#b0c4d8' : '';
+}
+
+function clearDraw() {
+  if (!_drawCtx) return;
+  const dc = document.getElementById('drawCanvas');
+  _drawCtx.fillStyle = '#ffffff';
+  _drawCtx.fillRect(0, 0, dc.clientWidth, dc.clientHeight);
+}
+
+function cancelDraw() {
+  document.getElementById('drawModal').style.display = 'none';
+  _drawIdx = -1;
+}
+
+function confirmDraw() {
+  if (_drawIdx < 0 || !_drawCtx) return;
+  const dc = document.getElementById('drawCanvas');
+  S.signers[_drawIdx].drawDataUrl = dc.toDataURL('image/png');
+  document.getElementById('drawModal').style.display = 'none';
+  _drawIdx = -1;
+  renderSignerList();
+  renderMarkers();
+}
+
+// Set up drawing canvas events once
+(function setupDrawCanvas() {
+  const dc = document.getElementById('drawCanvas');
+
+  function getPos(e) {
+    const rect = dc.getBoundingClientRect();
+    const src  = e.touches ? e.touches[0] : e;
+    return {
+      x: src.clientX - rect.left,
+      y: src.clientY - rect.top,
+    };
+  }
+
+  function startStroke(pos) {
+    if (!_drawCtx) return;
+    _drawing  = true;
+    _drawLast = pos;
+    const size = parseInt(document.getElementById('penSize').value);
+    _drawCtx.beginPath();
+    _drawCtx.arc(pos.x, pos.y, size / 2, 0, Math.PI * 2);
+    _drawCtx.fillStyle = _eraserOn ? '#ffffff' : document.getElementById('penColor').value;
+    _drawCtx.fill();
+  }
+
+  function continueStroke(pos) {
+    if (!_drawing || !_drawCtx) return;
+    const size  = parseInt(document.getElementById('penSize').value);
+    const color = _eraserOn ? '#ffffff' : document.getElementById('penColor').value;
+    _drawCtx.beginPath();
+    _drawCtx.moveTo(_drawLast.x, _drawLast.y);
+    _drawCtx.lineTo(pos.x, pos.y);
+    _drawCtx.strokeStyle = color;
+    _drawCtx.lineWidth   = size;
+    _drawCtx.lineCap     = 'round';
+    _drawCtx.lineJoin    = 'round';
+    _drawCtx.stroke();
+    _drawLast = pos;
+  }
+
+  function endStroke() { _drawing = false; }
+
+  dc.addEventListener('mousedown',  (e) => startStroke(getPos(e)));
+  dc.addEventListener('mousemove',  (e) => continueStroke(getPos(e)));
+  dc.addEventListener('mouseup',    endStroke);
+  dc.addEventListener('mouseleave', endStroke);
+  dc.addEventListener('touchstart', (e) => { e.preventDefault(); startStroke(getPos(e)); }, { passive: false });
+  dc.addEventListener('touchmove',  (e) => { e.preventDefault(); continueStroke(getPos(e)); }, { passive: false });
+  dc.addEventListener('touchend',   endStroke);
+})();
+</script>
+</body>
+</html>

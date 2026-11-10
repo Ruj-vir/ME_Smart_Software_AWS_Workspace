@@ -1,5 +1,6 @@
 // Access is confirmed by the server; browser storage is not an authority.
 (() => {
+  const loginUrl = new URL('../Login.html', document.currentScript.src).href;
   async function refreshAccess() {
     document.documentElement.classList.remove('general-form-admin');
     const menu = document.getElementById('myBox');
@@ -9,7 +10,7 @@
     try {
       const response = await fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' });
       if (response.status === 401) {
-        location.replace('Login.html');
+        location.replace(loginUrl);
         return;
       }
       if (!response.ok) return;

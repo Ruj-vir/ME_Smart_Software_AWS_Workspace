@@ -305,31 +305,31 @@
       </div>
       <div id="myBox" class="hn-grid" style="display: none;">
         <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='MaintenanceReport.html' + location.search">
+          <button class="hn-btn" onclick="location.href=(new URLSearchParams(location.search).get('service') === 'Static Equipment' ? 'static-equipment/' : '') + 'MaintenanceReport.html' + location.search">
             <span class="btn-icon">🔧</span>
             <span class="btn-text">Maintenance Report</span>
           </button>
         </div>
         <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='InspectionReport.html' + location.search">
+          <button class="hn-btn" onclick="location.href=(new URLSearchParams(location.search).get('service') === 'Static Equipment' ? 'static-equipment/' : '') + 'InspectionReport.html' + location.search">
             <span class="btn-icon">🔍</span>
             <span class="btn-text">Inspection Report</span>
           </button>
         </div>
         <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='SparePartReport.html' + location.search">
+          <button class="hn-btn" onclick="location.href=(new URLSearchParams(location.search).get('service') === 'Static Equipment' ? 'static-equipment/' : '') + 'SparePartReport.html' + location.search">
             <span class="btn-icon">⚙️</span>
             <span class="btn-text">Spare Part Report</span>
           </button>
         </div>
         <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='PhotographerReport.html' + location.search">
+          <button class="hn-btn" onclick="location.href=(new URLSearchParams(location.search).get('service') === 'Static Equipment' ? 'static-equipment/' : '') + 'PhotographerReport.html' + location.search">
             <span class="btn-icon">📷</span>
             <span class="btn-text">Photographer Report</span>
           </button>
         </div>
         <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='NDTReport.html' + location.search">
+          <button class="hn-btn" onclick="location.href=(new URLSearchParams(location.search).get('service') === 'Static Equipment' ? 'static-equipment/' : '') + 'NDTReport.html' + location.search">
             <span class="btn-icon">&#128225;</span>
             <span class="btn-text">NDT Report</span>
           </button>
@@ -510,7 +510,10 @@
           service,
           package: currentLabel
         });
-        window.location.href = `Package Default.html?${params.toString()}`;
+        const packagePage = service === "Static Equipment"
+          ? "static-equipment/Package Default.html"
+          : "Package Default.html";
+        window.location.href = `${packagePage}?${params.toString()}`;
       };
 
       const actions = document.createElement("div");

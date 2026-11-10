@@ -18,6 +18,7 @@ COPY backend/ backend/
 # Copy static frontend (FastAPI serves these at /ui via StaticFiles)
 # server.py resolves STATIC_DIR = dirname(__file__)/..)  →  /app
 COPY *.html ./
+COPY static-equipment/ ./static-equipment/
 COPY *.png  ./
 COPY assets/general-form-access.js ./assets/general-form-access.js
 COPY assets/pdf/covers/PageCover.pdf ./assets/pdf/covers/PageCover.pdf

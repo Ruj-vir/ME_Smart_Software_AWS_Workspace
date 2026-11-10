@@ -1,0 +1,1792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QAQC Step</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom right, #f0f8ff, #eaf2f8);
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(to right, #d6eaf8, #aed6f1);
+      padding: 28px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      position: sticky; top: 0; z-index: 10;
+      border-top-left-radius: 12px; border-top-right-radius: 12px;
+    }
+    .logo-container { display: flex; flex-direction: column; align-items: flex-start; }
+    .logo { height: 50px; margin-bottom: 4px; }
+    .company-name { font-size: 13px; font-style: italic; color: #2c3e50; }
+    .center-title { flex: 1; text-align: center; font-size: 24px; font-weight: bold; color: #154360; }
+
+    /* HEADER NAV (right side inside header) */
+    .header-nav {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      width: 360px;
+      flex-shrink: 0;
+      min-width: 0;
+    }
+
+    .hn-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #154360;
+      cursor: pointer;
+      padding: 7px 16px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: 20px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      transition: background 0.2s, box-shadow 0.2s;
+      user-select: none;
+    }
+
+    .hn-label:hover {
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    }
+
+    .hn-label .hn-arrow { font-size: 10px; transition: transform 0.25s; }
+    .hn-label.open .hn-arrow { transform: rotate(180deg); }
+
+    .hn-grid {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      width: 100%;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+    }
+
+    .hn-item { display: flex; align-items: center; gap: 3px; min-width: 0; }
+
+    .hn-btn {
+      flex: 1; min-width: 0;
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      color: #154360; font-size: 11px; font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .hn-btn:hover { background: #ffffff; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
+    .hn-btn .btn-icon { font-size: 14px; flex-shrink: 0; }
+    .hn-btn .btn-text { white-space: nowrap; min-width: 0; }
+
+    @media (max-width: 900px) { .header-nav { display: none; } }
+
+    .breadcrumb { text-align: left; padding: 15px 40px 0; font-size: 14px; color: #34495e; }
+    .breadcrumb a { text-decoration: none; color: #2980b9; }
+    .breadcrumb a:hover { text-decoration: underline; }
+
+    .tab-header { display: flex; justify-content: flex-start; gap: 10px; padding: 15px 40px 15px; }
+    .tab-button {
+      padding: 10px 40px; font-size: 16px; font-weight: bold;
+      border: 2px solid #0078d7; background: white; color: #0078d7;
+      border-radius: 8px; cursor: pointer;
+    }
+    .tab-button:hover, .tab-button.active { background-color: #0078d7; color: white; }
+    .tab-content { display: flex; flex-direction: column; padding: 0 40px; }
+    .tab-pane { display: none; width: 100%; }
+    .tab-pane.active { display: flex; flex-direction: row; }
+
+    .sub-tab-header { display: none; justify-content: flex-start; gap: 8px; padding: 0 40px 12px; }
+    .sub-tab-header.visible { display: flex; }
+    .sub-tab-dest-info { display: none; padding: 0 40px 10px; font-size: 11.5px; color: #6b7280; overflow-wrap: anywhere; }
+    .sub-tab-dest-info.visible { display: block; }
+    .sub-tab-button {
+      padding: 7px 24px; font-size: 14px; font-weight: bold;
+      border: 2px solid #0078d7; background: white; color: #0078d7;
+      border-radius: 8px; cursor: pointer;
+    }
+    .sub-tab-button:hover, .sub-tab-button.active { background-color: #0078d7; color: white; }
+    .sub-pane { display: none; width: 100%; flex-direction: column; gap: 8px; }
+    .sub-pane.active { display: flex; }
+
+    .file-entry { margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .popup-image { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; max-height: 90%; z-index: 999; border: 2px solid #333; display: none; }
+    .thumbnail { width: 80px; height: 80px; object-fit: cover; cursor: pointer; margin-right: 10px; }
+    .floating-btn { position: fixed; bottom: 20px; right: 20px; background: #0078d7; color: white; border: none; border-radius: 50%; font-size: 24px; width: 50px; height: 50px; cursor: pointer; }
+
+    .table-wrap { width: 100%; overflow: auto; margin-top: 12px; }
+    table.qaqc-control { width: 100%; border-collapse: collapse; background: #fff; }
+    table.qaqc-control th, table.qaqc-control td { border: 1px solid #d9e2ef; padding: 8px 10px; font-size: 14px; vertical-align: top; }
+    table.qaqc-control thead th { position: sticky; top: 0; background: #f3f8ff; color: #154360; z-index: 1; }
+    .last-col-input { width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; font-size: 14px; outline: none; }
+    .last-col-input:focus { border-color: #0078d7; box-shadow: 0 0 0 2px rgba(0,120,215,0.15); }
+    .edit-meta { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    .upload-row { display: flex; align-items: center; gap: 10px; }
+    .hint { font-size: 12px; color: #475569; }
+
+    /* Bank Form Modal */
+    #bankFormModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9999; align-items:center; justify-content:center; }
+    #bankFormModal.open { display:flex; }
+    #bankFormModal .modal-box { width:90%; height:85vh; background:#fff; border-radius:10px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,.3); }
+    #bankFormModal .modal-header { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; background:#d6eaf8; border-bottom:1px solid #aed6f1; }
+    #bankFormModal .modal-header span { font-weight:bold; color:#154360; font-size:16px; }
+    #bankFormModal .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:#154360; line-height:1; }
+    #bankFormModal iframe { flex:1; border:none; }
+
+    /* Recorded files table */
+    .recorded-files-card {
+      margin-top: 8px; background: #fff; border: 1px solid #d7dde3; border-radius: 10px;
+      overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    table.recorded-files { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.recorded-files thead th {
+      background: #f0f4f6; text-align: left; padding: 11px 14px;
+      font-weight: 700; color: #374151; border-bottom: 2px solid #d7dde3;
+      white-space: nowrap;
+    }
+    table.recorded-files tbody td { padding: 7px 10px; border-bottom: 1px solid #eef1f3; vertical-align: middle; color: #1f2937; }
+    table.recorded-files tbody tr:last-child td { border-bottom: none; }
+    table.recorded-files tbody tr:hover { background: #fafcfb; }
+    table.recorded-files .file-num { color: #6b7280; font-size: 12px; }
+    table.recorded-files .file-name { cursor: pointer; text-decoration: underline; color: #0078d7; }
+    table.recorded-files .file-date { font-size: 12px; color: #6b7280; white-space: nowrap; }
+    table.recorded-files td input[type="text"] {
+      width: 100%; box-sizing: border-box; padding: 5px 8px; font-size: 12px;
+      border: 1px solid #d7dde3; border-radius: 6px; color: #1f2937;
+    }
+    table.recorded-files td input[type="text"]:focus { outline: none; border-color: #0078d7; }
+    table.recorded-files .file-del {
+      border: none; background: transparent; color: #c0392b; cursor: pointer;
+      font-size: 16px; padding: 4px 8px; border-radius: 6px; line-height: 1;
+    }
+    table.recorded-files .file-del:hover { background: #fdecea; }
+    .recorded-files-empty {
+      margin-top: 8px; padding: 40px; text-align: center; color: #6b7280; font-size: 14px;
+      background: #fff; border: 1px solid #d7dde3; border-radius: 10px;
+    }
+
+    /* Inspection Record UI (subtab2 only) */
+    .insp-wrap { display: flex; margin-top: 8px; background: #fff; border: 1px solid #d7dde3; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04); min-height: 320px; }
+    .insp-aside { width: 260px; flex-shrink: 0; background: #f8fafc; border-right: 1px solid #d7dde3; display: flex; flex-direction: column; }
+    .insp-aside-head { padding: 10px 14px; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid #d7dde3; }
+    .insp-tablist { overflow-y: auto; flex: 1; padding: 6px; max-height: 420px; }
+    .insp-tab { display: flex; align-items: center; gap: 6px; padding: 8px 9px; margin: 2px 0; border-radius: 7px; cursor: pointer; font-size: 12.5px; color: #1f2937; border: 1px solid transparent; }
+    .insp-tab:hover { background: #eaf4fb; }
+    .insp-tab.active { background: #d6eaf8; border-color: #aed6f1; font-weight: 600; }
+    .insp-tab .insp-ic { width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0; background: #eaf4fb; color: #0078d7; display: grid; place-items: center; font-size: 10px; font-weight: 700; }
+    .insp-tab.active .insp-ic { background: rgba(255,255,255,.7); }
+    .insp-tab .insp-name { line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+    .insp-tab .insp-count { font-size: 10.5px; background: #eef1f4; color: #6b7280; border-radius: 20px; padding: 1px 7px; min-width: 20px; text-align: center; }
+    .insp-tab.active .insp-count { background: rgba(255,255,255,.7); }
+    .insp-tab .insp-act { border: none; background: transparent; cursor: pointer; font-size: 12px; padding: 3px 5px; border-radius: 5px; color: #6b7280; line-height: 1; flex-shrink: 0; }
+    .insp-tab .insp-act:hover { background: #fff; }
+    .insp-tab .insp-act.insp-del:hover { background: #fdecea; color: #c0392b; }
+    .insp-main { flex: 1; padding: 16px 18px; min-width: 0; overflow-x: auto; }
+    .insp-doc-head { margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .insp-doc-head .insp-crumb { font-size: 11.5px; color: #6b7280; margin-bottom: 3px; }
+    .insp-doc-head h3 { font-size: 15px; font-weight: 700; color: #154360; }
+    .insp-card { background: #fff; border: 1px solid #d7dde3; border-radius: 10px; overflow: hidden; }
+    .insp-card table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .insp-card thead th { background: #f0f4f6; text-align: left; padding: 10px 12px; font-weight: 700; color: #374151; border-bottom: 2px solid #d7dde3; white-space: nowrap; }
+    .insp-card tbody td { padding: 6px 9px; border-bottom: 1px solid #eef1f3; vertical-align: middle; }
+    .insp-card tbody tr:last-child td { border-bottom: none; }
+    .insp-card tbody tr:hover { background: #fafcfb; }
+    .insp-card input[type=date], .insp-card input[type=text], .insp-card select { width: 100%; padding: 6px 8px; border: 1px solid #d7dde3; border-radius: 6px; font-size: 13px; font-family: inherit; background: #fff; color: #1f2937; }
+    .insp-card input:focus, .insp-card select:focus { outline: none; border-color: #0078d7; box-shadow: 0 0 0 2px #eaf4fb; }
+    .insp-btn-addrow { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #aed6f1; border-radius: 6px; padding: 4px 11px; font-size: 11.5px; font-weight: 600; cursor: pointer; font-family: inherit; background: #d6eaf8; color: #154360; vertical-align: middle; }
+    .insp-btn-addrow:hover { background: #aed6f1; }
+    .insp-linkfile { color: #0078d7; text-decoration: underline; cursor: pointer; word-break: break-all; }
+    .insp-empty-main { padding: 40px; text-align: center; color: #6b7280; font-size: 13px; }
+    .insp-row-actions { display: flex; align-items: center; justify-content: center; gap: 2px; }
+    .insp-row-del {
+      border: none; background: transparent; color: #c0392b; cursor: pointer;
+      font-size: 14px; padding: 4px 8px; border-radius: 6px; line-height: 1;
+    }
+    .insp-row-del:hover { background: #fdecea; }
+    .insp-row-save {
+      border: none; background: transparent; color: #1e8449; cursor: pointer;
+      font-size: 14px; padding: 4px 8px; border-radius: 6px; line-height: 1;
+    }
+    .insp-row-save:hover { background: #eafaf1; }
+    .insp-row-save.saved { color: #0078d7; }
+
+    /* Delete Confirm Modal */
+    #deleteConfirmModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:10000; align-items:center; justify-content:center; }
+    #deleteConfirmModal.open { display:flex; }
+    #deleteConfirmModal .modal-box { width:360px; max-width:90%; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,.3); }
+    #deleteConfirmModal .modal-header { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; background:#d6eaf8; border-bottom:1px solid #aed6f1; }
+    #deleteConfirmModal .modal-header span { font-weight:bold; color:#154360; font-size:16px; }
+    #deleteConfirmModal .modal-close { background:none; border:none; font-size:20px; cursor:pointer; color:#154360; line-height:1; }
+    #deleteConfirmModal .modal-body { padding: 18px; font-size: 13px; color: #154360; line-height: 1.6; }
+    #deleteConfirmModal .modal-body strong { color: #c0392b; word-break: break-all; }
+    #deleteConfirmModal .modal-footer { display:flex; justify-content:flex-end; gap:10px; padding:12px 18px; background:#f8fafc; border-top:1px solid #e2e8f0; }
+    #deleteConfirmModal .modal-btn { border:none; border-radius:7px; padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+    #deleteConfirmModal .modal-btn-cancel { background:#eef1f4; color:#154360; }
+    #deleteConfirmModal .modal-btn-cancel:hover { background:#e2e7ec; }
+    #deleteConfirmModal .modal-btn-delete { background:#c0392b; color:#fff; }
+    #deleteConfirmModal .modal-btn-delete:hover { background:#a93226; }
+
+    /* ITP PDF Upload */
+    .itp-pdf-upload-row { display: flex; align-items: center; gap: 10px; padding: 6px 0 14px; }
+    #itpDataModal, #qaqcDataModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:10000; align-items:center; justify-content:center; }
+    #itpDataModal.open, #qaqcDataModal.open { display:flex; }
+    #itpDataModal .modal-box, #qaqcDataModal .modal-box { width:460px; max-width:90%; max-height:75vh; background:#fff; border-radius:10px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,.3); }
+    #itpDataModal .modal-header, #qaqcDataModal .modal-header { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; background:#d6eaf8; border-bottom:1px solid #aed6f1; flex-shrink:0; }
+    #itpDataModal .modal-header span, #qaqcDataModal .modal-header span { font-weight:bold; color:#154360; font-size:16px; }
+    #itpDataModal .modal-close, #qaqcDataModal .modal-close { background:none; border:none; font-size:20px; cursor:pointer; color:#154360; line-height:1; }
+    #itpDataModal .modal-body, #qaqcDataModal .modal-body { padding: 14px; overflow-y: auto; }
+    #itpDataModal .file-entry:hover, #qaqcDataModal .file-entry:hover { background: #eef6ff; }
+    .itp-data-empty, .itp-data-error { text-align:center; color:#6b7280; padding: 30px 10px; font-size: 13px; }
+    .itp-file-list { display: flex; flex-direction: column; gap: 8px; }
+    .itp-file-item .file-entry { margin-bottom: 0; }
+    .itp-file-item .file-entry:hover { background: #eef6ff; }
+    .itp-file-item.open .file-entry { background: #d6eaf8; border-color: #aed6f1; }
+    .itp-file-breadcrumb { flex: 1; font-size: 13px; color: #6b7280; }
+    .itp-file-breadcrumb strong { color: #154360; }
+    .itp-file-del { border: none; background: transparent; color: #c0392b; cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: 6px; line-height: 1; flex-shrink: 0; }
+    .itp-file-del:hover { background: #fdecea; }
+    .itp-file-oo { border: 1px solid #0078d7; background: transparent; color: #0078d7; cursor: pointer; font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 6px; line-height: 1; flex-shrink: 0; white-space: nowrap; }
+    .itp-file-oo:hover { background: #e8f4fd; }
+    .itp-inline-pdf { display: none; margin-top: 6px; height: 80vh; border: 1px solid #d7dde3; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06); flex-direction: column; }
+    .itp-inline-pdf.open { display: flex; }
+    .itp-pdf-frame { flex: 1; width: 100%; border: none; }
+
+  </style>
+  <style>
+    html:not(.general-form-admin) #hnLabel,
+    html:not(.general-form-admin) #myBox { display: none !important; }
+  </style>
+  <script src="../assets/general-form-access.js" defer></script>
+</head>
+<body>
+  <header class="header">
+    <div class="logo-container">
+      <img src="../GCME_Logo.png" alt="GCME Logo" class="logo" />
+      <div class="company-name">GC Maintenance and Engineering Co.,LTD.</div>
+    </div>
+    <div class="center-title">QAQC ONLINE APPLICATION - QAQC Step</div>
+
+    <div class="header-nav">
+      <div class="hn-label" id="hnLabel" onclick="toggleBox()">
+        <span>General Form</span>
+        <span class="hn-arrow">▾</span>
+      </div>
+      <div id="myBox" class="hn-grid" style="display: none;">
+        <div class="hn-item">
+          <button class="hn-btn" onclick="location.href='MaintenanceReport.html' + location.search">
+            <span class="btn-icon">🔧</span>
+            <span class="btn-text">Maintenance Report</span>
+          </button>
+        </div>
+        <div class="hn-item">
+          <button class="hn-btn" onclick="location.href='InspectionReport.html' + location.search">
+            <span class="btn-icon">🔍</span>
+            <span class="btn-text">Inspection Sheet</span>
+          </button>
+        </div>
+        <div class="hn-item">
+          <button class="hn-btn" onclick="location.href='SparePartReport.html' + location.search">
+            <span class="btn-icon">⚙️</span>
+            <span class="btn-text">Spare Part</span>
+          </button>
+        </div>
+        <div class="hn-item">
+          <button class="hn-btn" onclick="location.href='PhotographerReport.html' + location.search">
+            <span class="btn-icon">📷</span>
+            <span class="btn-text">Photographs</span>
+          </button>
+        </div>
+        <div class="hn-item">
+          <button class="hn-btn" onclick="location.href='NDTReport.html' + location.search">
+            <span class="btn-icon">&#128225;</span>
+            <span class="btn-text">NDT Report</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <div class="tab-header">
+    <button class="tab-button active" data-tab="tab1">ITP Check list</button>
+    <button class="tab-button" data-tab="tab2">Maintenance Record</button>
+    <button class="tab-button" data-tab="tab3">NDT Report</button>
+    <button class="tab-button" data-tab="tab4">QAQC control</button>
+    <button class="tab-button" data-tab="tab5">Special request</button>
+  </div>
+
+  <div class="sub-tab-header" id="maintenanceSubTabs">
+    <button class="sub-tab-button active" data-subtab="subtab1">Maintenance Report</button>
+    <button class="sub-tab-button" data-subtab="subtab2">Inspection Sheet</button>
+    <button class="sub-tab-button" data-subtab="subtab3">Spare Part</button>
+    <button class="sub-tab-button" data-subtab="subtab4">Photographs</button>
+  </div>
+  <div class="sub-tab-header" id="ndtReportSubTabs" style="flex-wrap:wrap;">
+    <button class="sub-tab-button active" data-subtab="ndtSubtab1">Penetrant Testing Report</button>
+    <button class="sub-tab-button" data-subtab="ndtSubtab2">Ultrasonic Testing Report</button>
+    <button class="sub-tab-button" data-subtab="ndtSubtab3">Magnetic Particle Testing Report</button>
+    <button class="sub-tab-button" data-subtab="ndtSubtab4">Hardness Testing Report</button>
+    <button class="sub-tab-button" data-subtab="ndtSubtab5">Ultrasonic Thickness Measurement Report</button>
+    <button class="sub-tab-button" data-subtab="ndtSubtab6">Other</button>
+  </div>
+  <div class="sub-tab-dest-info" id="subtabDestInfo"></div>
+
+  <div class="tab-content">
+    <div class="tab-pane active" id="tab1" style="flex-direction: column;">
+      <div class="itp-pdf-upload-row">
+        <button onclick="openITPDataBrowse()">Upload From Data</button>
+        <button onclick="document.getElementById('pdfDeviceUpload').click()">Upload From your device PC</button>
+        <input type="file" id="pdfDeviceUpload" accept="application/pdf,.pdf" style="display:none;" />
+      </div>
+      <div id="itpFileList" class="itp-file-list"></div>
+    </div>
+
+    <div class="tab-pane" id="tab2" style="flex-direction: column; gap: 8px;">
+      <div class="sub-pane active" id="subtab1">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('subtab1')">Upload Bank form</button>
+          <span id="selectedBankForm-subtab1" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button type="button" class="insp-btn-addrow" id="recordBtn-subtab1" onclick="recordFile('subtab1')" style="display:none; margin-left:auto;">Record</button>
+        </div>
+        <div id="recordedFilesList-subtab1" style="margin-top:8px;"></div>
+        <div class="table-wrap" id="controlTableWrap-subtab1"></div>
+      </div>
+      <div class="sub-pane" id="subtab2">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('subtab2')">Upload Bank form</button>
+          <span id="selectedBankForm-subtab2" style="font-size:13px; color:#154360; font-weight:600;"></span>
+        </div>
+        <div id="recordedFilesList-subtab2" style="margin-top:8px;"></div>
+        <div class="table-wrap" id="controlTableWrap-subtab2"></div>
+      </div>
+      <div class="sub-pane" id="subtab3">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('subtab3')">Upload Bank form</button>
+          <span id="selectedBankForm-subtab3" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button id="recordBtn-subtab3" onclick="recordFile('subtab3')" style="display:none;">Record</button>
+        </div>
+        <div id="recordedFilesList-subtab3" style="margin-top:8px;"></div>
+        <div class="table-wrap" id="controlTableWrap-subtab3"></div>
+      </div>
+      <div class="sub-pane" id="subtab4">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('subtab4')">Upload Bank form</button>
+          <span id="selectedBankForm-subtab4" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button id="recordBtn-subtab4" onclick="recordFile('subtab4')" style="display:none;">Record</button>
+        </div>
+        <div id="recordedFilesList-subtab4" style="margin-top:8px;"></div>
+        <div class="table-wrap" id="controlTableWrap-subtab4"></div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="tab3" style="flex-direction:column; gap:8px;">
+      <div class="sub-pane active" id="ndtSubtab1">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('ndtSubtab1')">Upload Bank form</button>
+          <span id="selectedBankForm-ndtSubtab1" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab1" onclick="recordFile('ndtSubtab1')" style="display:none; margin-left:auto;">Record</button>
+        </div>
+        <div id="recordedFilesList-ndtSubtab1" style="margin-top:8px;"></div>
+      </div>
+      <div class="sub-pane" id="ndtSubtab2">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('ndtSubtab2')">Upload Bank form</button>
+          <span id="selectedBankForm-ndtSubtab2" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab2" onclick="recordFile('ndtSubtab2')" style="display:none; margin-left:auto;">Record</button>
+        </div>
+        <div id="recordedFilesList-ndtSubtab2" style="margin-top:8px;"></div>
+      </div>
+      <div class="sub-pane" id="ndtSubtab3">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('ndtSubtab3')">Upload Bank form</button>
+          <span id="selectedBankForm-ndtSubtab3" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab3" onclick="recordFile('ndtSubtab3')" style="display:none; margin-left:auto;">Record</button>
+        </div>
+        <div id="recordedFilesList-ndtSubtab3" style="margin-top:8px;"></div>
+      </div>
+      <div class="sub-pane" id="ndtSubtab4">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('ndtSubtab4')">Upload Bank form</button>
+          <span id="selectedBankForm-ndtSubtab4" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab4" onclick="recordFile('ndtSubtab4')" style="display:none; margin-left:auto;">Record</button>
+        </div>
+        <div id="recordedFilesList-ndtSubtab4" style="margin-top:8px;"></div>
+      </div>
+      <div class="sub-pane" id="ndtSubtab5">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('ndtSubtab5')">Upload Bank form</button>
+          <span id="selectedBankForm-ndtSubtab5" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab5" onclick="recordFile('ndtSubtab5')" style="display:none; margin-left:auto;">Record</button>
+        </div>
+        <div id="recordedFilesList-ndtSubtab5" style="margin-top:8px;"></div>
+      </div>
+      <div class="sub-pane" id="ndtSubtab6">
+        <div class="upload-row">
+          <button onclick="openBankFormModal('ndtSubtab6')">Upload Bank form</button>
+          <span id="selectedBankForm-ndtSubtab6" style="font-size:13px; color:#154360; font-weight:600;"></span>
+          <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab6" onclick="recordFile('ndtSubtab6')" style="display:none; margin-left:auto;">Record</button>
+        </div>
+        <div id="recordedFilesList-ndtSubtab6" style="margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="tab4" style="flex-direction: column;">
+      <div class="itp-pdf-upload-row">
+        <button onclick="document.getElementById('qaqcPdfDeviceUpload').click()">Upload From your device PC</button>
+        <input type="file" id="qaqcPdfDeviceUpload" accept="application/pdf,.pdf" style="display:none;" />
+      </div>
+      <div id="qaqcFileList" class="itp-file-list"></div>
+    </div>
+
+    <div class="tab-pane" id="tab5">
+      <button onclick="addRow()">Add row</button>
+      <table id="specialRequest">
+        <thead>
+          <tr><th>No.</th><th>Date</th><th>Component part</th><th>Detail of Work</th><th>Status of work</th><th>Status to Approve</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <img id="popupImage" class="popup-image" onclick="this.style.display='none'" />
+
+  <!-- Bank Form Modal -->
+  <div id="bankFormModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>Browse Bank Form</span>
+        <button class="modal-close" onclick="closeBankFormModal()">&#x2715;</button>
+      </div>
+      <iframe id="bankFormIframe" src=""></iframe>
+    </div>
+  </div>
+
+  <!-- ITP Upload From Data Modal -->
+  <div id="itpDataModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>Upload From Data (ITP)</span>
+        <button class="modal-close" onclick="closeITPDataModal()">&#x2715;</button>
+      </div>
+      <div class="modal-body" id="itpDataFileList"></div>
+    </div>
+  </div>
+
+  <div id="qaqcDataModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>Upload From Data (QAQC control)</span>
+        <button class="modal-close" onclick="closeQAQCDataModal()">&#x2715;</button>
+      </div>
+      <div class="modal-body" id="qaqcDataFileList"></div>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div id="deleteConfirmModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>ยืนยันการลบ</span>
+        <button class="modal-close" onclick="closeDeleteConfirm()">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <p>คุณต้องการลบ <strong id="deleteConfirmFileName"></strong> ใช่หรือไม่?</p>
+        <p style="margin-top:6px; color:#6b7280;">เมื่อลบแล้วจะไม่สามารถกู้คืนกลับมาได้</p>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeDeleteConfirm()">ยกเลิก</button>
+        <button class="modal-btn modal-btn-delete" onclick="confirmDeleteFile()">ลบ</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleBox() {
+      if (!document.documentElement.classList.contains('general-form-admin')) return;
+      const element = document.getElementById('myBox');
+      const label = document.getElementById('hnLabel');
+      if (element.style.display === 'none') {
+        element.style.display = 'grid';
+        label.classList.add('open');
+      } else {
+        element.style.display = 'none';
+        label.classList.remove('open');
+      }
+    }
+
+    document.querySelectorAll('.tab-button').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+        const subHeader = document.getElementById('maintenanceSubTabs');
+        const destInfo = document.getElementById('subtabDestInfo');
+        const isMaintenance = btn.dataset.tab === 'tab2';
+        const isNdt = btn.dataset.tab === 'tab3';
+        document.getElementById('ndtReportSubTabs').classList.toggle('visible', isNdt);
+        subHeader.classList.toggle('visible', isMaintenance);
+        if (isMaintenance || isNdt) {
+          activeSubtab = isNdt ? activeNdtSubtab : activeMaintenanceSubtab;
+          destInfo.classList.add('visible');
+          loadRecordedFiles(activeSubtab);
+          updateDestInfo();
+        } else {
+          subHeader.classList.remove('visible');
+          destInfo.classList.remove('visible');
+        }
+        saveViewState();
+      };
+    });
+
+    document.querySelectorAll('.sub-tab-button').forEach(btn => {
+      btn.onclick = () => {
+        btn.parentElement.querySelectorAll('.sub-tab-button').forEach(b => b.classList.remove('active'));
+        document.getElementById(btn.dataset.subtab).parentElement.querySelectorAll('.sub-pane').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        activeSubtab = btn.dataset.subtab;
+        if (activeSubtab.startsWith('ndt')) activeNdtSubtab = activeSubtab;
+        else activeMaintenanceSubtab = activeSubtab;
+        document.getElementById(activeSubtab).classList.add('active');
+        loadRecordedFiles(activeSubtab);
+        updateDestInfo();
+        saveViewState();
+      };
+    });
+
+    function addRow() {
+      const tbody = document.getElementById('specialRequest').querySelector('tbody');
+      const tr = document.createElement('tr');
+      const no = tbody.rows.length + 1;
+      tr.innerHTML = `<td>${no}</td>
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>`;
+      const select1 = document.createElement('select');
+      ['Pending', 'Complete'].forEach(v => {
+        const o = document.createElement('option'); o.value = o.text = v; select1.appendChild(o);
+      });
+      const select2 = document.createElement('select');
+      ['Accept', 'Unaccepted', 'Pending'].forEach(v => {
+        const o = document.createElement('option'); o.value = o.text = v; select2.appendChild(o);
+      });
+      const td1 = document.createElement('td'); td1.appendChild(select1);
+      const td2 = document.createElement('td'); td2.appendChild(select2);
+      tr.appendChild(td1); tr.appendChild(td2);
+      tbody.appendChild(tr);
+    }
+
+    // ── CONTEXT จาก URL (company/plant/service/package ที่ส่งมาจาก Package Default.html) ──
+    const urlParams = new URLSearchParams(window.location.search);
+    const company = urlParams.get("company") || "";
+    const plant   = urlParams.get("plant")   || "";
+    const service = urlParams.get("service") || "";
+    const pkg     = urlParams.get("package") || "";
+    const CONTEXT_BASE = [company, plant, service, pkg].filter(Boolean).join('/');
+    const CONTEXT_PREFIX = CONTEXT_BASE ? CONTEXT_BASE + '/' : '';
+    const ITP_PREFIX = `${CONTEXT_PREFIX}Data/ITP/`;
+
+    // Keep navigation on this browser, separately for each project/package.
+    const VIEW_STATE_KEY = 'qaqc-step:view:v1:' + JSON.stringify([company, plant, service, pkg]);
+    function readViewState() {
+      try {
+        const state = JSON.parse(localStorage.getItem(VIEW_STATE_KEY));
+        return state && typeof state === 'object' ? state : {};
+      } catch { return {}; }
+    }
+    function saveViewState() {
+      try {
+        localStorage.setItem(VIEW_STATE_KEY, JSON.stringify({
+          tab: document.querySelector('.tab-button.active')?.dataset.tab || 'tab1',
+          subtab: activeSubtab,
+          maintenanceSubtab: activeMaintenanceSubtab,
+          ndtSubtab: activeNdtSubtab,
+          version: 2,
+          inspectionFile: activeInspFile.subtab2,
+        }));
+      } catch { /* Navigation still works when browser storage is unavailable. */ }
+    }
+    function restoreViewState() {
+      const state = readViewState();
+      if (!state.version) {
+        if (state.tab === 'tab4') state.tab = 'tab5';
+        else if (state.tab === 'tab3') state.tab = 'tab4';
+      }
+      const restoreGroup = (headerId, saved) => {
+        const header = document.getElementById(headerId);
+        const button = Array.from(header.querySelectorAll('.sub-tab-button')).find(b => b.dataset.subtab === saved);
+        if (!button) return;
+        header.querySelectorAll('.sub-tab-button').forEach(b => b.classList.toggle('active', b === button));
+        const pane = document.getElementById(saved);
+        pane.parentElement.querySelectorAll('.sub-pane').forEach(p => p.classList.toggle('active', p === pane));
+        if (headerId === 'ndtReportSubTabs') activeNdtSubtab = saved;
+        else activeMaintenanceSubtab = saved;
+      };
+      restoreGroup('maintenanceSubTabs', state.maintenanceSubtab || state.subtab);
+      restoreGroup('ndtReportSubTabs', state.ndtSubtab);
+      if (typeof state.inspectionFile === 'string') activeInspFile.subtab2 = state.inspectionFile;
+      const tabButton = Array.from(document.querySelectorAll('.tab-button'))
+        .find(button => button.dataset.tab === state.tab);
+      if (tabButton) tabButton.click();
+    }
+
+    // "PTTGC > Ruj_Test > Rotating Equipment > RujAB_test > Data > ITP > <file>.pdf"
+    function itpBreadcrumbHTML(fileName) {
+      const parts = [company, plant, service, pkg, 'Data', 'ITP'].filter(Boolean);
+      return parts.join(' &gt; ') + ' &gt; <strong>' + fileName + '</strong>';
+    }
+
+    async function fetchITPPdfFiles() {
+      const res = await fetch(`/api/browse?prefix=${encodeURIComponent(ITP_PREFIX)}`);
+      if (!res.ok) throw new Error('browse failed');
+      const { files } = await res.json();
+      return (files || []).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+    }
+
+    // Only one PDF is ever expanded inline at a time — opening another one collapses the previous.
+    let openITPWrap = null;
+
+    function closeInlineITPPdf() {
+      if (!openITPWrap) return;
+      const pdfDiv = openITPWrap.querySelector('.itp-inline-pdf');
+      pdfDiv.classList.remove('open');
+      pdfDiv.innerHTML = '';
+      openITPWrap.classList.remove('open');
+      openITPWrap = null;
+    }
+
+    // Embeds the PDF Stamp tool right here (same page, no new tab) — it loads this file from the
+    // backend itself (picking up its "<name> - ITP Checklist Comment.pdf" companion if one already
+    // exists), lets you view/draw/comment/sign, and saves back to that companion via its own
+    // "Save to ITP folder" button.
+    function openInlineITPPdf(wrap, objectName) {
+      if (openITPWrap === wrap) {
+        closeInlineITPPdf();
+        // Only rebuild the list now (not while it was open) — refreshing mid-session would
+        // destroy the live embedded tool the user might still be working in.
+        if (itpListNeedsRefresh) { itpListNeedsRefresh = false; loadITPFileList(); }
+        return;
+      }
+      closeInlineITPPdf();
+      const fileName = objectName.split('/').pop();
+      const pdfDiv = wrap.querySelector('.itp-inline-pdf');
+      pdfDiv.classList.add('open');
+      wrap.classList.add('open');
+      openITPWrap = wrap;
+
+      const params = new URLSearchParams({ company, plant, service, package: pkg, file: fileName, embed: '1' });
+      pdfDiv.innerHTML = `<iframe class="itp-pdf-frame" src="${'PDF Stamp.html?' + params.toString()}"></iframe>`;
+    }
+
+    // The embedded PDF Stamp tool posts this after a successful save. We don't refresh the list
+    // immediately (that would destroy the still-open embedded tool) — just flag it, and the list
+    // rebuilds itself as soon as this row is collapsed.
+    let itpListNeedsRefresh = false;
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'itp-stamp-saved') itpListNeedsRefresh = true;
+    });
+
+    function buildITPFileItem(f) {
+      const wrap = document.createElement('div');
+      wrap.className = 'itp-file-item';
+      wrap.dataset.object = f.object_name;
+
+      const entry = document.createElement('div');
+      entry.className = 'file-entry';
+      entry.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:20px;"/><span class="itp-file-breadcrumb">${itpBreadcrumbHTML(f.name)}</span><button class="itp-file-oo" title="เปิดด้วย OnlyOffice — ดูคมชัดและแก้ไข PDF ได้เต็มรูปแบบ">📝 OnlyOffice</button><button class="itp-file-del" title="Delete">&#x1F5D1;</button>`;
+      entry.onclick = () => openInlineITPPdf(wrap, f.object_name);
+      entry.querySelector('.itp-file-oo').onclick = (e) => {
+        e.stopPropagation();
+        const backParams = new URLSearchParams({ company, plant, service, package: pkg });
+        window.open(
+          `Editor.html?object_name=${encodeURIComponent(f.object_name)}&return_url=${encodeURIComponent('QAQC Step.html?' + backParams)}`,
+          '_blank'
+        );
+      };
+      entry.querySelector('.itp-file-del').onclick = (e) => {
+        e.stopPropagation();
+        openDeleteConfirm(null, null, `ไฟล์ "${f.name}"`, { type: 'itp', objectName: f.object_name });
+      };
+
+      const pdfDiv = document.createElement('div');
+      pdfDiv.className = 'itp-inline-pdf';
+
+      wrap.appendChild(entry);
+      wrap.appendChild(pdfDiv);
+      return wrap;
+    }
+
+    // Persistent list shown under the upload buttons — reloaded from the server so it survives page reloads.
+    async function loadITPFileList() {
+      const list = document.getElementById('itpFileList');
+      openITPWrap = null;
+      list.innerHTML = '<div class="itp-data-empty">Loading...</div>';
+      try {
+        const pdfs = await fetchITPPdfFiles();
+        if (!pdfs.length) {
+          list.innerHTML = '<div class="itp-data-empty">No PDF files found in the ITP folder yet.</div>';
+          return;
+        }
+        list.innerHTML = '';
+        pdfs.forEach(f => list.appendChild(buildITPFileItem(f)));
+      } catch (err) {
+        list.innerHTML = '<div class="itp-data-error">Failed to load files from the ITP folder.</div>';
+      }
+    }
+
+    function openITPObjectInline(objectName) {
+      const wrap = document.querySelector(`#itpFileList .itp-file-item[data-object="${CSS.escape(objectName)}"]`);
+      if (!wrap) return;
+      openInlineITPPdf(wrap, objectName);
+      wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function openITPDataBrowse() {
+      document.getElementById('itpDataModal').classList.add('open');
+      loadITPDataFiles();
+    }
+
+    function closeITPDataModal() {
+      document.getElementById('itpDataModal').classList.remove('open');
+    }
+
+    document.getElementById('itpDataModal').addEventListener('click', function (e) {
+      if (e.target === this) closeITPDataModal();
+    });
+
+    async function loadITPDataFiles() {
+      const list = document.getElementById('itpDataFileList');
+      list.innerHTML = '<div class="itp-data-empty">Loading...</div>';
+      try {
+        const pdfs = await fetchITPPdfFiles();
+        if (!pdfs.length) {
+          list.innerHTML = '<div class="itp-data-empty">No PDF files found in the ITP folder.</div>';
+          return;
+        }
+        list.innerHTML = '';
+        pdfs.forEach(f => {
+          const entry = document.createElement('div');
+          entry.className = 'file-entry';
+          entry.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:20px;"/><span>${f.name}</span>`;
+          entry.onclick = () => selectITPDataFile(f.object_name);
+          list.appendChild(entry);
+        });
+      } catch (err) {
+        list.innerHTML = '<div class="itp-data-error">Failed to load files from the ITP folder.</div>';
+      }
+    }
+
+    function selectITPDataFile(objectName) {
+      closeITPDataModal();
+      openITPObjectInline(objectName);
+    }
+
+    // ITP folder holds at most one PDF — uploading a new one replaces whatever was there before.
+    document.getElementById('pdfDeviceUpload').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const existing = await fetchITPPdfFiles();
+        await Promise.all(existing.map(f =>
+          fetch(`/api/browse/file?object_name=${encodeURIComponent(f.object_name)}`, { method: 'DELETE' })
+        ));
+
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`/api/browse/upload?prefix=${encodeURIComponent(ITP_PREFIX)}`, {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) throw new Error('upload failed');
+        const { object_name } = await res.json();
+        await loadITPFileList();
+        openITPObjectInline(object_name);
+      } catch (err) {
+        alert('Failed to upload the PDF to the ITP folder.');
+      }
+      e.target.value = '';
+    });
+
+    loadITPFileList();
+
+    const QAQC_PREFIX = `${CONTEXT_PREFIX}QAQCStep/QAQC control/`;
+    // "PTTGC > Ruj_Test > Rotating Equipment > RujAB_test > Data > QAQC > <file>.pdf"
+    function qaqcBreadcrumbHTML(fileName) {
+      const parts = [company, plant, service, pkg, 'QAQCStep', 'QAQC control'].filter(Boolean);
+      return parts.join(' &gt; ') + ' &gt; <strong>' + fileName + '</strong>';
+    }
+
+    async function fetchQAQCPdfFiles() {
+      const res = await fetch(`/api/browse?prefix=${encodeURIComponent(QAQC_PREFIX)}`);
+      if (!res.ok) throw new Error('browse failed');
+      const { files } = await res.json();
+      return (files || []).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+    }
+
+    // Only one PDF is ever expanded inline at a time — opening another one collapses the previous.
+    let openQAQCWrap = null;
+
+    function closeInlineQAQCPdf() {
+      if (!openQAQCWrap) return;
+      const pdfDiv = openQAQCWrap.querySelector('.itp-inline-pdf');
+      pdfDiv.classList.remove('open');
+      pdfDiv.innerHTML = '';
+      openQAQCWrap.classList.remove('open');
+      openQAQCWrap = null;
+    }
+
+    // Embeds the PDF Stamp tool right here (same page, no new tab) — it loads this file from the
+    // backend itself (picking up its "<name> - QAQC Checklist Comment.pdf" companion if one already
+    // exists), lets you view/draw/comment/sign, and saves back to that companion via its own
+    // "Save to QAQC control folder" button.
+    function openInlineQAQCPdf(wrap, objectName) {
+      if (openQAQCWrap === wrap) {
+        closeInlineQAQCPdf();
+        // Only rebuild the list now (not while it was open) — refreshing mid-session would
+        // destroy the live embedded tool the user might still be working in.
+        if (qaqcListNeedsRefresh) { qaqcListNeedsRefresh = false; loadQAQCFileList(); }
+        return;
+      }
+      closeInlineQAQCPdf();
+      const fileName = objectName.split('/').pop();
+      const pdfDiv = wrap.querySelector('.itp-inline-pdf');
+      pdfDiv.classList.add('open');
+      wrap.classList.add('open');
+      openQAQCWrap = wrap;
+
+      const params = new URLSearchParams({ company, plant, service, package: pkg, file: fileName, embed: '1', section: 'qaqc-control' });
+      pdfDiv.innerHTML = `<iframe class="itp-pdf-frame" src="${'PDF Stamp.html?' + params.toString()}"></iframe>`;
+    }
+
+    // The embedded PDF Stamp tool posts this after a successful save. We don't refresh the list
+    // immediately (that would destroy the still-open embedded tool) — just flag it, and the list
+    // rebuilds itself as soon as this row is collapsed.
+    let qaqcListNeedsRefresh = false;
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'qaqc-stamp-saved') qaqcListNeedsRefresh = true;
+    });
+
+    function buildQAQCFileItem(f) {
+      const wrap = document.createElement('div');
+      wrap.className = 'itp-file-item';
+      wrap.dataset.object = f.object_name;
+
+      const entry = document.createElement('div');
+      entry.className = 'file-entry';
+      entry.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:20px;"/><span class="itp-file-breadcrumb">${qaqcBreadcrumbHTML(f.name)}</span><button class="itp-file-oo" title="เปิดด้วย OnlyOffice — ดูคมชัดและแก้ไข PDF ได้เต็มรูปแบบ">📝 OnlyOffice</button><button class="itp-file-del" title="Delete">&#x1F5D1;</button>`;
+      entry.onclick = () => openInlineQAQCPdf(wrap, f.object_name);
+      entry.querySelector('.itp-file-oo').onclick = (e) => {
+        e.stopPropagation();
+        const backParams = new URLSearchParams({ company, plant, service, package: pkg });
+        window.open(
+          `Editor.html?object_name=${encodeURIComponent(f.object_name)}&return_url=${encodeURIComponent('QAQC Step.html?' + backParams)}`,
+          '_blank'
+        );
+      };
+      entry.querySelector('.itp-file-del').onclick = (e) => {
+        e.stopPropagation();
+        openDeleteConfirm(null, null, `ไฟล์ "${f.name}"`, { type: 'qaqc', objectName: f.object_name });
+      };
+
+      const pdfDiv = document.createElement('div');
+      pdfDiv.className = 'itp-inline-pdf';
+
+      wrap.appendChild(entry);
+      wrap.appendChild(pdfDiv);
+      return wrap;
+    }
+
+    // Persistent list shown under the upload buttons — reloaded from the server so it survives page reloads.
+    async function loadQAQCFileList() {
+      const list = document.getElementById('qaqcFileList');
+      openQAQCWrap = null;
+      list.innerHTML = '<div class="itp-data-empty">Loading...</div>';
+      try {
+        const pdfs = await fetchQAQCPdfFiles();
+        if (!pdfs.length) {
+          list.innerHTML = '<div class="itp-data-empty">No PDF files found in the QAQC control folder yet.</div>';
+          return;
+        }
+        list.innerHTML = '';
+        pdfs.forEach(f => list.appendChild(buildQAQCFileItem(f)));
+      } catch (err) {
+        list.innerHTML = '<div class="itp-data-error">Failed to load files from the QAQC control folder.</div>';
+      }
+    }
+
+    function openQAQCObjectInline(objectName) {
+      const wrap = document.querySelector(`#qaqcFileList .itp-file-item[data-object="${CSS.escape(objectName)}"]`);
+      if (!wrap) return;
+      openInlineQAQCPdf(wrap, objectName);
+      wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function openQAQCDataBrowse() {
+      document.getElementById('qaqcDataModal').classList.add('open');
+      loadQAQCDataFiles();
+    }
+
+    function closeQAQCDataModal() {
+      document.getElementById('qaqcDataModal').classList.remove('open');
+    }
+
+    document.getElementById('qaqcDataModal').addEventListener('click', function (e) {
+      if (e.target === this) closeQAQCDataModal();
+    });
+
+    async function loadQAQCDataFiles() {
+      const list = document.getElementById('qaqcDataFileList');
+      list.innerHTML = '<div class="itp-data-empty">Loading...</div>';
+      try {
+        const pdfs = await fetchQAQCPdfFiles();
+        if (!pdfs.length) {
+          list.innerHTML = '<div class="itp-data-empty">No PDF files found in the QAQC control folder.</div>';
+          return;
+        }
+        list.innerHTML = '';
+        pdfs.forEach(f => {
+          const entry = document.createElement('div');
+          entry.className = 'file-entry';
+          entry.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:20px;"/><span>${f.name}</span>`;
+          entry.onclick = () => selectQAQCDataFile(f.object_name);
+          list.appendChild(entry);
+        });
+      } catch (err) {
+        list.innerHTML = '<div class="itp-data-error">Failed to load files from the QAQC control folder.</div>';
+      }
+    }
+
+    function selectQAQCDataFile(objectName) {
+      closeQAQCDataModal();
+      openQAQCObjectInline(objectName);
+    }
+
+    // QAQC control folder holds at most one PDF — uploading a new one replaces whatever was there before.
+    document.getElementById('qaqcPdfDeviceUpload').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const existing = await fetchQAQCPdfFiles();
+        await Promise.all(existing.map(f =>
+          fetch(`/api/browse/file?object_name=${encodeURIComponent(f.object_name)}`, { method: 'DELETE' })
+        ));
+
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`/api/browse/upload?prefix=${encodeURIComponent(QAQC_PREFIX)}`, {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) throw new Error('upload failed');
+        const { object_name } = await res.json();
+        await loadQAQCFileList();
+        openQAQCObjectInline(object_name);
+      } catch (err) {
+        alert('Failed to upload the PDF to the QAQC control folder.');
+      }
+      e.target.value = '';
+    });
+
+    loadQAQCFileList();
+
+    // Breadcrumb: Home > Company > Plant > Service > Package > QAQC Step
+    document.getElementById("breadcrumb").innerHTML = `
+      <a href="../Main.html">Home</a> &gt;
+      <a href="../Plant Selection.html?plant=${encodeURIComponent(company)}">${company}</a> &gt;
+      <a href="../Service.html?company=${encodeURIComponent(company)}&plant=${encodeURIComponent(plant)}">${plant}</a> &gt;
+      <a href="../Package Selection.html?company=${encodeURIComponent(company)}&plant=${encodeURIComponent(plant)}&service=${encodeURIComponent(service)}">${service}</a> &gt;
+      <a href="Package Default.html?company=${encodeURIComponent(company)}&plant=${encodeURIComponent(plant)}&service=${encodeURIComponent(service)}&package=${encodeURIComponent(pkg)}">${pkg}</a> &gt;
+      <span>QAQC Step</span>
+    `;
+
+    const REPORT_CONFIG = {
+      ndtSubtab1: { src: 'NDTReport.html', report: 'Penetrant Testing Report', source: 'General_Form/NDT_Report/Penetrant Testing Report/', dest: `${CONTEXT_PREFIX}QAQCStep/NDT Report/Penetrant Testing Report/` },
+      ndtSubtab2: { src: 'NDTReport.html', report: 'Ultrasonic Testing Report', source: 'General_Form/NDT_Report/Ultrasonic Testing Report/', dest: `${CONTEXT_PREFIX}QAQCStep/NDT Report/Ultrasonic Testing Report/` },
+      ndtSubtab3: { src: 'NDTReport.html', report: 'Magnetic Particle Testing Report', source: 'General_Form/NDT_Report/Magnetic Particle Testing Report/', dest: `${CONTEXT_PREFIX}QAQCStep/NDT Report/Magnetic Particle Testing Report/` },
+      ndtSubtab4: { src: 'NDTReport.html', report: 'Hardness Testing Report', source: 'General_Form/NDT_Report/Hardness Testing Report/', dest: `${CONTEXT_PREFIX}QAQCStep/NDT Report/Hardness Testing Report/` },
+      ndtSubtab5: { src: 'NDTReport.html', report: 'Ultrasonic Thickness Measurement Report', source: 'General_Form/NDT_Report/Ultrasonic Thickness Measurement Report/', dest: `${CONTEXT_PREFIX}QAQCStep/NDT Report/Ultrasonic Thickness Measurement Report/` },
+      ndtSubtab6: { src: 'NDTReport.html', report: 'Other', source: 'General_Form/NDT_Report/Other/', dest: `${CONTEXT_PREFIX}QAQCStep/NDT Report/Other/` },
+
+      subtab1: {
+        src: 'MaintenanceReport.html',
+        source: 'General_Form/Maintenance_Report/',
+        dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/MaintenanceReport/`
+      },
+      subtab2: {
+        src: 'InspectionReport.html',
+        dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/Inspection Sheet/`
+      },
+      subtab3: {
+        src: 'SparePartReport.html',
+        source: 'General_Form/Spare_Part_Report/',
+        dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/Spare Part/`
+      },
+      subtab4: {
+        src: 'PhotographerReport.html',
+        source: 'General_Form/Photographer_Report/',
+        dest: `${CONTEXT_PREFIX}QAQCStep/MaintenanceRecord/Photographs/`
+      }
+    };
+
+    let activeSubtab = 'subtab1';
+    let activeMaintenanceSubtab = 'subtab1';
+    let activeNdtSubtab = 'ndtSubtab1';
+    const selectedObjectNames = { subtab1: null, subtab2: null, subtab3: null, subtab4: null };
+    // Object Type/Manufacturer/Year ที่เลือกไว้ตอนเปิด Bank Form (subtab1/3/4 — subtab2 ส่งแนบมากับ recordFile โดยตรง)
+    const selectedMeta = { subtab1: null, subtab3: null, subtab4: null };
+
+    // Inspection Record UI state (subtab2 only) — sync กับตาราง inspection_records ใน Postgres
+    // แต่ละแถวในตารางคือไฟล์เวอร์ชันจริงใน folder — inspectionRecords เก็บแค่ Record By/Result/Note ต่อเวอร์ชัน
+    const inspectionRecords = {};              // object_name (เวอร์ชันไฟล์) -> {by, result, note}
+    const inspectionFilesCache = { subtab2: [] };
+    const activeInspFile = { subtab2: null };
+
+    // Maintenance/SparePart/Photographer ล็อกไว้กับไฟล์เดียว (ลบไฟล์เดิมทั้งหมดก่อนถึงจะเปลี่ยนได้ — ดู recordFile)
+    // แสดงโฟลเดอร์ต้นทางและชื่อไฟล์ต้นฉบับ; ค้นใน Bank Form เมื่อไฟล์เก่าไม่มี metadata
+    async function findReportSources(prefix, fileName, depth = 0) {
+      const response = await fetch(`/api/browse?prefix=${encodeURIComponent(prefix)}`);
+      if (!response.ok) throw new Error('Cannot load source folders');
+      const { files = [], folders = [] } = await response.json();
+      const matches = files.filter(file => file.name === fileName).map(file => file.object_name);
+      if (depth < 3) {
+        const children = await Promise.all(folders.map(folder =>
+          findReportSources(prefix + folder.name + '/', fileName, depth + 1)
+        ));
+        matches.push(...children.flat());
+      }
+      return matches;
+    }
+
+    let destInfoRequest = 0;
+    async function updateDestInfo() {
+      const request = ++destInfoRequest;
+      const subtab = activeSubtab;
+      const { dest, source } = REPORT_CONFIG[subtab];
+      const el = document.getElementById('subtabDestInfo');
+      const show = text => {
+        if (request === destInfoRequest && activeSubtab === subtab) el.textContent = text;
+      };
+      if (subtab === 'subtab2') {
+        const file = inspectionFilesCache.subtab2.find(f => f.name === activeInspFile.subtab2);
+        const meta = file?.meta;
+        show(meta ? [meta.object_type, meta.manufacturer, meta.year].filter(Boolean).join(' › ') : '');
+        return;
+      }
+      show('กำลังโหลดโฟลเดอร์ต้นทาง...');
+      try {
+        const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
+        if (!r.ok) throw new Error('Cannot load recorded files');
+        const { files } = await r.json();
+        if (!files.length) { show('ยังไม่มีไฟล์ที่บันทึก'); return; }
+        const main = files[0]; // ปลายทางนี้ล็อกไว้กับไฟล์เดียว ทุกแถวคือเวอร์ชันของไฟล์เดียวกัน
+        const originalName = main.name.replace(/^\d{8}_\d+_/, '');
+        let records = {};
+        try {
+          const fr = await fetch(`/api/file-records?prefix=${encodeURIComponent(dest)}`);
+          if (fr.ok) records = await fr.json();
+        } catch {}
+        const rec = records[main.object_name] || {};
+        const parts = [rec.object_type, rec.manufacturer, rec.year];
+        if (parts.every(Boolean)) {
+          show([...parts, originalName].join(' › '));
+          return;
+        }
+        const matches = await findReportSources(source, originalName);
+        if (matches.length === 1) {
+          show(matches[0].slice(source.length).split('/').filter(Boolean).join(' › '));
+        } else {
+          show((matches.length ? 'พบชื่อไฟล์ในหลายโฟลเดอร์ต้นทาง' : 'ไม่พบโฟลเดอร์ต้นทาง') + ' › ' + originalName);
+        }
+      } catch {
+        show('ไม่สามารถโหลดโฟลเดอร์ต้นทางได้');
+      }
+    }
+
+    function openBankFormModal(subtabId) {
+      activeSubtab = subtabId;
+      const modal = document.getElementById('bankFormModal');
+      const iframe = document.getElementById('bankFormIframe');
+      const config = REPORT_CONFIG[subtabId];
+      const params = new URLSearchParams({ mode: 'select' });
+      if (config.report) params.set('report', config.report);
+      iframe.src = config.src + '?' + params.toString();
+      modal.classList.add('open');
+    }
+
+    function closeBankFormModal() {
+      const modal = document.getElementById('bankFormModal');
+      modal.classList.remove('open');
+      document.getElementById('bankFormIframe').src = '';
+    }
+
+    document.getElementById('bankFormModal').addEventListener('click', function(e) {
+      if (e.target === this) closeBankFormModal();
+    });
+
+    window.addEventListener('message', function(e) {
+      if (e.data && e.data.type === 'files-selected') {
+        if (e.source !== document.getElementById('bankFormIframe').contentWindow) return;
+        const config = REPORT_CONFIG[activeSubtab];
+        if (config.report && (e.data.ndt_report !== config.report ||
+            !(e.data.object_names || []).every(name => name.startsWith(config.source)))) return;
+        closeBankFormModal();
+        const names = e.data.object_names || [];
+        selectedObjectNames[activeSubtab] = names;
+
+        if (activeSubtab === 'subtab2') {
+          if (names.length) {
+            recordFile('subtab2', {
+              object_type: e.data.object_type || '',
+              manufacturer: e.data.manufacturer || '',
+              year: e.data.year || '',
+            });
+          }
+          return;
+        }
+
+        selectedMeta[activeSubtab] = {
+          object_type: e.data.object_type || '',
+          manufacturer: e.data.manufacturer || '',
+          year: e.data.year || '',
+        };
+
+        const label = names.length === 1
+          ? names[0].split('/').pop()
+          : `${names.length} files selected`;
+        document.getElementById(`selectedBankForm-${activeSubtab}`).textContent = names.length ? label : '';
+        document.getElementById(`recordBtn-${activeSubtab}`).style.display = names.length ? 'inline-block' : 'none';
+      }
+    });
+
+    async function loadRecordedFiles(subtabId, { forceFresh = false } = {}) {
+      const dest = REPORT_CONFIG[subtabId].dest;
+      const list = document.getElementById(`recordedFilesList-${subtabId}`);
+
+      if (subtabId === 'subtab2') {
+        // มี cache จากการเปิดครั้งก่อนในเซสชันนี้ → แสดงทันทีจาก cache ก่อน (ไม่ต้องรอ network)
+        // แล้วค่อยรีเฟรชข้อมูลจริงเบื้องหลัง (stale-while-revalidate) — ยกเว้นตอนที่เพิ่ง
+        // แก้ไขข้อมูลเอง (ลบ/บันทึกเวอร์ชันใหม่) ที่ต้องการผลลัพธ์สดใหม่แน่นอน จึง forceFresh
+        if (inspectionFilesCache.subtab2.length && !forceFresh) {
+          renderInspectionUI('subtab2', list);
+          loadInspectionFiles(dest, list);
+          return;
+        }
+        list.innerHTML = '';
+        await loadInspectionFiles(dest, list);
+        return;
+      }
+
+      list.innerHTML = '';
+      try {
+        const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
+        if (!r.ok) return;
+        const { files } = await r.json();
+        if (files.length === 0) {
+          list.innerHTML = '<div class="recorded-files-empty">ยังไม่มีไฟล์ที่บันทึก</div>';
+          return;
+        }
+
+        let fileRecords = {};
+        try {
+          const fr = await fetch(`/api/file-records?prefix=${encodeURIComponent(dest)}`);
+          if (fr.ok) fileRecords = await fr.json();
+        } catch {}
+
+        const card = document.createElement('div');
+        card.className = 'recorded-files-card';
+        const table = document.createElement('table');
+        table.className = 'recorded-files';
+        table.innerHTML = '<thead><tr><th>File Name</th><th style="width:160px">Date Record</th><th style="width:150px">Record by</th><th style="width:160px">Date Modified</th><th style="width:150px">Modified by</th><th style="width:100px">Save &amp; Delete</th></tr></thead>';
+        const tbody = document.createElement('tbody');
+
+        files.forEach(f => {
+          const tr = document.createElement('tr');
+          const rec = fileRecords[f.object_name] || { by: '', object_type: '', manufacturer: '', year: '' };
+
+          const nameTd = document.createElement('td');
+          const name = document.createElement('span');
+          name.className = 'file-name';
+          name.textContent = f.name;
+          name.onclick = () => window.open(
+            `Editor.html?object_name=${encodeURIComponent(f.object_name)}&return_url=${encodeURIComponent(location.pathname + location.search)}`, '_blank'
+          );
+          nameTd.appendChild(name);
+
+          const byTd = document.createElement('td');
+          const byInput = document.createElement('input');
+          byInput.type = 'text';
+          byInput.placeholder = 'ชื่อผู้บันทึก';
+          byInput.value = rec.by || '';
+          byTd.appendChild(byInput);
+
+          const modifyTd = document.createElement('td');
+          const modifyInput = document.createElement('input');
+          modifyInput.type = 'text';
+          modifyInput.placeholder = 'ชื่อผู้แก้ไข';
+          modifyInput.value = rec.modify_by || '';
+          modifyTd.appendChild(modifyInput);
+          const recordedTd = document.createElement('td');
+          recordedTd.className = 'file-date';
+          recordedTd.textContent = rec.recorded_at ? formatInspDate(rec.recorded_at) : '—';
+          if (!rec.recorded_at) recordedTd.title = 'ไม่มีข้อมูลเวลาสร้างไฟล์เดิม';
+
+          const dateTd = document.createElement('td');
+          dateTd.className = 'file-date';
+          if (f.last_modified) {
+            const dt   = new Date(f.last_modified);
+            const dd   = String(dt.getDate()).padStart(2,'0');
+            const mm   = String(dt.getMonth()+1).padStart(2,'0');
+            const yyyy = dt.getFullYear();
+            const hh   = String(dt.getHours()).padStart(2,'0');
+            const min  = String(dt.getMinutes()).padStart(2,'0');
+            dateTd.textContent = `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+          }
+
+          const delTd = document.createElement('td');
+          delTd.style.textAlign = 'center';
+          const delBtn = document.createElement('button');
+          delBtn.className = 'file-del';
+          delBtn.title = 'ลบไฟล์';
+          delBtn.textContent = '✕';
+          delBtn.onclick = () => openDeleteConfirm(subtabId, f.object_name, `ไฟล์ "${f.name}"`);
+          const saveBtn = document.createElement('button');
+          saveBtn.type = 'button';
+          saveBtn.className = 'insp-row-save';
+          saveBtn.textContent = '💾 Save';
+          saveBtn.title = 'บันทึก Record by / Modified by';
+          saveBtn.onclick = async () => {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'กำลังบันทึก...';
+            try {
+              await saveFileRecord(f.object_name, byInput.value, modifyInput.value, rec);
+              saveBtn.textContent = '✓ Saved';
+            } catch {
+              saveBtn.textContent = '💾 Save';
+              alert('บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง');
+            } finally {
+              saveBtn.disabled = false;
+            }
+          };
+          [byInput, modifyInput].forEach(input => input.addEventListener('input', () => {
+            saveBtn.textContent = '💾 Save';
+          }));
+          delTd.append(saveBtn, delBtn);
+
+          tr.append(nameTd, recordedTd, byTd, dateTd, modifyTd, delTd);
+          tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        card.appendChild(table);
+        list.appendChild(card);
+      } catch {}
+    }
+
+    // Save names without changing the creation timestamp.
+    async function saveFileRecord(objectName, by, modifyBy, rec) {
+        const response = await fetch('/api/file-records', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            object_name: objectName, by, modify_by: modifyBy,
+            object_type: rec.object_type, manufacturer: rec.manufacturer, year: rec.year,
+          }),
+        });
+        if (!response.ok) throw new Error('Save failed');
+        rec.by = by;
+        rec.modify_by = modifyBy;
+    }
+
+    // ── DELETE CONFIRM MODAL (handles both whole-file delete and inspection-row delete) ──
+    let pendingDelete = null;
+    function openDeleteConfirm(subtabId, objectName, name, extra) {
+      pendingDelete = extra ? { subtabId, ...extra } : { subtabId, objectName, type: 'file' };
+      document.getElementById('deleteConfirmFileName').textContent = name;
+      document.getElementById('deleteConfirmModal').classList.add('open');
+    }
+    function closeDeleteConfirm() {
+      pendingDelete = null;
+      document.getElementById('deleteConfirmModal').classList.remove('open');
+    }
+    async function confirmDeleteFile() {
+      if (!pendingDelete) return;
+      const { subtabId, type } = pendingDelete;
+      if (type === 'itp' || type === 'qaqc') {
+        const { objectName } = pendingDelete;
+        try {
+          await fetch(`/api/browse/file?object_name=${encodeURIComponent(objectName)}`, { method: 'DELETE' });
+          if (type === 'qaqc') await loadQAQCFileList();
+          else await loadITPFileList();
+        } catch {
+          alert('ลบไม่สำเร็จ');
+        }
+        closeDeleteConfirm();
+        return;
+      }
+      if (type === 'folder') {
+        const { prefix, key } = pendingDelete;
+        try {
+          await fetch(`/api/delete-path?path=${encodeURIComponent(prefix)}`, { method: 'DELETE' });
+          await fetch(`/api/inspection-records?prefix=${encodeURIComponent(prefix)}`, { method: 'DELETE' });
+          delete inspectionRecords[key];
+          if (activeInspFile[subtabId] === key) activeInspFile[subtabId] = null;
+          loadRecordedFiles(subtabId, { forceFresh: true });
+        } catch {
+          alert('ลบไม่สำเร็จ');
+        }
+        closeDeleteConfirm();
+        return;
+      }
+      const { objectName } = pendingDelete;
+      try {
+        await fetch(`/api/browse/file?object_name=${encodeURIComponent(objectName)}`, { method: 'DELETE' });
+        await fetch(`/api/inspection-records?object_name=${encodeURIComponent(objectName)}`, { method: 'DELETE' });
+        await fetch(`/api/file-records?object_name=${encodeURIComponent(objectName)}`, { method: 'DELETE' });
+        delete inspectionRecords[objectName];
+        if (activeInspFile[subtabId] === objectName) activeInspFile[subtabId] = null;
+        loadRecordedFiles(subtabId, { forceFresh: true });
+        if (subtabId !== 'subtab2') updateDestInfo();
+      } catch {
+        alert('ลบไม่สำเร็จ');
+      }
+      closeDeleteConfirm();
+    }
+
+    // ── INSPECTION RECORD UI (subtab2) ──────────────────────
+    // Folder = ชื่อไฟล์ต้นฉบับ (เช่น Test222.xlsm) ไฟล์ข้างในเก็บชื่อเต็มพร้อม date/ลำดับ
+    // (เช่น 13082026_1_Test222.xlsm) — อัปโหลดซ้ำจากไฟล์ต้นฉบับเดียวกันจะรวมอยู่ folder เดียวกัน
+    const GEN_NAME_RE = /^\d{8}_\d+_(.+)$/;   // datePrefix_index_originalName
+    const INSP_META_FILENAME = '_meta.json';  // เก็บ Object Type/Manufacturer/Year ของไฟล์ต้นฉบับ ไว้ในโฟลเดอร์เดียวกัน
+
+    async function saveInspMeta(folderPrefix, meta) {
+      try {
+        const blob = new Blob([JSON.stringify(meta)], { type: 'application/json' });
+        const form = new FormData();
+        form.append('file', blob, INSP_META_FILENAME);
+        await fetch(`/api/browse/upload?prefix=${encodeURIComponent(folderPrefix)}`, { method: 'POST', body: form });
+      } catch {}
+    }
+
+    async function fetchInspectionRecords(prefix) {
+      try {
+        const r = await fetch(`/api/inspection-records?prefix=${encodeURIComponent(prefix)}`);
+        if (!r.ok) return;
+        Object.assign(inspectionRecords, await r.json());
+      } catch {}
+    }
+
+    async function loadInspectionFiles(dest, list) {
+      const subtabId = 'subtab2';
+      try {
+        const [r] = await Promise.all([
+          fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`),
+          fetchInspectionRecords(dest),
+        ]);
+        if (!r.ok) return;
+        let { folders, files: flatFiles } = await r.json();
+        let needsRelist = false;
+
+        // ย้ายไฟล์เก่าที่ยังวางแบบ flat อยู่ตรง prefix เข้า folder ตามชื่อไฟล์ต้นฉบับ
+        for (const f of flatFiles) {
+          const m = f.name.match(GEN_NAME_RE);
+          const originalName = m ? m[1] : f.name;
+          try {
+            await fetch('/api/rename-file', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ old_object: f.object_name, new_object: `${dest}${originalName}/${f.name}` }),
+            });
+            needsRelist = true;
+          } catch {}
+        }
+
+        // แก้ folder ที่ถูก migrate ผิดไว้ก่อนหน้า (ชื่อ folder เป็นชื่อเต็มพร้อม date/ลำดับ)
+        // ให้ย้ายไฟล์ข้างในไปรวมกับ folder ที่ใช้ชื่อไฟล์ต้นฉบับที่ถูกต้อง
+        for (const folder of folders) {
+          const m = folder.name.match(GEN_NAME_RE);
+          if (!m) continue;
+          const correctName = m[1];
+          try {
+            const fr = await fetch(`/api/browse?prefix=${encodeURIComponent(dest + folder.name + '/')}`);
+            if (!fr.ok) continue;
+            const { files: inner } = await fr.json();
+            for (const innerFile of inner) {
+              await fetch('/api/rename-file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ old_object: innerFile.object_name, new_object: `${dest}${correctName}/${innerFile.name}` }),
+              });
+            }
+            needsRelist = true;
+          } catch {}
+        }
+
+        if (needsRelist) {
+          const r2 = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
+          if (!r2.ok) return;
+          ({ folders } = await r2.json());
+        }
+
+        if (!folders.length) {
+          list.innerHTML = '<div class="recorded-files-empty">ยังไม่มีไฟล์ที่บันทึก</div>';
+          inspectionFilesCache.subtab2 = [];
+          activeInspFile.subtab2 = null;
+          if (activeSubtab === 'subtab2') updateDestInfo();
+          return;
+        }
+
+        // ยิง /api/browse ของทุกโฟลเดอร์พร้อมกัน (แทนการ await ทีละโฟลเดอร์แบบเรียงคิว)
+        // เพื่อลดเวลาโหลดจาก O(จำนวนโฟลเดอร์ * round-trip) เหลือแค่ ~1 round-trip
+        const folderResults = await Promise.all(folders.map(async (folder) => {
+          const folderPrefix = `${dest}${folder.name}/`;
+          try {
+            const fr = await fetch(`/api/browse?prefix=${encodeURIComponent(folderPrefix)}`);
+            if (!fr.ok) return null;
+            const { files: rawInner } = await fr.json();
+            const metaEntry = rawInner.find(f => f.name === INSP_META_FILENAME);
+            const inner = rawInner.filter(f => f.name !== INSP_META_FILENAME);
+            if (!inner.length) return null;
+            // ไฟล์ล่าสุดใน folder (เวอร์ชันใหม่สุด) คือตัวแทนของ folder นี้
+            const main = inner.reduce((a, b) => new Date(b.last_modified) > new Date(a.last_modified) ? b : a);
+            let meta = null;
+            if (metaEntry) {
+              try {
+                const mr = await fetch(`/api/browse/file-content?object_name=${encodeURIComponent(metaEntry.object_name)}`);
+                if (mr.ok) meta = await mr.json();
+              } catch {}
+            }
+            return { name: folder.name, object_name: main.object_name, last_modified: main.last_modified, versions: inner, meta };
+          } catch {
+            return null;
+          }
+        }));
+        const files = folderResults.filter(Boolean);
+
+        inspectionFilesCache.subtab2 = files;
+        if (!activeInspFile.subtab2 || !files.some(f => f.name === activeInspFile.subtab2)) {
+          activeInspFile.subtab2 = files.length ? files[0].name : null;
+        }
+        renderInspectionUI(subtabId, list);
+      } catch {}
+    }
+
+    function renderInspectionUI(subtabId, container) {
+      container.innerHTML = ''; // ล้างของเดิม (เช่น cache ที่เรนเดอร์ไปก่อน) แล้วค่อยใส่ของใหม่ทับ
+      const wrap = document.createElement('div');
+      wrap.className = 'insp-wrap';
+      wrap.innerHTML = `
+        <aside class="insp-aside">
+          <div class="insp-aside-head">รายการไฟล์ที่บันทึก</div>
+          <div class="insp-tablist" id="insp-tablist-${subtabId}"></div>
+        </aside>
+        <div class="insp-main" id="insp-main-${subtabId}"></div>`;
+      container.appendChild(wrap);
+      renderInspectionTabs(subtabId);
+      renderInspectionMain(subtabId);
+    }
+
+    function renderInspectionTabs(subtabId) {
+      const files = inspectionFilesCache[subtabId];
+      const box = document.getElementById(`insp-tablist-${subtabId}`);
+      box.innerHTML = '';
+      files.forEach(f => {
+        const versionCount = f.versions ? f.versions.length : 0;
+        const code = (f.name.split('.').pop() || '').slice(0, 3).toUpperCase() || '•';
+        const el = document.createElement('div');
+        el.className = 'insp-tab' + (f.name === activeInspFile[subtabId] ? ' active' : '');
+        el.innerHTML = `
+          <span class="insp-ic">${code}</span>
+          <span class="insp-name" title="${f.name}">${f.name}</span>
+          <span class="insp-count">${versionCount}</span>
+          <button type="button" class="insp-act insp-del" title="ลบไฟล์">✕</button>`;
+        el.addEventListener('click', (e) => {
+          if (e.target.closest('.insp-act')) return;
+          activeInspFile[subtabId] = f.name;
+          saveViewState();
+          renderInspectionTabs(subtabId);
+          renderInspectionMain(subtabId);
+        });
+        el.querySelector('.insp-del').onclick = (e) => {
+          e.stopPropagation();
+          openDeleteConfirm(subtabId, null, `ไฟล์ "${f.name}"`, { type: 'folder', prefix: REPORT_CONFIG[subtabId].dest + f.name, key: f.name });
+        };
+        box.appendChild(el);
+      });
+    }
+
+    const INSP_RESULT_OPTIONS = ['', 'Pass', 'Fail', 'Need Repair', 'N/A'];
+
+    function formatInspDate(iso) {
+      if (!iso) return '-';
+      const dt = new Date(iso);
+      const dd = String(dt.getDate()).padStart(2, '0');
+      const mm = String(dt.getMonth() + 1).padStart(2, '0');
+      const yyyy = dt.getFullYear();
+      const hh = String(dt.getHours()).padStart(2, '0');
+      const min = String(dt.getMinutes()).padStart(2, '0');
+      return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+    }
+
+    // แต่ละแถว = ไฟล์เวอร์ชันจริงใน folder (เรียงเวอร์ชันใหม่สุดขึ้นก่อน)
+    function renderInspectionMain(subtabId) {
+      if (activeSubtab === subtabId) updateDestInfo();
+      const main = document.getElementById(`insp-main-${subtabId}`);
+      const activeKey = activeInspFile[subtabId];
+      const file = inspectionFilesCache[subtabId].find(f => f.name === activeKey);
+      if (!file) { main.innerHTML = '<div class="insp-empty-main">เลือกไฟล์ทางซ้ายเพื่อบันทึกผลตรวจ</div>'; return; }
+      const versions = [...(file.versions || [])].sort((a, b) => new Date(b.last_modified) - new Date(a.last_modified));
+
+      const body = versions.length ? versions.map((v, idx) => {
+        const meta = inspectionRecords[v.object_name] || (inspectionRecords[v.object_name] = { by: '', result: '', note: '' });
+        const key = encodeURIComponent(v.object_name);
+        return `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${formatInspDate(v.last_modified)}</td>
+          <td><span class="insp-linkfile" title="${v.name}" onclick="openInspFile('${key}')">${v.name}</span></td>
+          <td><input type="text" placeholder="ชื่อผู้บันทึก" value="${meta.by}" onchange="updInspMeta('${key}','by',this.value)"></td>
+          <td><select onchange="updInspMeta('${key}','result',this.value)">${
+            INSP_RESULT_OPTIONS.map(o => `<option value="${o}" ${o === meta.result ? 'selected' : ''}>${o || '— เลือก —'}</option>`).join('')
+          }</select></td>
+          <td><input type="text" placeholder="หมายเหตุ" value="${meta.note || ''}" onchange="updInspMeta('${key}','note',this.value)"></td>
+          <td>
+            <div class="insp-row-actions">
+              <button type="button" class="insp-row-save" title="บันทึก Record By / Result / Note" onclick="saveInspRecordBtn('${key}', this)">💾</button>
+              <button type="button" class="insp-row-del" title="ลบเวอร์ชันนี้" onclick="deleteInspVersion('${subtabId}','${key}')">✕</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('')
+        : `<tr><td colspan="7" class="insp-empty-main">ยังไม่มีข้อมูล — กด "Record" เพื่อเริ่มบันทึก</td></tr>`;
+
+      const metaParts = file.meta
+        ? [file.meta.object_type, file.meta.manufacturer, file.meta.year].filter(Boolean)
+        : [];
+      const crumb = (metaParts.length ? metaParts : ['Inspection Report']).join(' › ') + ' › ' + file.name;
+
+      main.innerHTML = `
+        <div class="insp-doc-head">
+          <div>
+            <div class="insp-crumb">${crumb}</div>
+            <h3>${file.name}</h3>
+          </div>
+          <button type="button" class="insp-btn-addrow" onclick="recordInspVersion('${subtabId}')">Record</button>
+        </div>
+        <div class="insp-card">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:36px">#</th>
+                <th style="width:160px">Date Record</th>
+                <th>Link file</th>
+                <th style="width:170px">Record By</th>
+                <th style="width:140px">Result</th>
+                <th style="width:180px">Note</th>
+                <th style="width:70px"></th>
+              </tr>
+            </thead>
+            <tbody>${body}</tbody>
+          </table>
+        </div>`;
+    }
+
+    function openInspFile(encodedObjectName) {
+      const objectName = decodeURIComponent(encodedObjectName);
+      window.open(
+        `Editor.html?object_name=${encodeURIComponent(objectName)}&return_url=${encodeURIComponent(location.pathname + location.search)}`, '_blank'
+      );
+    }
+    function updInspMeta(encodedObjectName, field, val) {
+      // แก้แค่ค่าใน memory เท่านั้น — ไม่บันทึกลง DB จนกว่าจะกดปุ่ม 💾 ต่อแถว
+      const key = decodeURIComponent(encodedObjectName);
+      const meta = inspectionRecords[key] || (inspectionRecords[key] = { by: '', result: '', note: '' });
+      meta[field] = val;
+    }
+    async function saveInspRecord(objectName, meta) {
+      try {
+        const r = await fetch('/api/inspection-records', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ object_name: objectName, by: meta.by, result: meta.result, note: meta.note }),
+        });
+        return r.ok;
+      } catch {
+        return false;
+      }
+    }
+    async function saveInspRecordBtn(encodedObjectName, btn) {
+      const key = decodeURIComponent(encodedObjectName);
+      const meta = inspectionRecords[key] || (inspectionRecords[key] = { by: '', result: '', note: '' });
+      btn.disabled = true;
+      const ok = await saveInspRecord(key, meta);
+      btn.textContent = ok ? '✓' : '✕';
+      btn.classList.toggle('saved', ok);
+      setTimeout(() => {
+        btn.textContent = '💾';
+        btn.classList.remove('saved');
+        btn.disabled = false;
+      }, 1000);
+    }
+    function deleteInspVersion(subtabId, encodedObjectName) {
+      const objectName = decodeURIComponent(encodedObjectName);
+      const name = objectName.split('/').pop();
+      openDeleteConfirm(subtabId, objectName, `เวอร์ชัน "${name}"`);
+    }
+
+    // ปุ่ม Record: copy ไฟล์เวอร์ชันล่าสุดในไฟล์นี้ เป็นเวอร์ชันใหม่ (วันที่_ฉบับที่_ชื่อไฟล์) ในโฟลเดอร์เดิม
+    async function recordInspVersion(subtabId) {
+      const originalName = activeInspFile[subtabId];
+      const file = inspectionFilesCache[subtabId].find(f => f.name === originalName);
+      if (!file) return;
+      const dest = REPORT_CONFIG[subtabId].dest;
+      const folderPrefix = `${dest}${originalName}/`;
+      const now = new Date();
+      const datePrefix = `${String(now.getDate()).padStart(2, '0')}${String(now.getMonth() + 1).padStart(2, '0')}${now.getFullYear()}`;
+      try {
+        const fr = await fetch(`/api/browse?prefix=${encodeURIComponent(folderPrefix)}`);
+        const existing = fr.ok ? (await fr.json()).files : [];
+        const matches = existing.filter(f => f.name.startsWith(`${datePrefix}_`) && f.name.endsWith(`_${originalName}`));
+        const newName = `${datePrefix}_${matches.length + 1}_${originalName}`;
+        const r = await fetch('/api/copy-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ src_object: file.object_name, dst_object: folderPrefix + newName }),
+        });
+        if (!r.ok) throw new Error(await r.text());
+      } catch {
+        alert('บันทึกไม่สำเร็จ');
+        return;
+      }
+      loadRecordedFiles(subtabId, { forceFresh: true });
+    }
+    document.getElementById('deleteConfirmModal').addEventListener('click', function(e) {
+      if (e.target === this) closeDeleteConfirm();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeDeleteConfirm();
+    });
+
+    async function recordFile(subtabId, inspMeta) {
+      const selectedObjects = selectedObjectNames[subtabId];
+      if (!selectedObjects || selectedObjects.length === 0) return;
+      const dest = REPORT_CONFIG[subtabId].dest;
+      const now = new Date();
+      const dd   = String(now.getDate()).padStart(2, '0');
+      const mm   = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      const datePrefix = `${dd}${mm}${yyyy}`;
+
+      const isInsp = subtabId === 'subtab2';
+      const statusEl = document.getElementById(`selectedBankForm-${subtabId}`);
+      if (isInsp && statusEl) statusEl.textContent = `กำลังบันทึก ${selectedObjects.length} ไฟล์...`;
+
+      // Record by กรอกทีหลังแบบ inline ในตาราง (ดู updFileRecordBy) — ตอนบันทึกเก็บแค่ Object Type/Manufacturer/Year
+      const meta = !isInsp ? (selectedMeta[subtabId] || { object_type: '', manufacturer: '', year: '' }) : null;
+
+      let existingFiles = [];
+      if (!isInsp) {
+        try {
+          const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
+          if (r.ok) ({ files: existingFiles } = await r.json());
+        } catch {}
+
+        // ปลายทางนี้ล็อกไว้กับไฟล์ต้นฉบับเดียว — ถ้ามีไฟล์อื่นอยู่แล้ว ห้ามบันทึกไฟล์ต้นฉบับที่ต่างออกไป
+        // จนกว่าจะลบไฟล์เดิมทั้งหมดออกก่อน (บันทึกไฟล์เดิมซ้ำ = เวอร์ชันใหม่ ยังทำได้ปกติ)
+        if (existingFiles.length && !REPORT_CONFIG[subtabId].report) {
+          const lockedMatch = existingFiles[0].name.match(GEN_NAME_RE);
+          const lockedName = lockedMatch ? lockedMatch[1] : existingFiles[0].name;
+          const mismatched = selectedObjects.some(sel => sel.split('/').pop() !== lockedName);
+          if (mismatched) {
+            alert(`ปลายทางนี้ถูกบันทึกไว้กับไฟล์ "${lockedName}" แล้ว\nต้องลบไฟล์เดิมทั้งหมดออกก่อน ถึงจะบันทึกไฟล์อื่นแทนได้`);
+            return;
+          }
+        }
+      }
+      const inspFolderCache = {}; // subtab2: originalName -> ไฟล์ที่มีอยู่แล้วใน folder นั้น
+
+      const savedNames = [];
+      const failedNames = [];
+      const duplicateNotices = []; // subtab2: originalName ที่เคยบันทึกไว้แล้ว → ข้าม ไม่บันทึกซ้ำ
+      for (const selectedObjectName of selectedObjects) {
+        const originalName = selectedObjectName.split('/').pop();
+        let matchPool = existingFiles;
+        if (isInsp) {
+          if (!inspFolderCache[originalName]) {
+            try {
+              const fr = await fetch(`/api/browse?prefix=${encodeURIComponent(dest + originalName + '/')}`);
+              inspFolderCache[originalName] = fr.ok ? (await fr.json()).files : [];
+            } catch { inspFolderCache[originalName] = []; }
+          }
+          matchPool = inspFolderCache[originalName];
+          if (matchPool.length) {
+            duplicateNotices.push(`${originalName} (มีอยู่แล้ว ${matchPool.length} เวอร์ชัน)`);
+            continue; // ไฟล์นี้เคยบันทึกไว้แล้ว ข้ามไปเลย ไม่บันทึกซ้ำ
+          }
+        }
+        const matches = matchPool.filter(f =>
+          f.name.startsWith(`${datePrefix}_`) && f.name.endsWith(`_${originalName}`)
+        );
+        const newName = `${datePrefix}_${matches.length + 1}_${originalName}`;
+        const destObject = isInsp ? `${dest}${originalName}/${newName}` : dest + newName;
+        try {
+          const r = await fetch('/api/copy-file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ src_object: selectedObjectName, dst_object: destObject }),
+          });
+          if (!r.ok) throw new Error(await r.text());
+          matchPool.push({ name: newName });
+          savedNames.push(newName);
+          if (isInsp && inspMeta) await saveInspMeta(`${dest}${originalName}/`, inspMeta);
+          if (!isInsp) {
+            try {
+              await fetch('/api/file-records', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ object_name: destObject, by: '', ...meta }),
+              });
+            } catch {}
+          }
+        } catch {
+          failedNames.push(originalName);
+        }
+      }
+
+      if (duplicateNotices.length) {
+        alert(`ไฟล์ต่อไปนี้เคยบันทึกไว้แล้ว จึงไม่บันทึกซ้ำ:\n${duplicateNotices.join('\n')}`);
+      }
+      if (savedNames.length) alert(`บันทึกสำเร็จ: ${savedNames.join(', ')}`);
+      if (failedNames.length) alert(`บันทึกไม่สำเร็จ: ${failedNames.join(', ')}`);
+
+      if (isInsp) {
+        selectedObjectNames[subtabId] = null;
+        if (statusEl) statusEl.textContent = '';
+      }
+      loadRecordedFiles(subtabId, { forceFresh: isInsp });
+      if (!isInsp) updateDestInfo();
+    }
+    restoreViewState();
+  </script>
+</body>
+</html>

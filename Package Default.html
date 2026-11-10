@@ -1,6 +1,12 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    // Preserve existing bookmarks for the Static Equipment service.
+    if (new URLSearchParams(location.search).get('service') === 'Static Equipment') {
+      location.replace('static-equipment/Package Default.html' + location.search + location.hash);
+    }
+  </script>
   <meta charset="UTF-8">
   <title>QAQC | Default Package</title>
   <style>

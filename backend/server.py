@@ -80,7 +80,10 @@ async def protect_general_form(request: Request, call_next):
             user = await run_in_threadpool(current_user, request)
         except HTTPException:
             return RedirectResponse("/ui/Login.html", status_code=303, headers={"Cache-Control": "no-store"})
-        if user["role"] != "admin":
+        # QAQC Step embeds these pages as form pickers for signed-in users.
+        # Require one exact mode value so browser/server parsing agrees.
+        is_selection = request.query_params.getlist("mode") == ["select"]
+        if user["role"] != "admin" and not is_selection:
             return Response("General Form is available to administrators only.", status_code=403,
                             headers={"Cache-Control": "no-store"})
         response = await call_next(request)

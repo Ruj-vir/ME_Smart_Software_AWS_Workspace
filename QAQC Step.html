@@ -117,7 +117,7 @@
 
     .sub-tab-header { display: none; justify-content: flex-start; gap: 8px; padding: 0 40px 12px; }
     .sub-tab-header.visible { display: flex; }
-    .sub-tab-dest-info { display: none; padding: 0 40px 10px; font-size: 12px; color: #7f8c8d; font-family: 'Consolas', monospace; word-break: break-all; }
+    .sub-tab-dest-info { display: none; padding: 0 40px 10px; font-size: 11.5px; color: #6b7280; overflow-wrap: anywhere; }
     .sub-tab-dest-info.visible { display: block; }
     .sub-tab-button {
       padding: 7px 24px; font-size: 14px; font-weight: bold;
@@ -1087,8 +1087,12 @@
       const show = text => {
         if (request === destInfoRequest && activeSubtab === subtab) el.textContent = text;
       };
-      const fallback = () => show('บันทึกไปที่: ' + dest);
-      if (activeSubtab === 'subtab2') { fallback(); return; }
+      if (subtab === 'subtab2') {
+        const file = inspectionFilesCache.subtab2.find(f => f.name === activeInspFile.subtab2);
+        const meta = file?.meta;
+        show(meta ? [meta.object_type, meta.manufacturer, meta.year].filter(Boolean).join(' › ') : '');
+        return;
+      }
       show('กำลังโหลดโฟลเดอร์ต้นทาง...');
       try {
         const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
@@ -1448,6 +1452,7 @@
           list.innerHTML = '<div class="recorded-files-empty">ยังไม่มีไฟล์ที่บันทึก</div>';
           inspectionFilesCache.subtab2 = [];
           activeInspFile.subtab2 = null;
+          if (activeSubtab === 'subtab2') updateDestInfo();
           return;
         }
 
@@ -1545,6 +1550,7 @@
 
     // แต่ละแถว = ไฟล์เวอร์ชันจริงใน folder (เรียงเวอร์ชันใหม่สุดขึ้นก่อน)
     function renderInspectionMain(subtabId) {
+      if (activeSubtab === subtabId) updateDestInfo();
       const main = document.getElementById(`insp-main-${subtabId}`);
       const activeKey = activeInspFile[subtabId];
       const file = inspectionFilesCache[subtabId].find(f => f.name === activeKey);

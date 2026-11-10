@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Progress - Static Equipment</title>
+  <style>
+    body { margin: 0; padding: 32px; background: #f4f6f8; color: #243746; font-family: Arial, sans-serif; }
+    main { max-width: 900px; margin: auto; padding: 32px; background: white; border-radius: 12px; }
+    a { color: #186da5; }
+    #context { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <main>
+    <a id="back" href="Package Default.html">← กลับไป Package</a>
+    <h1>Progress — Static Equipment</h1>
+    <p id="context"></p>
+    <p>หน้านี้อยู่ระหว่างเตรียมพัฒนา</p>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    document.getElementById('back').href = 'Package Default.html?' + params.toString();
+    document.getElementById('context').textContent = ['company', 'plant', 'service', 'package']
+      .map(key => params.get(key)).filter(Boolean).join(' / ');
+  </script>
+</body>
+</html>
