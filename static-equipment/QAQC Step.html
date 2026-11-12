@@ -293,27 +293,9 @@
       </div>
       <div id="myBox" class="hn-grid" style="display: none;">
         <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='MaintenanceReport.html' + location.search">
-            <span class="btn-icon">🔧</span>
-            <span class="btn-text">Maintenance Report</span>
-          </button>
-        </div>
-        <div class="hn-item">
           <button class="hn-btn" onclick="location.href='InspectionReport.html' + location.search">
             <span class="btn-icon">🔍</span>
             <span class="btn-text">Inspection Sheet</span>
-          </button>
-        </div>
-        <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='SparePartReport.html' + location.search">
-            <span class="btn-icon">⚙️</span>
-            <span class="btn-text">Spare Part</span>
-          </button>
-        </div>
-        <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='PhotographerReport.html' + location.search">
-            <span class="btn-icon">📷</span>
-            <span class="btn-text">Photographs</span>
           </button>
         </div>
         <div class="hn-item">
@@ -337,10 +319,7 @@
   </div>
 
   <div class="sub-tab-header" id="maintenanceSubTabs">
-    <button class="sub-tab-button active" data-subtab="subtab1">Maintenance Report</button>
-    <button class="sub-tab-button" data-subtab="subtab2">Inspection Sheet</button>
-    <button class="sub-tab-button" data-subtab="subtab3">Spare Part</button>
-    <button class="sub-tab-button" data-subtab="subtab4">Photographs</button>
+    <button class="sub-tab-button active" data-subtab="subtab2">Inspection Sheet</button>
   </div>
   <div class="sub-tab-header" id="ndtReportSubTabs" style="flex-wrap:wrap;">
     <button class="sub-tab-button active" data-subtab="ndtSubtab1">Penetrant Testing Report</button>
@@ -363,40 +342,13 @@
     </div>
 
     <div class="tab-pane" id="tab2" style="flex-direction: column; gap: 8px;">
-      <div class="sub-pane active" id="subtab1">
-        <div class="upload-row">
-          <button onclick="openBankFormModal('subtab1')">Upload Bank form</button>
-          <span id="selectedBankForm-subtab1" style="font-size:13px; color:#154360; font-weight:600;"></span>
-          <button type="button" class="insp-btn-addrow" id="recordBtn-subtab1" onclick="recordFile('subtab1')" style="display:none; margin-left:auto;">Record</button>
-        </div>
-        <div id="recordedFilesList-subtab1" style="margin-top:8px;"></div>
-        <div class="table-wrap" id="controlTableWrap-subtab1"></div>
-      </div>
-      <div class="sub-pane" id="subtab2">
+      <div class="sub-pane active" id="subtab2">
         <div class="upload-row">
           <button onclick="openBankFormModal('subtab2')">Upload Bank form</button>
           <span id="selectedBankForm-subtab2" style="font-size:13px; color:#154360; font-weight:600;"></span>
         </div>
         <div id="recordedFilesList-subtab2" style="margin-top:8px;"></div>
         <div class="table-wrap" id="controlTableWrap-subtab2"></div>
-      </div>
-      <div class="sub-pane" id="subtab3">
-        <div class="upload-row">
-          <button onclick="openBankFormModal('subtab3')">Upload Bank form</button>
-          <span id="selectedBankForm-subtab3" style="font-size:13px; color:#154360; font-weight:600;"></span>
-          <button id="recordBtn-subtab3" onclick="recordFile('subtab3')" style="display:none;">Record</button>
-        </div>
-        <div id="recordedFilesList-subtab3" style="margin-top:8px;"></div>
-        <div class="table-wrap" id="controlTableWrap-subtab3"></div>
-      </div>
-      <div class="sub-pane" id="subtab4">
-        <div class="upload-row">
-          <button onclick="openBankFormModal('subtab4')">Upload Bank form</button>
-          <span id="selectedBankForm-subtab4" style="font-size:13px; color:#154360; font-weight:600;"></span>
-          <button id="recordBtn-subtab4" onclick="recordFile('subtab4')" style="display:none;">Record</button>
-        </div>
-        <div id="recordedFilesList-subtab4" style="margin-top:8px;"></div>
-        <div class="table-wrap" id="controlTableWrap-subtab4"></div>
       </div>
     </div>
 
@@ -1080,8 +1032,8 @@
       }
     };
 
-    let activeSubtab = 'subtab1';
-    let activeMaintenanceSubtab = 'subtab1';
+    let activeSubtab = 'subtab2';
+    let activeMaintenanceSubtab = 'subtab2';
     let activeNdtSubtab = 'ndtSubtab1';
     const selectedObjectNames = { subtab1: null, subtab2: null, subtab3: null, subtab4: null };
     // Object Type/Manufacturer/Year ที่เลือกไว้ตอนเปิด Bank Form (subtab1/3/4 — subtab2 ส่งแนบมากับ recordFile โดยตรง)

@@ -649,27 +649,9 @@
       </div>
       <div id="myBox" class="hn-grid" style="display: none;">
         <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='MaintenanceReport.html' + location.search">
-            <span class="btn-icon">🔧</span>
-            <span class="btn-text">Maintenance Report</span>
-          </button>
-        </div>
-        <div class="hn-item">
           <button class="hn-btn" onclick="location.href='InspectionReport.html' + location.search">
             <span class="btn-icon">🔍</span>
             <span class="btn-text">Inspection Sheet</span>
-          </button>
-        </div>
-        <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='SparePartReport.html' + location.search">
-            <span class="btn-icon">⚙️</span>
-            <span class="btn-text">Spare Part</span>
-          </button>
-        </div>
-        <div class="hn-item">
-          <button class="hn-btn" onclick="location.href='PhotographerReport.html' + location.search">
-            <span class="btn-icon">📷</span>
-            <span class="btn-text">Photographs</span>
           </button>
         </div>
         <div class="hn-item">
@@ -721,13 +703,6 @@
         </div>
 
         <div class="check-list" id="mrList">
-          <div class="report-item">
-            <div class="check-row type-row" onclick="toggleFileGroup('maintenance', event)">
-              <label>Maintenance Report</label>
-              <span class="row-arrow">▾</span>
-            </div>
-            <div class="file-sublist" id="files-maintenance"></div>
-          </div>
 
           <div class="report-item">
             <div class="check-row type-row" onclick="toggleFileGroup('inspection', event)">
@@ -737,21 +712,7 @@
             <div class="file-sublist" id="files-inspection"></div>
           </div>
 
-          <div class="report-item">
-            <div class="check-row type-row" onclick="toggleFileGroup('sparepart', event)">
-              <label>Spare Part</label>
-              <span class="row-arrow">▾</span>
-            </div>
-            <div class="file-sublist" id="files-sparepart"></div>
-          </div>
 
-          <div class="report-item">
-            <div class="check-row type-row" onclick="toggleFileGroup('photographer', event)">
-              <label>Photographs</label>
-              <span class="row-arrow">▾</span>
-            </div>
-            <div class="file-sublist" id="files-photographer"></div>
-          </div>
         </div>
 
         <div class="report-type-label" id="ndtToggle" onclick="toggleFolderList('ndt')">
@@ -829,16 +790,20 @@
     const CONTEXT_PREFIX = CONTEXT_BASE ? CONTEXT_BASE + '/' : '';
 
     const REPORT_TYPE_FOLDER = {
-      maintenance:  'MaintenanceReport',
       inspection:   'Inspection Sheet',
-      sparepart:    'Spare Part',
-      photographer: 'Photographs',
     };
 
     // Raw data files browsed straight from the equipment's Data/ folder
     // (e.g. PTTGC/Ruj_Test/Rotating Equipment/RujAB_test/Data/), separate from
     // the QAQC Step ▸ Maintenance Record report types above.
     const DATA_FOLDER = 'Data/';
+    const AUTO_SELECT_DATA_FOLDERS = new Set([
+      'Organization', 'Schedule', 'Plot Plan', 'Scope Clarification',
+      'Spade List', 'JMS(Work Method)', 'ITP Inspection', 'Drawing',
+      'JSEA', 'Ventilation Plan', 'Rescue Plan', 'Material List',
+      'QA QC Control Sheet', 'Box UP', 'Joint Checker', 'PSSR',
+      'Photo Report', 'Inspection Check', 'Insulation', 'Scaffolding',
+    ]);
     const BROWSE_FOLDERS = { data: DATA_FOLDER, ndt: 'QAQCStep/NDT Report/' };
 
     // Breadcrumb
@@ -909,8 +874,8 @@
     }
 
     // Data and NDT Report can hold nested subfolders, so browse them recursively:
-    // each folder row lazy-loads its own children (folders + files) on expand.
-    async function renderDataFolder(container, prefix, groupKey = 'data') {
+    // Selected Data categories load recursively; other folders load on expand.
+    async function renderDataFolder(container, prefix, groupKey = 'data', autoSelect = false) {
       try {
         const res = await fetch(`${API_BASE}/browse?prefix=${encodeURIComponent(prefix)}`);
         if (!res.ok) throw new Error(res.status);
@@ -922,7 +887,11 @@
           return;
         }
 
+        const autoLoads = [];
         (folders || []).forEach(folder => {
+          const selectChildren = groupKey === 'data' && (autoSelect || (
+            prefix === `${CONTEXT_PREFIX}${DATA_FOLDER}` && AUTO_SELECT_DATA_FOLDERS.has(folder.name)
+          ));
           const row = document.createElement('div');
           row.className = 'folder-row';
           row.innerHTML = '<span class="folder-arrow">▾</span><span>📁</span><span class="folder-name"></span>';
@@ -938,16 +907,18 @@
             if (open && !loaded) {
               loaded = true;
               inner.innerHTML = '<div class="file-loading">กำลังโหลด...</div>';
-              await renderDataFolder(inner, `${prefix}${folder.name}/`, groupKey);
+              await renderDataFolder(inner, `${prefix}${folder.name}/`, groupKey, selectChildren);
             }
           };
 
           container.append(row, inner);
+          if (selectChildren) autoLoads.push(row.onclick());
         });
 
         (files || []).forEach(f => {
-          container.appendChild(buildFileRow(groupKey, f, dataFileRowCounter++));
+          container.appendChild(buildFileRow(groupKey, f, dataFileRowCounter++, { checked: autoSelect }));
         });
+        await Promise.all(autoLoads);
       } catch {
         container.innerHTML = '<div class="file-empty">⚠️ โหลดไฟล์ไม่สำเร็จ</div>';
       }
@@ -1266,6 +1237,7 @@
 
     // Init
     loadProjects();
+    toggleDataList();
   </script>
 </body>
 </html>
