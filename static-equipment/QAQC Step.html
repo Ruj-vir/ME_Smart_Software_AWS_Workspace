@@ -403,7 +403,7 @@
     <div class="tab-pane" id="tab3" style="flex-direction:column; gap:8px;">
       <div class="sub-pane active" id="ndtSubtab1">
         <div class="upload-row">
-          <button onclick="openBankFormModal('ndtSubtab1')">Upload Bank form</button>
+          <button id="ndtBankButton-ndtSubtab1" onclick="openBankFormModal('ndtSubtab1')">Upload Bank form</button>
           <button type="button" id="ndtUploadButton-ndtSubtab1" onclick="document.getElementById('ndtUpload-ndtSubtab1').click()">Upload</button>
           <input type="file" id="ndtUpload-ndtSubtab1" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" hidden onchange="uploadNdtPreview('ndtSubtab1', this)">
           <span id="ndtUploadStatus-ndtSubtab1" role="status" class="hint"></span>
@@ -415,7 +415,7 @@
       </div>
       <div class="sub-pane" id="ndtSubtab2">
         <div class="upload-row">
-          <button onclick="openBankFormModal('ndtSubtab2')">Upload Bank form</button>
+          <button id="ndtBankButton-ndtSubtab2" onclick="openBankFormModal('ndtSubtab2')">Upload Bank form</button>
           <button type="button" id="ndtUploadButton-ndtSubtab2" onclick="document.getElementById('ndtUpload-ndtSubtab2').click()">Upload</button>
           <input type="file" id="ndtUpload-ndtSubtab2" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" hidden onchange="uploadNdtPreview('ndtSubtab2', this)">
           <span id="ndtUploadStatus-ndtSubtab2" role="status" class="hint"></span>
@@ -427,7 +427,7 @@
       </div>
       <div class="sub-pane" id="ndtSubtab3">
         <div class="upload-row">
-          <button onclick="openBankFormModal('ndtSubtab3')">Upload Bank form</button>
+          <button id="ndtBankButton-ndtSubtab3" onclick="openBankFormModal('ndtSubtab3')">Upload Bank form</button>
           <button type="button" id="ndtUploadButton-ndtSubtab3" onclick="document.getElementById('ndtUpload-ndtSubtab3').click()">Upload</button>
           <input type="file" id="ndtUpload-ndtSubtab3" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" hidden onchange="uploadNdtPreview('ndtSubtab3', this)">
           <span id="ndtUploadStatus-ndtSubtab3" role="status" class="hint"></span>
@@ -439,7 +439,7 @@
       </div>
       <div class="sub-pane" id="ndtSubtab4">
         <div class="upload-row">
-          <button onclick="openBankFormModal('ndtSubtab4')">Upload Bank form</button>
+          <button id="ndtBankButton-ndtSubtab4" onclick="openBankFormModal('ndtSubtab4')">Upload Bank form</button>
           <button type="button" id="ndtUploadButton-ndtSubtab4" onclick="document.getElementById('ndtUpload-ndtSubtab4').click()">Upload</button>
           <input type="file" id="ndtUpload-ndtSubtab4" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" hidden onchange="uploadNdtPreview('ndtSubtab4', this)">
           <span id="ndtUploadStatus-ndtSubtab4" role="status" class="hint"></span>
@@ -451,7 +451,7 @@
       </div>
       <div class="sub-pane" id="ndtSubtab5">
         <div class="upload-row">
-          <button onclick="openBankFormModal('ndtSubtab5')">Upload Bank form</button>
+          <button id="ndtBankButton-ndtSubtab5" onclick="openBankFormModal('ndtSubtab5')">Upload Bank form</button>
           <button type="button" id="ndtUploadButton-ndtSubtab5" onclick="document.getElementById('ndtUpload-ndtSubtab5').click()">Upload</button>
           <input type="file" id="ndtUpload-ndtSubtab5" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" hidden onchange="uploadNdtPreview('ndtSubtab5', this)">
           <span id="ndtUploadStatus-ndtSubtab5" role="status" class="hint"></span>
@@ -463,7 +463,7 @@
       </div>
       <div class="sub-pane" id="ndtSubtab6">
         <div class="upload-row">
-          <button onclick="openBankFormModal('ndtSubtab6')">Upload Bank form</button>
+          <button id="ndtBankButton-ndtSubtab6" onclick="openBankFormModal('ndtSubtab6')">Upload Bank form</button>
           <button type="button" id="ndtUploadButton-ndtSubtab6" onclick="document.getElementById('ndtUpload-ndtSubtab6').click()">Upload</button>
           <input type="file" id="ndtUpload-ndtSubtab6" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" hidden onchange="uploadNdtPreview('ndtSubtab6', this)">
           <span id="ndtUploadStatus-ndtSubtab6" role="status" class="hint"></span>
@@ -1154,7 +1154,8 @@
       }
     }
 
-    function openBankFormModal(subtabId) {
+    async function openBankFormModal(subtabId) {
+      if (REPORT_CONFIG[subtabId].report && !await canUseNdtMode(subtabId, 'bank')) return;
       activeSubtab = subtabId;
       const modal = document.getElementById('bankFormModal');
       const iframe = document.getElementById('bankFormIframe');
@@ -1211,7 +1212,7 @@
     });
 
     async function loadRecordedFiles(subtabId, { forceFresh = false } = {}) {
-      if (REPORT_CONFIG[subtabId].report) loadNdtPreviews(subtabId);
+      if (REPORT_CONFIG[subtabId].report) await loadNdtPreviews(subtabId);
       const dest = REPORT_CONFIG[subtabId].dest;
       const list = document.getElementById(`recordedFilesList-${subtabId}`);
 
@@ -1233,7 +1234,8 @@
       try {
         const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
         if (!r.ok) return;
-        const { files } = await r.json();
+        let { files } = await r.json();
+        if (REPORT_CONFIG[subtabId].report) files = files.filter(file => !isNdtPreviewFile(file));
         if (files.length === 0) {
           list.innerHTML = '<div class="recorded-files-empty">ยังไม่มีไฟล์ที่บันทึก</div>';
           return;
@@ -1720,6 +1722,7 @@
     });
 
     async function recordFile(subtabId, inspMeta) {
+      if (REPORT_CONFIG[subtabId].report && !await canUseNdtMode(subtabId, 'bank')) return;
       const selectedObjects = selectedObjectNames[subtabId];
       if (!selectedObjects || selectedObjects.length === 0) return;
       const dest = REPORT_CONFIG[subtabId].dest;
