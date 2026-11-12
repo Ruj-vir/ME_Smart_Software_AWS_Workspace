@@ -20,6 +20,9 @@ def cover_section(object_name):
         if parts[index:index + 2] == ['QAQCStep', 'MaintenanceRecord']:
             folder = parts[index + 2]
             return '/'.join(parts[:index + 3]), REPORT_TITLES.get(folder, folder)
+        if parts[index:index + 2] == ['QAQCStep', 'NDT Report']:
+            # Nested uploads belong to their NDT category, not a separate cover.
+            return '/'.join(parts[:index + 3]), parts[index + 2]
     # Data subfolders are independent sections, including nested folders.
     if 'Data' in parts[:-1]:
         return '/'.join(parts[:-1]), parts[-2]

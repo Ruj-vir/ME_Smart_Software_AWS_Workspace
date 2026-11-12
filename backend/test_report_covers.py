@@ -13,6 +13,16 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class ReportCoverTests(unittest.TestCase):
+    def test_ndt_categories_and_nested_uploads(self):
+        for category in ['Penetrant Testing Report', 'Ultrasonic Testing Report',
+                         'Magnetic Particle Testing Report', 'Hardness Testing Report',
+                         'Ultrasonic Thickness Measurement Report', 'Other']:
+            for service in ['Static Equipment', 'Rotating Equipment']:
+                prefix = f'PTTGC/Ruj_Test/{service}/Statci/QAQCStep/NDT Report/{category}'
+                for file in ['12112026_1_report.xlsx', 'Preview Uploads/report.pdf']:
+                    with self.subTest(category=category, service=service, file=file):
+                        self.assertEqual(cover_section(prefix + '/' + file), (prefix, category))
+
     def test_folder_names_and_version_folders(self):
         self.assertEqual(cover_section('Client/Data/ITP/a.pdf'), ('Client/Data/ITP', 'ITP'))
         self.assertEqual(cover_section('Client/Data/ITP/Nested/a.pdf')[1], 'Nested')
@@ -46,13 +56,17 @@ class ReportCoverTests(unittest.TestCase):
                      _convert_object_to_pdf_bytes=lambda name: buffer.getvalue())
         exec(compile(ast.Module(body=[function], type_ignores=[]), 'server.py', 'exec'), scope)
         names = ['Client/Data/ITP/a.pdf', 'Client/Data/ITP/b.pdf',
-                 'Client/Data/P&ID/a.pdf', 'Client/QAQCStep/MaintenanceRecord/Photographs/a.pdf']
-        for enabled, count in [(True, 7), (False, 4)]:
+                 'Client/Data/P&ID/a.pdf', 'Client/QAQCStep/MaintenanceRecord/Photographs/a.pdf',
+                 'Client/QAQCStep/NDT Report/Penetrant Testing Report/a.xlsx',
+                 'Client/QAQCStep/NDT Report/Penetrant Testing Report/Preview Uploads/b.pdf',
+                 'Client/QAQCStep/NDT Report/Other/c.pdf']
+        for enabled, count in [(True, 12), (False, 7)]:
             data = scope['_combine_pdf_bytes'](SimpleNamespace(object_names=names, report_covers=enabled, maintenance_cover=False))
             with pymupdf.open(stream=data, filetype='pdf') as doc:
                 self.assertEqual(len(doc), count)
                 if enabled:
-                    for index, title in [(0, 'ITP'), (3, 'P&ID'), (5, 'Photographs')]:
+                    for index, title in [(0, 'ITP'), (3, 'P&ID'), (5, 'Photographs'),
+                                         (7, 'Penetrant Testing Report'), (10, 'Other')]:
                         self.assertIn(title, doc[index].get_text())
 
 

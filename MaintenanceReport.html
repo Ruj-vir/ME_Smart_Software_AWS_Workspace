@@ -232,8 +232,8 @@
             <input type="checkbox" id="selectAllFiles" onchange="toggleSelectAll(this.checked)">
             Select all
           </label>
-          <button class="upload-blank-btn" onclick="moveSelectedFiles()">Move to</button>
-          <button class="upload-blank-btn delete-all-btn" onclick="deleteAllFiles()">Delete all</button>
+          <button class="upload-blank-btn management-action" onclick="moveSelectedFiles()">Move to</button>
+          <button class="upload-blank-btn delete-all-btn management-action" onclick="deleteAllFiles()">Delete all</button>
           <button id="uploadBlankButton" class="upload-blank-btn" style="display:none" onclick="submitSelectedFiles()">Upload blank form</button>
         </div>
       </div>
@@ -704,6 +704,7 @@
     }
 
     if (IS_SELECT) {
+      document.querySelectorAll('.management-action').forEach(button => button.remove());
       document.querySelector('.header-right').style.display = 'none';
       document.querySelectorAll('.sort-btn').forEach(b => b.style.display = 'none');
       document.getElementById('selectActions').style.display = 'flex';
@@ -730,6 +731,7 @@
       } finally { bulkBusy = false; document.querySelector('.content').inert = false; }
     }
     async function deleteAllFiles() {
+      if (IS_SELECT) return;
       if (bulkBusy) return;
       const objects = Array.from(document.querySelectorAll('#col-3 .file-select-checkbox'), cb => cb.dataset.objectName);
       if (!objects.length) return alert('No files in this folder.');
@@ -737,6 +739,7 @@
       await runBulk(objects, object => reportRequest('/browse/file?object_name=' + encodeURIComponent(object), { method: 'DELETE' }));
     }
     async function moveSelectedFiles() {
+      if (IS_SELECT) return;
       if (bulkBusy) return;
       const objects = Array.from(document.querySelectorAll('#col-3 .file-select-checkbox:checked'), cb => cb.dataset.objectName);
       if (!objects.length) return alert('Please select files to move.');

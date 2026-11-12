@@ -276,6 +276,7 @@
     html:not(.general-form-admin) #myBox { display: none !important; }
   </style>
   <script src="../assets/general-form-access.js" defer></script>
+  <script src="../assets/ndt-preview.js"></script>
 </head>
 <body>
   <header class="header">
@@ -403,50 +404,74 @@
       <div class="sub-pane active" id="ndtSubtab1">
         <div class="upload-row">
           <button onclick="openBankFormModal('ndtSubtab1')">Upload Bank form</button>
+          <button type="button" id="ndtUploadButton-ndtSubtab1" onclick="document.getElementById('ndtUpload-ndtSubtab1').click()">Upload</button>
+          <input type="file" id="ndtUpload-ndtSubtab1" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" hidden onchange="uploadNdtPreview('ndtSubtab1', this)">
+          <span id="ndtUploadStatus-ndtSubtab1" role="status" class="hint"></span>
           <span id="selectedBankForm-ndtSubtab1" style="font-size:13px; color:#154360; font-weight:600;"></span>
           <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab1" onclick="recordFile('ndtSubtab1')" style="display:none; margin-left:auto;">Record</button>
         </div>
         <div id="recordedFilesList-ndtSubtab1" style="margin-top:8px;"></div>
+        <div id="ndtPreviews-ndtSubtab1"></div>
       </div>
       <div class="sub-pane" id="ndtSubtab2">
         <div class="upload-row">
           <button onclick="openBankFormModal('ndtSubtab2')">Upload Bank form</button>
+          <button type="button" id="ndtUploadButton-ndtSubtab2" onclick="document.getElementById('ndtUpload-ndtSubtab2').click()">Upload</button>
+          <input type="file" id="ndtUpload-ndtSubtab2" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" hidden onchange="uploadNdtPreview('ndtSubtab2', this)">
+          <span id="ndtUploadStatus-ndtSubtab2" role="status" class="hint"></span>
           <span id="selectedBankForm-ndtSubtab2" style="font-size:13px; color:#154360; font-weight:600;"></span>
           <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab2" onclick="recordFile('ndtSubtab2')" style="display:none; margin-left:auto;">Record</button>
         </div>
         <div id="recordedFilesList-ndtSubtab2" style="margin-top:8px;"></div>
+        <div id="ndtPreviews-ndtSubtab2"></div>
       </div>
       <div class="sub-pane" id="ndtSubtab3">
         <div class="upload-row">
           <button onclick="openBankFormModal('ndtSubtab3')">Upload Bank form</button>
+          <button type="button" id="ndtUploadButton-ndtSubtab3" onclick="document.getElementById('ndtUpload-ndtSubtab3').click()">Upload</button>
+          <input type="file" id="ndtUpload-ndtSubtab3" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" hidden onchange="uploadNdtPreview('ndtSubtab3', this)">
+          <span id="ndtUploadStatus-ndtSubtab3" role="status" class="hint"></span>
           <span id="selectedBankForm-ndtSubtab3" style="font-size:13px; color:#154360; font-weight:600;"></span>
           <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab3" onclick="recordFile('ndtSubtab3')" style="display:none; margin-left:auto;">Record</button>
         </div>
         <div id="recordedFilesList-ndtSubtab3" style="margin-top:8px;"></div>
+        <div id="ndtPreviews-ndtSubtab3"></div>
       </div>
       <div class="sub-pane" id="ndtSubtab4">
         <div class="upload-row">
           <button onclick="openBankFormModal('ndtSubtab4')">Upload Bank form</button>
+          <button type="button" id="ndtUploadButton-ndtSubtab4" onclick="document.getElementById('ndtUpload-ndtSubtab4').click()">Upload</button>
+          <input type="file" id="ndtUpload-ndtSubtab4" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" hidden onchange="uploadNdtPreview('ndtSubtab4', this)">
+          <span id="ndtUploadStatus-ndtSubtab4" role="status" class="hint"></span>
           <span id="selectedBankForm-ndtSubtab4" style="font-size:13px; color:#154360; font-weight:600;"></span>
           <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab4" onclick="recordFile('ndtSubtab4')" style="display:none; margin-left:auto;">Record</button>
         </div>
         <div id="recordedFilesList-ndtSubtab4" style="margin-top:8px;"></div>
+        <div id="ndtPreviews-ndtSubtab4"></div>
       </div>
       <div class="sub-pane" id="ndtSubtab5">
         <div class="upload-row">
           <button onclick="openBankFormModal('ndtSubtab5')">Upload Bank form</button>
+          <button type="button" id="ndtUploadButton-ndtSubtab5" onclick="document.getElementById('ndtUpload-ndtSubtab5').click()">Upload</button>
+          <input type="file" id="ndtUpload-ndtSubtab5" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" hidden onchange="uploadNdtPreview('ndtSubtab5', this)">
+          <span id="ndtUploadStatus-ndtSubtab5" role="status" class="hint"></span>
           <span id="selectedBankForm-ndtSubtab5" style="font-size:13px; color:#154360; font-weight:600;"></span>
           <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab5" onclick="recordFile('ndtSubtab5')" style="display:none; margin-left:auto;">Record</button>
         </div>
         <div id="recordedFilesList-ndtSubtab5" style="margin-top:8px;"></div>
+        <div id="ndtPreviews-ndtSubtab5"></div>
       </div>
       <div class="sub-pane" id="ndtSubtab6">
         <div class="upload-row">
           <button onclick="openBankFormModal('ndtSubtab6')">Upload Bank form</button>
+          <button type="button" id="ndtUploadButton-ndtSubtab6" onclick="document.getElementById('ndtUpload-ndtSubtab6').click()">Upload</button>
+          <input type="file" id="ndtUpload-ndtSubtab6" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" hidden onchange="uploadNdtPreview('ndtSubtab6', this)">
+          <span id="ndtUploadStatus-ndtSubtab6" role="status" class="hint"></span>
           <span id="selectedBankForm-ndtSubtab6" style="font-size:13px; color:#154360; font-weight:600;"></span>
           <button type="button" class="insp-btn-addrow" id="recordBtn-ndtSubtab6" onclick="recordFile('ndtSubtab6')" style="display:none; margin-left:auto;">Record</button>
         </div>
         <div id="recordedFilesList-ndtSubtab6" style="margin-top:8px;"></div>
+        <div id="ndtPreviews-ndtSubtab6"></div>
       </div>
     </div>
 
@@ -664,16 +689,16 @@
       return (files || []).filter(f => f.name.toLowerCase().endsWith('.pdf'));
     }
 
-    // Only one PDF is ever expanded inline at a time — opening another one collapses the previous.
-    let openITPWrap = null;
+    // Each PDF stays expanded independently so all files can be viewed on entry.
+    const openITPWraps = new Set();
 
-    function closeInlineITPPdf() {
-      if (!openITPWrap) return;
-      const pdfDiv = openITPWrap.querySelector('.itp-inline-pdf');
+    function closeInlineITPPdf(wrap) {
+      if (!openITPWraps.has(wrap)) return;
+      const pdfDiv = wrap.querySelector('.itp-inline-pdf');
       pdfDiv.classList.remove('open');
       pdfDiv.innerHTML = '';
-      openITPWrap.classList.remove('open');
-      openITPWrap = null;
+      wrap.classList.remove('open');
+      openITPWraps.delete(wrap);
     }
 
     // Embeds the PDF Stamp tool right here (same page, no new tab) — it loads this file from the
@@ -681,19 +706,18 @@
     // exists), lets you view/draw/comment/sign, and saves back to that companion via its own
     // "Save to ITP folder" button.
     function openInlineITPPdf(wrap, objectName) {
-      if (openITPWrap === wrap) {
-        closeInlineITPPdf();
+      if (openITPWraps.has(wrap)) {
+        closeInlineITPPdf(wrap);
         // Only rebuild the list now (not while it was open) — refreshing mid-session would
         // destroy the live embedded tool the user might still be working in.
-        if (itpListNeedsRefresh) { itpListNeedsRefresh = false; loadITPFileList(); }
+        if (itpListNeedsRefresh && openITPWraps.size === 0) { itpListNeedsRefresh = false; loadITPFileList(); }
         return;
       }
-      closeInlineITPPdf();
       const fileName = objectName.split('/').pop();
       const pdfDiv = wrap.querySelector('.itp-inline-pdf');
       pdfDiv.classList.add('open');
       wrap.classList.add('open');
-      openITPWrap = wrap;
+      openITPWraps.add(wrap);
 
       const params = new URLSearchParams({ company, plant, service, package: pkg, file: fileName, embed: '1' });
       pdfDiv.innerHTML = `<iframe class="itp-pdf-frame" src="${'PDF Stamp.html?' + params.toString()}"></iframe>`;
@@ -740,7 +764,7 @@
     // Persistent list shown under the upload buttons — reloaded from the server so it survives page reloads.
     async function loadITPFileList() {
       const list = document.getElementById('itpFileList');
-      openITPWrap = null;
+      openITPWraps.clear();
       list.innerHTML = '<div class="itp-data-empty">Loading...</div>';
       try {
         const pdfs = await fetchITPPdfFiles();
@@ -749,7 +773,11 @@
           return;
         }
         list.innerHTML = '';
-        pdfs.forEach(f => list.appendChild(buildITPFileItem(f)));
+        pdfs.forEach(f => {
+          const wrap = buildITPFileItem(f);
+          list.appendChild(wrap);
+          openInlineITPPdf(wrap, f.object_name);
+        });
       } catch (err) {
         list.innerHTML = '<div class="itp-data-error">Failed to load files from the ITP folder.</div>';
       }
@@ -758,7 +786,7 @@
     function openITPObjectInline(objectName) {
       const wrap = document.querySelector(`#itpFileList .itp-file-item[data-object="${CSS.escape(objectName)}"]`);
       if (!wrap) return;
-      openInlineITPPdf(wrap, objectName);
+      if (!openITPWraps.has(wrap)) openInlineITPPdf(wrap, objectName);
       wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
@@ -844,16 +872,16 @@
       return (files || []).filter(f => f.name.toLowerCase().endsWith('.pdf'));
     }
 
-    // Only one PDF is ever expanded inline at a time — opening another one collapses the previous.
-    let openQAQCWrap = null;
+    // Each PDF stays expanded independently so all files can be viewed on entry.
+    const openQAQCWraps = new Set();
 
-    function closeInlineQAQCPdf() {
-      if (!openQAQCWrap) return;
-      const pdfDiv = openQAQCWrap.querySelector('.itp-inline-pdf');
+    function closeInlineQAQCPdf(wrap) {
+      if (!openQAQCWraps.has(wrap)) return;
+      const pdfDiv = wrap.querySelector('.itp-inline-pdf');
       pdfDiv.classList.remove('open');
       pdfDiv.innerHTML = '';
-      openQAQCWrap.classList.remove('open');
-      openQAQCWrap = null;
+      wrap.classList.remove('open');
+      openQAQCWraps.delete(wrap);
     }
 
     // Embeds the PDF Stamp tool right here (same page, no new tab) — it loads this file from the
@@ -861,19 +889,18 @@
     // exists), lets you view/draw/comment/sign, and saves back to that companion via its own
     // "Save to QAQC control folder" button.
     function openInlineQAQCPdf(wrap, objectName) {
-      if (openQAQCWrap === wrap) {
-        closeInlineQAQCPdf();
+      if (openQAQCWraps.has(wrap)) {
+        closeInlineQAQCPdf(wrap);
         // Only rebuild the list now (not while it was open) — refreshing mid-session would
         // destroy the live embedded tool the user might still be working in.
-        if (qaqcListNeedsRefresh) { qaqcListNeedsRefresh = false; loadQAQCFileList(); }
+        if (qaqcListNeedsRefresh && openQAQCWraps.size === 0) { qaqcListNeedsRefresh = false; loadQAQCFileList(); }
         return;
       }
-      closeInlineQAQCPdf();
       const fileName = objectName.split('/').pop();
       const pdfDiv = wrap.querySelector('.itp-inline-pdf');
       pdfDiv.classList.add('open');
       wrap.classList.add('open');
-      openQAQCWrap = wrap;
+      openQAQCWraps.add(wrap);
 
       const params = new URLSearchParams({ company, plant, service, package: pkg, file: fileName, embed: '1', section: 'qaqc-control' });
       pdfDiv.innerHTML = `<iframe class="itp-pdf-frame" src="${'PDF Stamp.html?' + params.toString()}"></iframe>`;
@@ -920,7 +947,7 @@
     // Persistent list shown under the upload buttons — reloaded from the server so it survives page reloads.
     async function loadQAQCFileList() {
       const list = document.getElementById('qaqcFileList');
-      openQAQCWrap = null;
+      openQAQCWraps.clear();
       list.innerHTML = '<div class="itp-data-empty">Loading...</div>';
       try {
         const pdfs = await fetchQAQCPdfFiles();
@@ -929,7 +956,11 @@
           return;
         }
         list.innerHTML = '';
-        pdfs.forEach(f => list.appendChild(buildQAQCFileItem(f)));
+        pdfs.forEach(f => {
+          const wrap = buildQAQCFileItem(f);
+          list.appendChild(wrap);
+          openInlineQAQCPdf(wrap, f.object_name);
+        });
       } catch (err) {
         list.innerHTML = '<div class="itp-data-error">Failed to load files from the QAQC control folder.</div>';
       }
@@ -938,7 +969,7 @@
     function openQAQCObjectInline(objectName) {
       const wrap = document.querySelector(`#qaqcFileList .itp-file-item[data-object="${CSS.escape(objectName)}"]`);
       if (!wrap) return;
-      openInlineQAQCPdf(wrap, objectName);
+      if (!openQAQCWraps.has(wrap)) openInlineQAQCPdf(wrap, objectName);
       wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
@@ -1180,6 +1211,7 @@
     });
 
     async function loadRecordedFiles(subtabId, { forceFresh = false } = {}) {
+      if (REPORT_CONFIG[subtabId].report) loadNdtPreviews(subtabId);
       const dest = REPORT_CONFIG[subtabId].dest;
       const list = document.getElementById(`recordedFilesList-${subtabId}`);
 
