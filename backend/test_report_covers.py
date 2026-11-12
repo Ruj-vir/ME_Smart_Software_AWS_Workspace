@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import pymupdf
 from pypdf import PdfReader, PdfWriter
 from report_covers import cover_section, create_cover_pdf
+from office_sessions import SnapshotStore
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -53,7 +54,9 @@ class ReportCoverTests(unittest.TestCase):
                      ThreadPoolExecutor=ThreadPoolExecutor, COMBINE_PDF_MAX_WORKERS=5,
                      CombinePdfRequest=SimpleNamespace, STATIC_DIR=ROOT,
                      cover_section=cover_section, create_cover_pdf=create_cover_pdf,
-                     _convert_object_to_pdf_bytes=lambda name: buffer.getvalue())
+                     ONLYOFFICE_DOC_TYPES={}, office_snapshots=SnapshotStore(),
+                     _read_object=lambda name: buffer.getvalue(),
+                     _convert_object_to_pdf_bytes=lambda name, token: buffer.getvalue())
         exec(compile(ast.Module(body=[function], type_ignores=[]), 'server.py', 'exec'), scope)
         names = ['Client/Data/ITP/a.pdf', 'Client/Data/ITP/b.pdf',
                  'Client/Data/P&ID/a.pdf', 'Client/QAQCStep/MaintenanceRecord/Photographs/a.pdf',

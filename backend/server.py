@@ -25,10 +25,13 @@ import requests  # type: ignore[import-untyped]
 import jwt
 import zipfile
 import json
+import logging
 from pypdf import PdfReader, PdfWriter
 from pdf_jobs import PdfJobs
 from report_covers import cover_section, create_cover_pdf
 from pdf_layout import fit_pages_to_a4
+from office_sessions import OfficeSessions, SnapshotStore
+from threading import BoundedSemaphore
 
 load_dotenv()
 
@@ -533,6 +536,10 @@ ONLYOFFICE_URL         = os.getenv("ONLYOFFICE_URL", "http://localhost:8080")
 ONLYOFFICE_BACKEND_URL = os.getenv("ONLYOFFICE_BACKEND_URL", "http://host.docker.internal:8000")
 ONLYOFFICE_JWT_SECRET  = os.getenv("ONLYOFFICE_JWT_SECRET", "")
 ONLYOFFICE_DOCSERVER_URL = os.getenv("ONLYOFFICE_DOCSERVER_URL", "")
+office_sessions = OfficeSessions(os.path.join(
+    os.getenv("ONLYOFFICE_STATE_DIR", os.path.join(os.path.dirname(__file__), ".office-state")),
+    "sessions.sqlite3"))
+office_snapshots = SnapshotStore()
 
 # นามสกุลไฟล์ที่ OnlyOffice รองรับการแก้ไข → documentType ที่ต้องส่งให้ DocEditor
 ONLYOFFICE_DOC_TYPES = {
@@ -557,9 +564,10 @@ def onlyoffice_config(object_name: str, username: str = "Guest"):
         raise HTTPException(404, "File not found in MinIO")
 
     filename = object_name.split("/")[-1]
-    # key ต้องเปลี่ยนทุกครั้งที่ไฟล์เปลี่ยน เพื่อให้ OnlyOffice ไม่ใช้ cache เก่า
+    # Keep one key throughout co-editing, including force saves. Rotate only
+    # after final save, or replacement of an inactive document.
     etag = (stat.etag or "").strip('"')
-    doc_key = hashlib.md5(f"{object_name}:{etag}".encode(), usedforsecurity=False).hexdigest()
+    doc_key = office_sessions.key(object_name, etag)
 
     config = {
         "document": {
@@ -574,7 +582,7 @@ def onlyoffice_config(object_name: str, username: str = "Guest"):
             "callbackUrl": f"{ONLYOFFICE_BACKEND_URL}/api/onlyoffice/callback?object_name={quote(object_name)}",
             "lang": "en",
             "mode": "edit",
-            "user": {"id": username, "name": username},
+            "user": {"id": username if username != "Guest" else uuid.uuid4().hex, "name": username},
         },
         "type": "desktop",
     }
@@ -589,16 +597,10 @@ def onlyoffice_config(object_name: str, username: str = "Guest"):
 def onlyoffice_download(object_name: str):
     """ให้ OnlyOffice Document Server ดึงไฟล์ต้นฉบับจาก MinIO ไปเปิดแก้ไข"""
     try:
-        response = mc.get_object(MINIO_BUCKET, object_name)
-        data = response.read()
+        data, filetype = office_sessions.source(object_name, lambda: _read_object(object_name))
     except S3Error:
         raise HTTPException(404, "File not found")
-    finally:
-        with suppress(Exception):
-            response.close()
-            response.release_conn()
-
-    media_type = mimetypes.guess_type(object_name)[0] or "application/octet-stream"
+    media_type = mimetypes.guess_type(f"file.{filetype}")[0] or "application/octet-stream"
     filename = object_name.split("/")[-1]
     return Response(
         content=data,
@@ -616,31 +618,72 @@ async def onlyoffice_callback(object_name: str, request: Request):
         auth_header = request.headers.get("Authorization", "")
         token = body.get("token") or auth_header.removeprefix("Bearer ")
         try:
-            jwt.decode(token, ONLYOFFICE_JWT_SECRET, algorithms=["HS256"])
+            claims = jwt.decode(token, ONLYOFFICE_JWT_SECRET, algorithms=["HS256"])
+            body = claims.get("payload", claims)
         except jwt.PyJWTError:
             raise HTTPException(403, "Invalid JWT token")
 
-    status = body.get("status")
     # Network/storage operations must not block the event loop: PDF job polling
     # and OnlyOffice source downloads need to remain responsive during a save.
-    await run_in_threadpool(_save_onlyoffice_callback, object_name, status, body.get("url"))
+    try:
+        await run_in_threadpool(_save_onlyoffice_callback, object_name, body)
+    except Exception:
+        # Do not acknowledge a failed write: Document Server must retain it for retry.
+        logging.getLogger(__name__).exception("ONLYOFFICE callback failed for %s", object_name)
+        return JSONResponse(status_code=500, content={"error": 1})
     return {"error": 0}
 
 
-def _save_onlyoffice_callback(object_name: str, status: int, download_url: str | None):
-    if status in (2, 6):  # 2 = MustSave, 6 = MustForceSave
-        if download_url:
-            if ONLYOFFICE_DOCSERVER_URL:
-                import re
-                download_url = re.sub(r'^https?://[^/]+', ONLYOFFICE_DOCSERVER_URL, download_url)
-            resp = requests.get(download_url, timeout=60)
-            resp.raise_for_status()
-            data = resp.content
-            mc.put_object(
-                MINIO_BUCKET, object_name,
-                io.BytesIO(data), length=len(data),
-                content_type=mimetypes.guess_type(object_name)[0] or "application/octet-stream",
-            )
+def _office_download(download_url):
+    if ONLYOFFICE_DOCSERVER_URL:
+        import re
+        download_url = re.sub(r'^https?://[^/]+', ONLYOFFICE_DOCSERVER_URL, download_url)
+    resp = requests.get(download_url, timeout=60)
+    resp.raise_for_status()
+    return resp.content
+
+
+def _object_etag(object_name):
+    return (mc.stat_object(MINIO_BUCKET, object_name).etag or "").strip('"')
+
+
+def _read_object(object_name):
+    response = mc.get_object(MINIO_BUCKET, object_name)
+    try:
+        return response.read()
+    finally:
+        response.close()
+        response.release_conn()
+
+
+def _save_onlyoffice_callback(object_name: str, body: dict):
+    def save(data):
+        mc.put_object(MINIO_BUCKET, object_name, io.BytesIO(data), length=len(data),
+                      content_type=mimetypes.guess_type(object_name)[0] or "application/octet-stream")
+    office_sessions.callback(object_name, body, _office_download, save,
+                             lambda: _object_etag(object_name))
+
+
+def _office_force_save(key, request_id):
+    body = {"c": "forcesave", "key": key, "userdata": request_id}
+    headers = {"Accept": "application/json"}
+    if ONLYOFFICE_JWT_SECRET:
+        body["token"] = jwt.encode(body, ONLYOFFICE_JWT_SECRET, algorithm="HS256")
+        headers["Authorization"] = f"Bearer {body['token']}"
+    response = requests.post(f"{ONLYOFFICE_CONVERT_BASE}/command", params={"shardkey": key},
+                             json=body, headers=headers, timeout=30)
+    response.raise_for_status()
+    return response.json().get("error")
+
+
+@app.get("/api/onlyoffice/snapshots/{token}")
+def onlyoffice_snapshot_download(token: str):
+    snapshot = office_snapshots.get(token)
+    if snapshot is None:
+        raise HTTPException(404, "Snapshot expired. Generate again.")
+    data, ext = snapshot
+    return Response(content=data, media_type=mimetypes.guess_type(f"file.{ext}")[0]
+                    or "application/octet-stream", headers={"Cache-Control": "no-store"})
 
 # ══════════════════════════════════════════════════════
 #  COMBINE FILES INTO ONE PDF (preview only — nothing saved to MinIO)
@@ -652,29 +695,25 @@ ONLYOFFICE_CONVERT_BASE = ONLYOFFICE_DOCSERVER_URL or ONLYOFFICE_URL
 # hit the reverse-proxy timeout — convert concurrently instead. Capped so a large
 # selection doesn't flood the single OnlyOffice Document Server instance at once.
 COMBINE_PDF_MAX_WORKERS = 5
+office_conversion_slots = BoundedSemaphore(COMBINE_PDF_MAX_WORKERS)
 
 class CombinePdfRequest(BaseModel):
     object_names: list[str]
     maintenance_cover: bool = False
     report_covers: bool = False
 
-def _convert_object_to_pdf_bytes(object_name: str) -> bytes:
-    ext = object_name.rsplit(".", 1)[-1].lower()
+def _convert_object_to_pdf_bytes(object_name: str, snapshot_token: str) -> bytes:
+    snapshot = office_snapshots.get(snapshot_token)
+    if snapshot is None:
+        raise HTTPException(409, "Snapshot expired. Generate again.")
+    source_bytes, ext = snapshot
     filename = object_name.split("/")[-1]
 
     if ext == "pdf":
         # Already a PDF (e.g. an Inspection Report folder whose original upload was
         # a PDF, not an Excel file) — nothing to convert, OnlyOffice's ConvertService
-        # rejects a pdf->pdf request. Just fetch it from MinIO as-is.
-        try:
-            response = mc.get_object(MINIO_BUCKET, object_name)
-            return response.read()
-        except S3Error:
-            raise HTTPException(404, f"ไม่พบไฟล์ '{filename}'")
-        finally:
-            with suppress(Exception):
-                response.close()
-                response.release_conn()
+        # rejects a pdf->pdf request. Use the already-frozen PDF bytes as-is.
+        return source_bytes
 
     body = {
         "async": False,
@@ -682,7 +721,7 @@ def _convert_object_to_pdf_bytes(object_name: str) -> bytes:
         "key": hashlib.md5(f"{object_name}:{uuid.uuid4()}".encode(), usedforsecurity=False).hexdigest(),
         "outputtype": "pdf",
         "title": filename,
-        "url": f"{ONLYOFFICE_BACKEND_URL}/api/onlyoffice/download?object_name={quote(object_name)}",
+        "url": f"{ONLYOFFICE_BACKEND_URL}/api/onlyoffice/snapshots/{snapshot_token}",
     }
     if ONLYOFFICE_DOC_TYPES.get(ext) == "cell":
         # Honor the saved print area shown in Page Break Preview. Leave scale,
@@ -695,27 +734,45 @@ def _convert_object_to_pdf_bytes(object_name: str) -> bytes:
         body["token"] = token
         headers["Authorization"] = f"Bearer {token}"
 
-    resp = requests.post(f"{ONLYOFFICE_CONVERT_BASE}/ConvertService.ashx", json=body, headers=headers, timeout=90)
+    with office_conversion_slots:
+        resp = requests.post(f"{ONLYOFFICE_CONVERT_BASE}/ConvertService.ashx", json=body, headers=headers, timeout=90)
     resp.raise_for_status()
     result = resp.json()
     if not result.get("endConvert"):
         raise HTTPException(502, f"แปลง '{filename}' เป็น PDF ไม่สำเร็จ: {result.get('error', result)}")
 
-    pdf_resp = requests.get(result["fileUrl"], timeout=90)
-    pdf_resp.raise_for_status()
+    pdf_data = _office_download(result["fileUrl"])
     if ONLYOFFICE_DOC_TYPES.get(ext) == "cell":
         # Enlarge each printed page independently; retain saved pagination.
-        return fit_pages_to_a4(pdf_resp.content)
-    return pdf_resp.content
+        return fit_pages_to_a4(pdf_data)
+    return pdf_data
 
 def _combine_pdf_bytes(payload: CombinePdfRequest):
     if not payload.object_names:
         raise HTTPException(400, "No files selected")
 
-    # ThreadPoolExecutor.map preserves input order in its results even though the
-    # underlying conversions complete concurrently/out of order.
-    with ThreadPoolExecutor(max_workers=min(COMBINE_PDF_MAX_WORKERS, len(payload.object_names))) as executor:
-        pdf_bytes_list = list(executor.map(_convert_object_to_pdf_bytes, payload.object_names))
+    snapshots = {}
+    try:
+        # Freeze ALL selected sources before starting conversion. Duplicate
+        # selections share one immutable copy and preserve the requested order.
+        for object_name in dict.fromkeys(payload.object_names):
+            ext = object_name.rsplit('.', 1)[-1].lower()
+            try:
+                if ext in ONLYOFFICE_DOC_TYPES:
+                    data, ext = office_sessions.snapshot(
+                        object_name, lambda: _object_etag(object_name),
+                        lambda: _read_object(object_name), _office_force_save)
+                else:
+                    data = _read_object(object_name)
+                snapshots[object_name] = office_snapshots.add(data, ext)
+            except Exception as exc:
+                raise HTTPException(502, f"Cannot prepare '{object_name.split('/')[-1]}': {exc}") from exc
+        with ThreadPoolExecutor(max_workers=min(COMBINE_PDF_MAX_WORKERS, len(payload.object_names))) as executor:
+            pdf_bytes_list = list(executor.map(
+                lambda name: _convert_object_to_pdf_bytes(name, snapshots[name]), payload.object_names))
+    finally:
+        for token in snapshots.values():
+            office_snapshots.remove(token)
 
     writer = PdfWriter()
     added_covers = set()

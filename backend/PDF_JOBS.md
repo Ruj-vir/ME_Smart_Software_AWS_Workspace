@@ -1,6 +1,10 @@
 Report Demo PDF generation
 =========================
 
+Concurrent editing and immutable sources are documented in ONLYOFFICE_GENERATE.md.
+Deploy the office_session_data volume with the backend to preserve session keys
+and acknowledged force-save copies.
+
 Report_Demo.html now POSTs /api/combine-pdf-jobs, polls the job every two
 seconds, and downloads /api/combine-pdf-jobs/{job_id}/result once ready.
 Conversion no longer holds a browser request open past a proxy's 60-second

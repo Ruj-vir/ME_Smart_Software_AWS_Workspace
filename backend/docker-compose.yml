@@ -87,6 +87,9 @@ services:
       - DB_PORT=5432
       - ONLYOFFICE_BACKEND_URL=http://backend:8000
       - ONLYOFFICE_DOCSERVER_URL=http://onlyoffice
+      - ONLYOFFICE_STATE_DIR=/var/lib/me-smart-office
+    volumes:
+      - office_session_data:/var/lib/me-smart-office
     depends_on:
       postgres:
         condition: service_healthy
@@ -116,3 +119,4 @@ volumes:
   onlyoffice_data:
   onlyoffice_log:
   onlyoffice_cache:
+  office_session_data:

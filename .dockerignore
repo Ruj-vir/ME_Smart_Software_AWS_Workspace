@@ -1,0 +1,5 @@
+**/.office-state
+**/__pycache__
+**/.venv
+**/.env
+**/pgadmin_pgpass
