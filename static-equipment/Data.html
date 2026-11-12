@@ -423,7 +423,7 @@
   <div id="homePopup">
     <button data-link="../Main.html">Home</button>
     <button data-link="../Plant Selection.html">Plant Selection</button>
-    <button data-link="../Package Selection.html">Package Selection</button>
+    <button data-link="Package Selection.html">Package Selection</button>
   </div>
 
   <div id="toast-container"></div>
@@ -582,7 +582,7 @@
       let html = `<a href="../Main.html" style="${lnk}">Home</a>`;
       if (_company) html += ` &gt; <a href="../Plant Selection.html?plant=${encodeURIComponent(_company)}" style="${lnk}">${_company}</a>`;
       if (_plant)   html += ` &gt; <a href="../Service.html?company=${encodeURIComponent(_company)}&plant=${encodeURIComponent(_plant)}" style="${lnk}">${_plant}</a>`;
-      if (_service) html += ` &gt; <a href="../Package Selection.html?company=${encodeURIComponent(_company)}&plant=${encodeURIComponent(_plant)}&service=${encodeURIComponent(_service)}" style="${lnk}">${_service}</a>`;
+      if (_service) html += ` &gt; <a href="Package Selection.html?company=${encodeURIComponent(_company)}&plant=${encodeURIComponent(_plant)}&service=${encodeURIComponent(_service)}" style="${lnk}">${_service}</a>`;
       if (_pkg)     html += ` &gt; <a href="Package Default.html?${ctx}" style="${lnk}">${_pkg}</a>`;
 
       // Data root

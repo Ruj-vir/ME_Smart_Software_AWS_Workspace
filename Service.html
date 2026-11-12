@@ -240,7 +240,10 @@
 
       wrapper.onclick = () => {
         const params = new URLSearchParams({ company, plant, service: label });
-        window.location.href = `Package Selection.html?${params.toString()}`;
+        const packagePage = label === "Static Equipment"
+          ? "static-equipment/Package Selection.html"
+          : "Package Selection.html";
+        window.location.href = `${packagePage}?${params.toString()}`;
       };
 
       wrapper.appendChild(span);

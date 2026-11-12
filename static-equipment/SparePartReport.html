@@ -663,7 +663,7 @@
       const backParams = new URLSearchParams();
       ['company', 'plant', 'service'].forEach(k => { if (qp.get(k)) backParams.set(k, qp.get(k)); });
       const qs = backParams.toString();
-      document.getElementById('generalFormLink').href = '../Package Selection.html' + (qs ? '?' + qs : '');
+      document.getElementById('generalFormLink').href = 'Package Selection.html' + (qs ? '?' + qs : '');
     })();
     // ── MULTI-SELECT (Bank Form picker) ───────────────────
     function toggleSelectAll(checked) {
