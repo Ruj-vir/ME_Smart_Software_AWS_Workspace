@@ -1235,9 +1235,10 @@
         const r = await fetch(`/api/browse?prefix=${encodeURIComponent(dest)}`);
         if (!r.ok) return;
         let { files } = await r.json();
+        const hasNdtPreviews = REPORT_CONFIG[subtabId].report && files.some(isNdtPreviewFile);
         if (REPORT_CONFIG[subtabId].report) files = files.filter(file => !isNdtPreviewFile(file));
         if (files.length === 0) {
-          list.innerHTML = '<div class="recorded-files-empty">ยังไม่มีไฟล์ที่บันทึก</div>';
+          list.innerHTML = hasNdtPreviews ? '' : '<div class="recorded-files-empty">ยังไม่มีไฟล์ที่บันทึก</div>';
           return;
         }
 
