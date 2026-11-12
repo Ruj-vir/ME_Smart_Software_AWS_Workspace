@@ -211,6 +211,9 @@
     .folder img, .file img { width: 64px; height: 64px; }
     .folder:hover { background: #e0f0ff; border-radius: 8px; }
     .folder .name, .file .name { margin-top: 8px; word-break: break-word; }
+    .folder.primary-default { background: #eaf5ff; border-radius: 8px; box-shadow: inset 0 0 0 1px #b6dcfa; }
+    .folder.primary-default .name { color: #125b96; font-weight: 600; }
+    .folder.primary-default:hover { background: #d5ebff; }
     .folder.selected, .file.selected { background: #cce5ff; border-radius: 8px; outline: 2px solid #0078d7; }
 
     .item-checkbox {
@@ -503,7 +506,7 @@
     }
 
     // โฟลเดอร์เริ่มต้นที่ต้องมีเสมอใน Data root
-    const DEFAULT_FOLDERS = [
+    const PRIMARY_DEFAULT_FOLDERS = [
       'Organization',
       'Schedule',
       'Plot Plan',
@@ -524,6 +527,10 @@
       'Inspection Check',
       'Insulation',
       'Scaffolding',
+    ];
+    const primaryDefaultFolderNames = new Set(PRIMARY_DEFAULT_FOLDERS);
+    const DEFAULT_FOLDERS = [
+      ...PRIMARY_DEFAULT_FOLDERS,
       'Provision checklist',
       'Site survey checklist',
       'Curriculum Vitae',
@@ -738,6 +745,9 @@
         folders.forEach(f => {
           const div = document.createElement('div');
           div.className = 'folder';
+          if (pathStack.length === 0 && primaryDefaultFolderNames.has(f.name)) {
+            div.classList.add('primary-default');
+          }
 
           const cb = document.createElement('input');
           cb.type = 'checkbox';
