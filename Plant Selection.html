@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -19,7 +19,9 @@
     .header {
       background: linear-gradient(to right, #d6eaf8, #aed6f1);
       padding: 20px 40px;
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      column-gap: 20px;
       align-items: center;
       justify-content: space-between;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -46,12 +48,11 @@
     }
 
     .center-title {
-      flex: 1;
+      grid-column: 2;
       text-align: center;
       font-size: 28px;
       font-weight: bold;
       color: #154360;
-      margin-right: 100px;
     }
 
     .content {
@@ -174,6 +175,28 @@
     .btn-cancel {
       background-color: #ccc;
       color: #333;
+    }
+
+    /* Equal side columns keep the title centered across the entire header. */
+    .header > .logo-container {
+      min-width: 0;
+    }
+
+    .header > .header-nav {
+      justify-self: end;
+    }
+
+    @media (max-width: 900px) {
+      .header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        row-gap: 12px;
+      }
+
+      .header > .center-title {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        margin: 0;
+      }
     }
   </style>
 </head>
