@@ -77,6 +77,10 @@
     }
 
     .big-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 110px;
       background: linear-gradient(to right, hsl(0, 0%, 100%), hwb(255 92% 0%));
       color: rgb(89, 0, 255);
       padding: 30px 30px;
@@ -86,6 +90,10 @@
       box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
       cursor: pointer;
       transition: transform 0.2s, box-shadow 0.3s, background 0.3s;
+    }
+
+    .big-button .logo {
+      margin-bottom: 0;
     }
 
     .big-button:hover {
@@ -134,7 +142,7 @@
   <!-- Header Section -->
   <div class="header">
     <div class="logo-container">
-      <img src="GCME_Logo.png" alt="Company Logo" class="logo">
+      <a href="Main.html" aria-label="Go to ME SMART home" title="ME SMART Home" style="display: inline-flex;"><img src="GCME_Logo.png" alt="Company Logo" class="logo"></a>
       <div class="company-name">GC Maintenance and Engineering Co.,LTD.</div>
     </div>
 

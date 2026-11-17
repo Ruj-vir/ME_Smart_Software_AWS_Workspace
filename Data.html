@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -144,7 +144,7 @@
       .header-nav { display: none; }
     }
 
-    .top-right { position: relative; }
+    .top-right { position: relative; flex-shrink: 0; margin-left: auto; }
 
     .add-button {
       width: 40px; height: 40px;
@@ -195,7 +195,8 @@
       box-shadow: 0 0 10px #ccc;
     }
 
-    .breadcrumb { margin-bottom: 15px; font-size: 14px; }
+    .breadcrumb-row { display: flex; align-items: center; gap: 16px; margin-bottom: 15px; }
+    .breadcrumb { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
     .breadcrumb span { cursor: pointer; color: #0078d7; margin-right: 5px; }
     .breadcrumb span:last-child { color: #333; cursor: default; }
 
@@ -358,7 +359,7 @@
 
   <header class="header">
     <div class="logo-container">
-      <img src="GCME_Logo.png" alt="GCME Logo" class="logo" />
+      <a href="Main.html" aria-label="Go to ME SMART home" title="ME SMART Home" style="display: inline-flex;"><img src="GCME_Logo.png" alt="GCME Logo" class="logo" /></a>
       <div class="company-name">GC Maintenance and Engineering Co.,LTD.</div>
     </div>
     <div class="center-title">QAQC ONLINE APPLICATION - Data</div>
@@ -403,17 +404,20 @@
       </div>
     </div>
 
-    <div class="top-right">
-      <div class="add-button" id="addBtn" title="Add">+</div>
-      <div class="popup-options" id="popupOptions">
-        <button id="newFolderBtn">New folder</button>
-        <button id="uploadFileBtn">Upload file</button>
-      </div>
-    </div>
+
   </header>
 
   <div class="container">
-    <div class="breadcrumb" id="breadcrumb"></div>
+    <div class="breadcrumb-row">
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <div class="top-right">
+        <div class="add-button" id="addBtn" title="Add">+</div>
+        <div class="popup-options" id="popupOptions">
+          <button id="newFolderBtn">New folder</button>
+          <button id="uploadFileBtn">Upload file</button>
+        </div>
+      </div>
+    </div>
     <div id="deleteBar">
       <div id="deleteActions">
         <span class="del-count"><span id="selectedCount">0</span> รายการที่เลือก</span>
