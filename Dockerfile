@@ -22,6 +22,7 @@ COPY static-equipment/ ./static-equipment/
 COPY *.png  ./
 COPY assets/general-form-access.js ./assets/general-form-access.js
 COPY assets/ndt-preview.js ./assets/ndt-preview.js
+COPY assets/logout.js ./assets/logout.js
 COPY assets/pdf/covers/PageCover.pdf ./assets/pdf/covers/PageCover.pdf
 
 WORKDIR /app/backend

@@ -654,6 +654,7 @@
     html:not(.general-form-admin) #myBox { display: none !important; }
   </style>
   <script src="assets/general-form-access.js" defer></script>
+  <script src="assets/logout.js" defer></script>
 </head>
 <body>
 
@@ -739,6 +740,15 @@
         </div>
         <!-- <div class="panel-subtitle">Using data from maintenance record</div> -->
 
+        <div class="report-type-label" id="dataToggle" onclick="toggleDataList()">
+          <span class="rt-arrow" id="dataArrow">▾</span>
+          <span>Data</span>
+        </div>
+
+        <div class="check-list" id="dataList">
+          <div id="files-data"></div>
+        </div>
+
         <div class="report-type-label" id="mrToggle" onclick="toggleRecordList()">
           <span class="rt-arrow" id="mrArrow">▾</span>
           <span>Maintenance Record</span>
@@ -787,14 +797,7 @@
           <div id="files-ndt"></div>
         </div>
 
-        <div class="report-type-label" id="dataToggle" onclick="toggleDataList()">
-          <span class="rt-arrow" id="dataArrow">▾</span>
-          <span>Data</span>
-        </div>
 
-        <div class="check-list" id="dataList">
-          <div id="files-data"></div>
-        </div>
       </div>
 
       <!-- RIGHT: Final Report Preview -->
